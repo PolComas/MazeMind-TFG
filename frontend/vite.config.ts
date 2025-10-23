@@ -4,6 +4,11 @@ import svgr from 'vite-plugin-svgr'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/MazeMind-TFG/',
   plugins: [react(), svgr()],
+  base: '/MazeMind-TFG/',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true
+  }
 })
