@@ -1,24 +1,40 @@
 import { useEffect, useRef } from 'react'
 import type { Level } from '../maze/maze_generator'
 
+type Pos = { x: number; y: number }
+
 // Tipus per a les props del component MazeCanvas
 type Props = {
   level: Level  
   phase?: 'memorize' | 'playing' | 'completed'  
-  playerPos?: { x: number; y: number } 
-  settings?: {  // Configuracions opcionals per colors i estils
+  playerPos?: Pos
+  settings?: {
     path_color?: string
     wall_color?: string
     wall_thickness?: number
     exit_color?: string
     player_color?: string
-    revealNearby?: boolean
   }
+  // Props per a les ajudes 
+  showReveal?: boolean
+  showPlayerPath?: boolean
+  crashPosition?: Pos | null
 }
 
 // Renderitzar el laberint en un canvas HTML5
-export default function MazeCanvas({ level, phase = 'memorize', playerPos, settings = {} }: Props) {
+export default function MazeCanvas({ 
+  level, 
+  phase = 'memorize', 
+  playerPos, 
+  settings = {},
+  showReveal = false,
+  showPlayerPath = false,
+  crashPosition = null,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
+  // Guardar les posicions del jugador per dibuixar el camí
+  const pathHistoryRef = useRef<Pos[]>([])
 
   // Configuració per defecte
   const s = {
@@ -27,7 +43,6 @@ export default function MazeCanvas({ level, phase = 'memorize', playerPos, setti
     wall_thickness: 3,
     exit_color: '#F59E0B',
     player_color: '#111',
-    revealNearby: false,
     ...settings,
   }
 
@@ -35,33 +50,68 @@ export default function MazeCanvas({ level, phase = 'memorize', playerPos, setti
     const canvas = canvasRef.current
     if (!canvas) return
 
+    // Netejar l'historial si el joc es reinicia
+    if (phase === 'memorize') {
+      pathHistoryRef.current = []
+    }
+
+    // Afegir la posició actual a l'historial si canvia
+    if (playerPos) {
+      const lastPos = pathHistoryRef.current[pathHistoryRef.current.length - 1]
+      // Només afegir si és una cel·la nova
+      if (!lastPos || lastPos.x !== playerPos.x || lastPos.y !== playerPos.y) {
+        pathHistoryRef.current.push(playerPos)
+      }
+    }
+
     // Dibuixar el laberint
     const draw = () => {
       const parent = canvas.parentElement!
-      const size = Math.min(parent.clientWidth, parent.clientHeight)  // Mida quadrada basada en el contenidor
+      const size = Math.min(parent.clientWidth, parent.clientHeight)
       canvas.width = size
       canvas.height = size
 
       const ctx = canvas.getContext('2d')!
-      const cell = size / level.width  // Mida de cada cel·la del laberint
+      const cell = size / level.width
 
+      // Fons
       ctx.fillStyle = s.path_color
       ctx.fillRect(0, 0, size, size)
 
-      // Dibuixa les parets si estem en fase de memorització o si revealNearby és actiu
-      if (phase === 'memorize' || s.revealNearby) {
+      // Sortida
+      const ex = level.exit.x * cell, ey = level.exit.y * cell  
+      const sz = cell * 0.7, pad = (cell - sz) / 2  
+      ctx.fillStyle = s.exit_color
+      ctx.roundRect?.(ex + pad, ey + pad, sz, sz, cell * 0.15) ?? ctx.fillRect(ex + pad, ey + pad, sz, sz)
+      ctx.fill()
+
+      // Camí del jugador
+      if (phase === 'playing' && showPlayerPath && pathHistoryRef.current.length > 1) {
+        ctx.strokeStyle = s.player_color
+        ctx.lineWidth = s.wall_thickness 
+        ctx.globalAlpha = 0.4 
+        ctx.beginPath()
+        const start = pathHistoryRef.current[0]
+        ctx.moveTo(start.x * cell + cell / 2, start.y * cell + cell / 2)
+        for (const pos of pathHistoryRef.current.slice(1)) {
+          ctx.lineTo(pos.x * cell + cell / 2, pos.y * cell + cell / 2)
+        }
+        ctx.stroke()
+        ctx.globalAlpha = 1.0
+      }
+
+      // Parets (si 'memorize' o 'showReveal' és true)
+      if (phase === 'memorize' || showReveal) {
         ctx.strokeStyle = s.wall_color
         ctx.lineWidth = s.wall_thickness
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
-        // Itera per cada cel·la del laberint
         for (let y = 0; y < level.height; y++) {
           for (let x = 0; x < level.width; x++) {
             const c = level.maze[y][x]  
             const px = x * cell 
             const py = y * cell  
             ctx.beginPath()
-            // Dibuixa cada paret si existeix
             if (c.walls.top) { ctx.moveTo(px, py); ctx.lineTo(px + cell, py) }
             if (c.walls.right) { ctx.moveTo(px + cell, py); ctx.lineTo(px + cell, py + cell) }
             if (c.walls.bottom) { ctx.moveTo(px, py + cell); ctx.lineTo(px + cell, py + cell) }
@@ -71,15 +121,34 @@ export default function MazeCanvas({ level, phase = 'memorize', playerPos, setti
         }
       }
 
-      // Dibuixa la sortida com un rectangle 
-      const ex = level.exit.x * cell, ey = level.exit.y * cell  
-      const sz = cell * 0.7, pad = (cell - sz) / 2  
-      ctx.fillStyle = s.exit_color
-      
-      ctx.roundRect?.(ex + pad, ey + pad, sz, sz, cell * 0.15) ?? ctx.fillRect(ex + pad, ey + pad, sz, sz)
-      ctx.fill()
+      // Ajuda de Xoc: destacar les parets en la zona 3x3 al voltant de la cel·la de xoc
+      if (phase === 'playing' && crashPosition) {
+        ctx.strokeStyle = '#E11D48'
+        ctx.lineWidth = s.wall_thickness + 2
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
 
-      // Dibuixa el jugador com una bola rodona si estem en fase de joc
+        const { x, y } = crashPosition
+
+        // Iterar la regió 3x3 centrada a (x,y) per dibuixar les parets dels veïns
+        for (let ny = y - 1; ny <= y + 1; ny++) {
+          for (let nx = x - 1; nx <= x + 1; nx++) {
+            if (nx < 0 || ny < 0 || nx >= level.width || ny >= level.height) continue
+            const cellObj = level.maze[ny][nx]
+            const px = nx * cell
+            const py = ny * cell
+            ctx.beginPath()
+            // Dibuixar les parets presents a la cel·la veïna
+            if (cellObj.walls.top) { ctx.moveTo(px, py); ctx.lineTo(px + cell, py) }
+            if (cellObj.walls.right) { ctx.moveTo(px + cell, py); ctx.lineTo(px + cell, py + cell) }
+            if (cellObj.walls.bottom) { ctx.moveTo(px, py + cell); ctx.lineTo(px + cell, py + cell) }
+            if (cellObj.walls.left) { ctx.moveTo(px, py); ctx.lineTo(px, py + cell) }
+            ctx.stroke()
+          }
+        }
+      }
+
+      // Jugador
       if (phase === 'playing' && playerPos) {
         const px = playerPos.x * cell + cell / 2  
         const py = playerPos.y * cell + cell / 2
@@ -94,8 +163,14 @@ export default function MazeCanvas({ level, phase = 'memorize', playerPos, setti
     draw()
     window.addEventListener('resize', draw)
     return () => window.removeEventListener('resize', draw)
-  }, [level, phase, playerPos, s.path_color, s.wall_color, s.wall_thickness, s.exit_color, s.player_color])
 
-  // Renderitza el canvas amb estils per omplir l'espai i radi de cantonades
+  // Actualitzar dependències
+  }, [
+    level, phase, playerPos, 
+    showReveal, showPlayerPath, crashPosition,
+    s.path_color, s.wall_color, s.wall_thickness, s.exit_color, s.player_color
+  ])
+
+  // Renderitza el canvas
   return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', borderRadius: 12 }} />
 }

@@ -7,14 +7,22 @@ import { generateLevel } from './maze/maze_generator';
 export default function App() {
   // --- Lògica de Navegació ---
   const [path, setPath] = useState(window.location.pathname);
+  const [navKey, setNavKey] = useState(0);
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   const go = (p: string) => {
+    // Si naveguem a la mateixa ruta, incrementem navKey per forçar remuntatge (reiniciar nivell)
     window.history.pushState({}, '', p);
-    setPath(p);
+    if (p === path) {
+      setNavKey((k) => k + 1);
+      setPath(p);
+    } else {
+      setPath(p);
+      setNavKey(0);
+    }
   };
 
   // --- Selector de Pantalla ---
@@ -40,6 +48,7 @@ export default function App() {
     }); 
     return (
       <LevelScreen
+        key={navKey} 
         level={level}
         onBack={() => go('/levels')}
         onRetry={() => go(`/level/${num}`)}

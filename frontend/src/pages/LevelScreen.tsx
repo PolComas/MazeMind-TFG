@@ -1,9 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import MazeCanvas from "../components/MazeCanvas";
 import type { Level } from "../maze/maze_generator";
 import { PALETTE } from "../components/palette";
+import GameHUD from "../components/GameHUD";
 
-type Phase = "memorize" | "playing";
+type Phase = "memorize" | "playing" | "completed";
+
+// Constants del Joc
+const POINTS_START = 1000;
+const POINTS_LOSS_PER_SECOND = 1;
+const POINTS_LOSS_PATH_HELP = 2; // Cost extra per segon
+const POINTS_LOSS_CRASH_HELP = 20; 
+const POINTS_COST_REVEAL = 50;
+const REVEAL_DURATION_MS = 500; // 0.5 segons
 
 export default function LevelScreen({
   level,
@@ -19,9 +28,18 @@ export default function LevelScreen({
   const [phase, setPhase] = useState<Phase>("memorize");
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
   const total = useRef(memorizeDuration);
-
-  // Posició del jugador, inicia a l'inici del laberint
   const [playerPos, setPlayerPos] = useState({ x: level.start.x, y: level.start.y });
+
+  // Estats per al Joc
+  const [gameTime, setGameTime] = useState(0);
+  const [points, setPoints] = useState(POINTS_START);
+  const [revealCharges, setRevealCharges] = useState(3);
+  const [isPathHelpActive, setIsPathHelpActive] = useState(false);
+  const [isCrashHelpActive, setIsCrashHelpActive] = useState(false);
+
+  // Estats per passar al Canvas
+  const [showReveal, setShowReveal] = useState(false);
+  const [crashedAt, setCrashedAt] = useState<{x: number, y: number} | null>(null);
 
   // Barra de progrés (0–100)
   const progressPct = useMemo(() => {
@@ -29,64 +47,110 @@ export default function LevelScreen({
     return Math.min(100, Math.max(0, (done / total.current) * 100));
   }, [remaining]);
 
-  // Compte enrere
+  // Compte enrere (Memorize)
   useEffect(() => {
     if (phase !== "memorize") return;
     const tickMs = 1000;
-
     const id = setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
           clearInterval(id);
           setPhase("playing");
-          // Reinicia la posició del jugador a l'inici quan comença el joc
           setPlayerPos({ x: level.start.x, y: level.start.y });
           return 0;
         }
         return r - 1;
       });
     }, tickMs);
-
     return () => clearInterval(id);
   }, [phase, level.start.x, level.start.y]);
 
-  // Gestió del moviment del jugador amb tecles
+  // Efectes pel Joc (Temps i Punts)
+  useEffect(() => {
+    if (phase !== 'playing') return;
+
+    const gameTick = setInterval(() => {
+      setGameTime(t => t + 1);
+
+    let pointLoss = POINTS_LOSS_PER_SECOND;
+    if (isPathHelpActive) pointLoss += POINTS_LOSS_PATH_HELP;
+
+
+    setPoints(p => Math.max(0, p - pointLoss));
+      }, 1000);
+
+    return () => clearInterval(gameTick);
+  }, [phase, isPathHelpActive, isCrashHelpActive]);
+
+  
+  // Lògica d'Ajudes
+  const onRevealHelp = useCallback(() => {
+    if (phase !== 'playing' || revealCharges <= 0 || showReveal) return;
+    setRevealCharges(c => c - 1);
+    setPoints(p => Math.max(0, p - POINTS_COST_REVEAL));
+    setShowReveal(true);
+    setTimeout(() => setShowReveal(false), REVEAL_DURATION_MS);
+  }, [phase, revealCharges, showReveal]);
+
+  const onTogglePathHelp = useCallback(() => {
+    if (phase !== 'playing') return;
+    setIsPathHelpActive(active => !active);
+  }, [phase]);
+
+  const onToggleCrashHelp = useCallback(() => {
+    if (phase !== 'playing') return;
+    setIsCrashHelpActive(active => !active);
+  }, [phase]);
+
+
+  // Gestió de Teclat (Moviment + Ajudes)
   useEffect(() => {
     if (phase !== "playing") return;
 
     const handleKey = (e: KeyboardEvent) => {
+      if (showReveal) return;
+      setCrashedAt(null);
+
+      // Ajudes
+      if (e.key === 'h' || e.key === 'H') { onRevealHelp(); return; }
+      if (e.key === 'j' || e.key === 'J') { onTogglePathHelp(); return; }
+      if (e.key === 'k' || e.key === 'K') { onToggleCrashHelp(); return; }
+
+      // Moviment
       const { x, y } = playerPos;
-      let newX = x;
-      let newY = y;
+      let newX = x, newY = y;
+      let didCrash = false;
 
-      // Determina la nova posició basada en la tecla
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') newY -= 1;
-      else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') newY += 1;
-      else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') newX -= 1;
-      else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') newX += 1;
-      else return; // Ignora altres tecles
-
-      // Comprova si el moviment és vàlid (dins dels límits i sense paret)
-      if (newX < 0 || newX >= level.width || newY < 0 || newY >= level.height) return;
-
-      const cell = level.maze[y][x];
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-        if (cell.walls.top) return;
+        if (level.maze[y][x].walls.top) { didCrash = true; } else { newY -= 1; }
       } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-        if (cell.walls.bottom) return;
+        if (level.maze[y][x].walls.bottom) { didCrash = true; } else { newY += 1; }
       } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        if (cell.walls.left) return;
+        if (level.maze[y][x].walls.left) { didCrash = true; } else { newX -= 1; }
       } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        if (cell.walls.right) return;
+        if (level.maze[y][x].walls.right) { didCrash = true; } else { newX += 1; }
+      } else {
+        return;
       }
 
-      // Mou el jugador
-      setPlayerPos({ x: newX, y: newY });
+      if (didCrash) {
+        if (isCrashHelpActive) {
+          // Mostrar l'ajuda de xoc
+          setCrashedAt({ x, y });
+          setPoints(p => Math.max(0, p - POINTS_LOSS_CRASH_HELP));
+          setTimeout(() => setCrashedAt(null), REVEAL_DURATION_MS);
+        }
+        return; 
+      }
+
+      if (newX >= 0 && newX < level.width && newY >= 0 && newY < level.height) {
+        setPlayerPos({ x: newX, y: newY });
+      }
     };
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level]);
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal]);
 
   return (
     <div style={styles.page}>
@@ -102,8 +166,9 @@ export default function LevelScreen({
       </header>
 
       <main style={styles.mainArea}>
-        {/* PANELL DE MEMORITZACIÓ */}
-        {phase === "memorize" && (
+
+        {/* Mostrar el panell de memorització O el HUD del joc */}        
+        {phase === "memorize" ? (
           <section aria-labelledby="memorizeTitle" style={styles.memorizePanel}>
             <h2 id="memorizeTitle" style={styles.memorizeHeading}>
               <span aria-hidden="true">👁️</span> Memoritza el Laberint!
@@ -115,24 +180,48 @@ export default function LevelScreen({
               <div style={{ ...styles.progressFill, width: `${progressPct}%` }} />
             </div>
           </section>
+        ) : (
+          // Mostrar el HUD quan la fase no sigui memorize
+          <GameHUD
+            gameTime={gameTime}
+            points={points}
+            revealCharges={revealCharges}
+            isPathHelpActive={isPathHelpActive}
+            isCrashHelpActive={isCrashHelpActive}
+            onRevealHelp={onRevealHelp}
+            onTogglePathHelp={onTogglePathHelp}
+            onToggleCrashHelp={onToggleCrashHelp}
+          />
         )}
+
 
         {/* TAULER DEL LABERINT */}
         <section aria-label="Tauler del laberint" style={styles.boardWrap}>
           <div style={styles.boardInner}>
-            <MazeCanvas level={level} phase={phase} playerPos={playerPos} />
+            <MazeCanvas 
+              level={level} 
+              phase={phase} 
+              playerPos={playerPos} 
+              showReveal={showReveal}
+              showPlayerPath={isPathHelpActive}
+              crashPosition={crashedAt}
+            />
           </div>
         </section>
       </main>
 
-      {/* FOOTER / TIP - Només visible durant el joc */}
-      {phase === 'playing' && (
-        <footer style={styles.footer}>
+      {/* FOOTER */}
+      <footer style={styles.footer}>
+        {phase === 'playing' ? (
           <p style={styles.tip}>
             Utilitza les <kbd>Fletxes</kbd> o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> per moure’t.
           </p>
-        </footer>
-      )}
+        ) : phase === 'memorize' ? (
+          <p style={styles.tip}>
+            Memoritza el camí des de l'inici (negre) fins al final (taronja).
+          </p>
+        ) : null }
+      </footer>
     </div>
   );
 }
@@ -220,20 +309,21 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '100%',
     aspectRatio: '1 / 1',
-    maxWidth: 'calc(100vh - 250px)',
+    maxWidth: 'calc(100vh - 300px)',
     maxHeight: '100%',
     background: '#EEF2FF',
     borderRadius: 16,
     boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
     overflow: "hidden",
+    position: 'relative', 
   },
-  footer: {
-    textAlign: "center",
+  footer: { 
     flexShrink: 0,
     width: "100%",
     maxWidth: "980px",
+    textAlign: "center",
   },
-  tip: {
+  tip: { 
     display: 'inline-block',
     background: PALETTE.surface,
     border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
