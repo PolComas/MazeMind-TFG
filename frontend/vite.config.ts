@@ -4,6 +4,6 @@ import svgr from 'vite-plugin-svgr'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/MAZEMIND-TFG/',
+  base: '/MazeMind-TFG/',
   plugins: [react(), svgr()],
 })

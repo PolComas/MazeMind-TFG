@@ -1,8 +1,16 @@
 import React from "react";
+import { User, LogOut } from 'lucide-react';
 import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 
-type Props = { onNavigate: () => void };
+type UserType = { id: string; email: string; };
+
+type Props = { 
+  user: UserType | null;   
+  onNavigate: () => void; 
+  onUserClick: () => void;
+  onLogout: () => void;
+};
 
 const stats = [
   { icon: "🎯", label: "Nivells Superats", value: 0 },
@@ -10,9 +18,27 @@ const stats = [
   { icon: "⚡️", label: "Nivells Perfectes", value: 0 },
 ];
 
-export default function HomeScreen({ onNavigate }: Props) {
+export default function HomeScreen({ user, onNavigate, onUserClick, onLogout }: Props) {
+  const handleUserInteraction = () => {
+    if (user) {
+      onLogout(); 
+    } else {
+      onUserClick();
+    }
+  };
+
   return (
     <main role="main" style={styles.page}>
+      {/* Botó d'usuari */}
+      <button 
+        style={styles.userButton} 
+        onClick={handleUserInteraction} 
+        aria-label={user ? `Compte de ${user.email}. Tancar sessió.` : "Iniciar sessió o registrar-se"}
+      >
+        {/* Icona condicional */}
+        {user ? <LogOut size={24} /> : <User size={24} />} 
+      </button>
+      
       <div style={styles.container} aria-labelledby="title">
         {/* LOGO */}
         <div style={styles.logoWrap} role="img" aria-label="Logotip de MazeMind">
@@ -76,6 +102,23 @@ const styles: Record<string, React.CSSProperties> = {
     placeItems: "center",
     padding: 24,
     boxSizing: "border-box",
+  },
+  userButton: { // Botó d'usuari a la cantonada superior dreta
+    position: 'absolute',
+    top: 'clamp(16px, 3vw, 24px)',
+    right: 'clamp(16px, 3vw, 24px)',
+    background: PALETTE.surface,
+    border: `1px solid ${PALETTE.borderColor}`,
+    color: PALETTE.subtext,
+    borderRadius: '50%',
+    width: '48px',       
+    height: '48px',
+    display: 'grid',
+    placeItems: 'center',
+    cursor: 'pointer',
+    boxShadow: PALETTE.shadow,
+    zIndex: 10,
+    transition: 'background 0.2s ease',
   },
   container: {
     // Contenidor principal centrat amb amplada màxima i gap

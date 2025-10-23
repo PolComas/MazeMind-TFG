@@ -4,6 +4,7 @@ import type { Level } from "../maze/maze_generator";
 import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
+import CompletionModal from '../components/CompletionModal';
 
 type Phase = "memorize" | "playing" | "completed";
 
@@ -207,6 +208,7 @@ export default function LevelScreen({
       if (newX === level.exit.x && newY === level.exit.y) {
         audio.playWin(); 
         audio.stopMusic();
+        setPhase("completed");
       }
     };
 
@@ -284,6 +286,18 @@ export default function LevelScreen({
           </p>
         ) : null }
       </footer>
+
+      {/* Nivell completat */}
+      {phase === "completed" && (
+        <CompletionModal
+          levelNumber={level.number}
+          stars={currentStars} 
+          time={gameTime}
+          points={points}
+          onRetry={onRetryWithSound} 
+          onBack={onBackWithSound}
+        />
+      )}
     </div>
   );
 }
