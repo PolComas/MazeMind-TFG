@@ -3,6 +3,7 @@ import MazeCanvas from "../components/MazeCanvas";
 import type { Level } from "../maze/maze_generator";
 import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
+import { useGameAudio } from "../audio/sound";
 
 type Phase = "memorize" | "playing" | "completed";
 
@@ -16,13 +17,14 @@ const REVEAL_DURATION_MS = 500; // 0.5 segons
 
 export default function LevelScreen({
   level,
-  onBack,
-  onRetry,
+  onBack: onBackOriginal,
+  onRetry: originalOnRetry,
 }: {
   level: Level;
   onBack: () => void;
   onRetry: () => void;
 }) {
+  const audio = useGameAudio();
   const memorizeDuration = level.memorizeTime;
 
   const [phase, setPhase] = useState<Phase>("memorize");
@@ -33,6 +35,25 @@ export default function LevelScreen({
   // Estats per al Joc
   const [gameTime, setGameTime] = useState(0);
   const [points, setPoints] = useState(POINTS_START);
+
+  // Sorolls Estrella
+  const getStars = (p: number) => {
+    if (p >= 800) return 3;
+    if (p >= 400) return 2;
+    if (p > 0) return 1;
+    return 0;
+  };
+
+  const currentStars = useMemo(() => getStars(points), [points]);
+  const prevStarsRef = useRef(getStars(POINTS_START));
+
+  useEffect(() => {
+    if (currentStars < prevStarsRef.current) {
+      audio.playStarLoss(); 
+    }
+    prevStarsRef.current = currentStars;
+  }, [currentStars, audio.playStarLoss]);
+
   const [revealCharges, setRevealCharges] = useState(3);
   const [isPathHelpActive, setIsPathHelpActive] = useState(false);
   const [isCrashHelpActive, setIsCrashHelpActive] = useState(false);
@@ -55,19 +76,32 @@ export default function LevelScreen({
       setRemaining((r) => {
         if (r <= 1) {
           clearInterval(id);
+          audio.playStart();
           setPhase("playing");
           setPlayerPos({ x: level.start.x, y: level.start.y });
           return 0;
         }
+        // So de compte enrere
+        if (r <= 4) { 
+          audio.playTickFinal(); 
+        } else {
+          audio.playTick(); 
+        }
+
         return r - 1;
       });
     }, tickMs);
     return () => clearInterval(id);
-  }, [phase, level.start.x, level.start.y]);
+  }, [phase, level.start.x, level.start.y, audio]);
 
   // Efectes pel Joc (Temps i Punts)
   useEffect(() => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing'){
+      audio.stopMusic();
+      return;
+    }
+
+    audio.startMusic();
 
     const gameTick = setInterval(() => {
       setGameTime(t => t + 1);
@@ -79,29 +113,49 @@ export default function LevelScreen({
     setPoints(p => Math.max(0, p - pointLoss));
       }, 1000);
 
-    return () => clearInterval(gameTick);
-  }, [phase, isPathHelpActive, isCrashHelpActive]);
+    return () => {
+      clearInterval(gameTick);
+      audio.stopMusic();
+    };
+  }, [phase, isPathHelpActive, isCrashHelpActive, audio]);
 
   
   // Lògica d'Ajudes
   const onRevealHelp = useCallback(() => {
     if (phase !== 'playing' || revealCharges <= 0 || showReveal) return;
+    audio.playReveal();
     setRevealCharges(c => c - 1);
     setPoints(p => Math.max(0, p - POINTS_COST_REVEAL));
     setShowReveal(true);
     setTimeout(() => setShowReveal(false), REVEAL_DURATION_MS);
-  }, [phase, revealCharges, showReveal]);
+  }, [phase, revealCharges, showReveal, audio]);
 
   const onTogglePathHelp = useCallback(() => {
     if (phase !== 'playing') return;
-    setIsPathHelpActive(active => !active);
-  }, [phase]);
+    setIsPathHelpActive(active => {
+      active ? audio.playToggleOff() : audio.playToggleOn(); 
+      return !active;
+    });
+  }, [phase, audio]);
 
   const onToggleCrashHelp = useCallback(() => {
     if (phase !== 'playing') return;
-    setIsCrashHelpActive(active => !active);
-  }, [phase]);
+    setIsCrashHelpActive(active => {
+      active ? audio.playToggleOff() : audio.playToggleOn(); 
+      return !active;
+    });
+  }, [phase, audio]);
 
+  const onRetryWithSound = useCallback(() => {
+    audio.playFail(); 
+    audio.stopMusic();
+    originalOnRetry(); 
+  }, [originalOnRetry, audio]);
+
+  const onBackWithSound = useCallback(() => {
+    audio.playFail(); 
+    onBackOriginal();
+  }, [onBackOriginal, audio]);
 
   // Gestió de Teclat (Moviment + Ajudes)
   useEffect(() => {
@@ -136,6 +190,7 @@ export default function LevelScreen({
       if (didCrash) {
         if (isCrashHelpActive) {
           // Mostrar l'ajuda de xoc
+          audio.playCrash();
           setCrashedAt({ x, y });
           setPoints(p => Math.max(0, p - POINTS_LOSS_CRASH_HELP));
           setTimeout(() => setCrashedAt(null), REVEAL_DURATION_MS);
@@ -143,24 +198,31 @@ export default function LevelScreen({
         return; 
       }
 
+      // Actualitzar la posició del jugador
       if (newX >= 0 && newX < level.width && newY >= 0 && newY < level.height) {
         setPlayerPos({ x: newX, y: newY });
+      }
+
+      // Lògica de Victòria
+      if (newX === level.exit.x && newY === level.exit.y) {
+        audio.playWin(); 
+        audio.stopMusic();
       }
     };
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal]);
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points]);
 
   return (
     <div style={styles.page}>
       {/* HEADER */}
       <header style={styles.headerRow}>
-        <button type="button" onClick={onBack} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
+        <button type="button" onClick={onBackWithSound} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
           <span aria-hidden="true">←</span> Nivells
         </button>
         <h1 style={styles.title}>Nivell {level.number}</h1>
-        <button type="button" onClick={onRetry} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
+        <button type="button" onClick={onRetryWithSound} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
           <span aria-hidden="true">↻</span> Reintentar
         </button>
       </header>
