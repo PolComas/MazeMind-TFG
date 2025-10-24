@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame } from 'lucide-react';
 import { loadProgress, getLevelStats, type GameProgress, type LevelProgress } from '../utils/progress';
+import { useGameAudio } from '../audio/sound';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -27,12 +28,14 @@ const difficultyColors: Record<Diff, string> = {
 };
 
 export default function LevelSelect({
-  onPlayLevel,
-  onBack, 
+  onPlayLevel: originalOnPlayLevel,
+  onBack: originalOnBack,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
 }) {
+  const audio = useGameAudio();
+
   const [difficulty, setDifficulty] = useState<Diff>('easy');
   const [progress] = useState<GameProgress>(() => loadProgress());
 
@@ -65,11 +68,27 @@ export default function LevelSelect({
   const levels = Array.from({ length: 15 }, (_, i) => i + 1);
   const unlockedCount = progress.highestUnlocked[difficulty] || 0;
 
+  // Efectes de so per a les interaccions
+  const onBackWithSound = useCallback(() => {
+    audio.playFail(); 
+    originalOnBack(); 
+  }, [originalOnBack, audio]);
+
+  const onPlayLevelWithSound = useCallback((levelNumber: number, difficulty: Diff) => {
+    //audio.playBtnSound(); 
+    audio.playFail();
+    originalOnPlayLevel(levelNumber, difficulty); 
+  }, [originalOnPlayLevel, audio]);
+
+  const onPracticeClick = useCallback(() => {
+    audio.playFail(); 
+  }, [audio]);
+
   return (
     <main style={styles.page}>
       <div style={styles.container}>
         <header style={styles.header}>
-          <button style={styles.backBtn} onClick={onBack} aria-label="Tornar a la pantalla d'inici">
+          <button style={styles.backBtn} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
             <span aria-hidden="true">←</span> Inici
           </button>
           <div style={{ textAlign: 'center' }}>
@@ -87,7 +106,7 @@ export default function LevelSelect({
             <button
               key={d}
               role="tab" 
-              onClick={() => setDifficulty(d)}
+              onClick={() => { audio.playSlide(); setDifficulty(d); }}
               aria-selected={difficulty === d} 
               style={{
                 ...styles.diffTab, 
@@ -114,7 +133,7 @@ export default function LevelSelect({
                   difficulty={difficulty} 
                   stars={stats?.stars ?? 0}
                   bestTime={stats?.bestTime ?? null}
-                  onPlay={() => onPlayLevel(n, difficulty)}
+                  onPlay={() => onPlayLevelWithSound(n, difficulty)}
                 />
               );
             })}
@@ -123,7 +142,7 @@ export default function LevelSelect({
 
           {/* Peu de pàgina amb botó de mode pràctica */}
         <footer style={styles.footer}>
-          <button style={styles.practiceBtn}>
+          <button style={styles.practiceBtn} onClick={onPracticeClick}>
             <Dumbbell size={18} /> Mode Pràctica
           </button>
         </footer>

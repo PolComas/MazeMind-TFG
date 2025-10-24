@@ -10,6 +10,7 @@ type Props = {
   onNavigate: () => void; 
   onUserClick: () => void;
   onLogout: () => void;
+  onSettingsClick: () => void;
 };
 
 const stats = [
@@ -18,7 +19,7 @@ const stats = [
   { icon: "⚡️", label: "Nivells Perfectes", value: 0 },
 ];
 
-export default function HomeScreen({ user, onNavigate, onUserClick, onLogout }: Props) {
+export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, onSettingsClick }: Props) {
   const handleUserInteraction = () => {
     if (user) {
       onLogout(); 
@@ -76,7 +77,7 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout }: 
           <button
             type="button"
             style={styles.secondaryBtn}
-            onClick={() => alert("En construcció")}
+            onClick={onSettingsClick}
             aria-label="Obrir configuració"
           >
             <span aria-hidden="true">⚙</span> Configuració

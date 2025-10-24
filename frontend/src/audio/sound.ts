@@ -11,6 +11,8 @@ import toggleOnSound from './toggle_on.mp3';
 import toggleOffSound from './toggle_off.mp3';
 import winSound from './win.wav';
 import failSound from './fail.mp3';
+import playBtnSound from './play.wav';
+import slideSound from './slide2.wav';
 
 // Tipus de configuració d'un so
 type SoundConfig = { src: string; volume?: number; loop?: boolean }
@@ -28,6 +30,8 @@ const soundMap: Record<string, SoundConfig> = {
   toggleOff: { src: toggleOffSound, volume: 0.7 },
   win: { src: winSound, volume: 0.8 },
   fail: { src: failSound, volume: 0.7 },
+  playBtn: { src: playBtnSound, volume: 0.7 },
+  slide: { src: slideSound, volume: 0.8 },  
 };
 
 type SoundKey = keyof typeof soundMap;
@@ -71,7 +75,9 @@ export const useGameAudio = () => {
     playToggleOff: useCallback(() => playSound(audioCache.get('toggleOff')), [audioCache]),
     playWin: useCallback(() => playSound(audioCache.get('win')), [audioCache]),
     playFail: useCallback(() => playSound(audioCache.get('fail')), [audioCache]),
-    
+    playBtnSound: useCallback(() => playSound(audioCache.get('playBtn')), [audioCache]),
+    playSlide: useCallback(() => playSound(audioCache.get('slide')), [audioCache]),
+
     startMusic: useCallback(() => {
       audioCache.get('music')?.play().catch(e => console.error("Error al reproduir música:", e));
     }, [audioCache]),

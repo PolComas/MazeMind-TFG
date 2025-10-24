@@ -4,6 +4,7 @@ import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
 import { generateLevel } from './maze/maze_generator';
 import AuthModal from './components/AuthModal'; 
+import SettingsScreen from './pages/SettingsScreen';
 
 type User = {
   id: string;
@@ -68,6 +69,11 @@ export default function App() {
     console.log("Usuari desconnectat");
   };
 
+  // Pantalla de Configuració
+  if (path === '/settings') {
+    return <SettingsScreen onBack={() => go('/')} />;
+  }
+
   // Pantalla de Selecció de Nivell
   if (path === '/levels') {
     return (
@@ -107,6 +113,7 @@ export default function App() {
         onNavigate={() => go('/levels')} 
         onUserClick={() => setShowAuthModal(true)} 
         onLogout={handleLogout} 
+        onSettingsClick={() => go('/settings')}
       />
 
       {showAuthModal && (
