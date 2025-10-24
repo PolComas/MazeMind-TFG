@@ -11,6 +11,11 @@ export const PALETTE = {
   accentGreen: "#34D399",
   accentBlue: '#5C6CFF',
 
+  // Colors per dificultats
+  easyGreen: "#34D399",   
+  normalYellow: "#FBBF24", 
+  hardRed: "#F87171",      
+
   // UI
   playBtnFrom: "#5b21b6",            
   playBtnTo: "#7e22ce",

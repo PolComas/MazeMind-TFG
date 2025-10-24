@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
+import { Dumbbell, Zap, Flame } from 'lucide-react';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -8,6 +9,20 @@ const DIFF_LABEL: Record<Diff, string> = {
   easy: 'Fàcil',
   normal: 'Normal',
   hard: 'Difícil',
+};
+
+// Icones per dificultat
+const difficultyIcons: Record<Diff, React.ReactNode> = {
+  easy: <Dumbbell size={16} />,
+  normal: <Zap size={16} />,
+  hard: <Flame size={16} />,
+};
+
+// Mapar la dificultat a un color
+const difficultyColors: Record<Diff, string> = {
+  easy: PALETTE.easyGreen,
+  normal: PALETTE.normalYellow,
+  hard: PALETTE.hardRed,
 };
 
 export default function LevelSelect({
@@ -18,6 +33,31 @@ export default function LevelSelect({
   onBack: () => void;
 }) {
   const [difficulty, setDifficulty] = useState<Diff>('easy');
+
+  // Indicador lliscant
+  const diffBarRef = useRef<HTMLDivElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
+
+  // Posició de l'indicador quan canvia la dificultat
+  useEffect(() => {
+    if (!diffBarRef.current) return;
+
+    const buttons = diffBarRef.current.querySelectorAll('button');
+    const difficulties: Diff[] = ['easy', 'normal', 'hard'];
+    const activeIndex = difficulties.indexOf(difficulty);
+    const activeButton = buttons[activeIndex] as HTMLElement | null;
+
+    if (activeButton) {
+      setIndicatorStyle({
+        left: `${activeButton.offsetLeft}px`,
+        width: `${activeButton.offsetWidth}px`,
+        background: difficultyColors[difficulty], 
+        opacity: 1,
+      });
+    } else {
+      setIndicatorStyle({ opacity: 0 }); 
+    }
+  }, [difficulty]);
 
   // Lògica de nivells desbloquejats
   const unlocked = useMemo(() => 1, []);
@@ -38,31 +78,35 @@ export default function LevelSelect({
         </header>
 
         {/* Barra de selecció de dificultat */}
-        <div role="group" aria-label="Selector de dificultat" style={styles.diffBar}>
+        <div role="tablist" aria-label="Selector de dificultat" style={styles.diffBarContainer} ref={diffBarRef} >
+          <div style={{ ...styles.diffIndicator, ...indicatorStyle }} />
+
           {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
             <button
               key={d}
+              role="tab" 
               onClick={() => setDifficulty(d)}
-              aria-pressed={difficulty === d}
+              aria-selected={difficulty === d} 
               style={{
-                ...styles.diffBtn,
-                ...(difficulty === d ? styles.diffBtnActive : {}),
+                ...styles.diffTab, 
+                color: difficulty === d ? PALETTE.text : PALETTE.subtext, 
               }}
             >
+              {difficultyIcons[d]} 
               {DIFF_LABEL[d]}
             </button>
           ))}
         </div>
 
         {/* Graella de nivells */}
-        <section aria-label="Llista de nivells">
+        <section aria-label={`Nivells de dificultat ${DIFF_LABEL[difficulty]}`}>
           <div style={styles.grid}>
             {levels.map(n => (
               <LevelCard
-                key={n}
+                key={`${difficulty}-${n}`}
                 index={n}
                 unlocked={n <= unlocked}
-                difficulty={DIFF_LABEL[difficulty]} 
+                difficulty={difficulty} 
                 onPlay={() => onPlayLevel(n, difficulty)}
               />
             ))}
@@ -72,7 +116,7 @@ export default function LevelSelect({
           {/* Peu de pàgina amb botó de mode pràctica */}
         <footer style={styles.footer}>
           <button style={styles.practiceBtn}>
-            <span aria-hidden="true">🧠</span> Mode Pràctica
+            <Dumbbell size={18} /> Mode Pràctica
           </button>
         </footer>
       </div>
@@ -118,29 +162,47 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
     width: 100,
   },
-  diffBar: { 
-    // Barra de botons per seleccionar dificultat
-    display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24 
+  // --- Nous estils per a la barra de dificultat ---
+  diffBarContainer: { 
+    position: 'relative', // Conté l'indicador absolut
+    display: 'flex', 
+    justifyContent: 'center', 
+    background: PALETTE.surface, // Fons del contenidor
+    borderRadius: 999, // Arrodonit
+    padding: '6px', // Espai interior
+    marginBottom: 32, // Més separació
+    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)', // Ombra interior
   },
-  diffBtn: {
-    // Botó de dificultat base amb transició
-    padding: '8px 16px',
+  diffTab: { // Estil dels botons de dificultat
+    flexGrow: 1, 
+    padding: '10px 16px',
     borderRadius: 999,
-    border: PALETTE.borderColor,
+    border: 'none',
     background: 'transparent',
     color: PALETTE.subtext,
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: 'color 0.3s ease',
+    zIndex: 2,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
   },
-  diffBtnActive: { 
-    // Estils addicionals per al botó actiu (verd i escalat)
-    background: PALETTE.accentGreen,
-    color: PALETTE.bg, 
-    borderColor: PALETTE.accentGreen,
-    fontWeight: 800,
-    transform: 'scale(1.05)',
-   },
+  diffIndicator: { // Estil de l'indicador lliscant
+    position: 'absolute',
+    top: '6px',
+    bottom: '6px',
+    borderRadius: 999,
+    boxShadow: PALETTE.shadow,
+    transition: 'left 0.3s ease, width 0.3s ease, background 0.3s ease',
+    zIndex: 1,
+    opacity: 0,
+  },
+  diffBar: { 
+    // Barra de botons per seleccionar dificultat
+    display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24 
+  },
   grid: {
     // Graella responsiva per les targetes de nivell
     display: 'grid',
