@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame } from 'lucide-react';
+import { loadProgress, getLevelStats, type GameProgress, type LevelProgress } from '../utils/progress';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -33,6 +34,7 @@ export default function LevelSelect({
   onBack: () => void;
 }) {
   const [difficulty, setDifficulty] = useState<Diff>('easy');
+  const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Indicador lliscant
   const diffBarRef = useRef<HTMLDivElement>(null);
@@ -60,8 +62,8 @@ export default function LevelSelect({
   }, [difficulty]);
 
   // Lògica de nivells desbloquejats
-  const unlocked = useMemo(() => 1, []);
   const levels = Array.from({ length: 15 }, (_, i) => i + 1);
+  const unlockedCount = progress.highestUnlocked[difficulty] || 0;
 
   return (
     <main style={styles.page}>
@@ -101,15 +103,21 @@ export default function LevelSelect({
         {/* Graella de nivells */}
         <section aria-label={`Nivells de dificultat ${DIFF_LABEL[difficulty]}`}>
           <div style={styles.grid}>
-            {levels.map(n => (
-              <LevelCard
-                key={`${difficulty}-${n}`}
-                index={n}
-                unlocked={n <= unlocked}
-                difficulty={difficulty} 
-                onPlay={() => onPlayLevel(n, difficulty)}
-              />
-            ))}
+            {levels.map(n => {
+              const stats = getLevelStats(progress, difficulty, n);
+
+              return (
+                <LevelCard
+                  key={`${difficulty}-${n}`}
+                  index={n}
+                  unlocked={n <= unlockedCount}
+                  difficulty={difficulty} 
+                  stars={stats?.stars ?? 0}
+                  bestTime={stats?.bestTime ?? null}
+                  onPlay={() => onPlayLevel(n, difficulty)}
+                />
+              );
+            })}
           </div>
         </section>
 
@@ -121,7 +129,7 @@ export default function LevelSelect({
         </footer>
       </div>
     </main>
-  );
+  );  
 }
 
 const styles: Record<string, React.CSSProperties> = {

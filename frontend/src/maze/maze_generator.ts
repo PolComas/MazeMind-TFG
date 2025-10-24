@@ -2,10 +2,13 @@ export type Dir = 'top' | 'right' | 'bottom' | 'left'
 export type Cell = { walls: Record<Dir, boolean>; visited: boolean } // Parets i si ha estat visitada
 export type Grid = Cell[][]
 
+export type Diff = 'easy' | 'normal' | 'hard';
+
 // Tipus per a un nivell complet del joc
 export type Level = {
   id: string  
   number: number  
+  difficulty: Diff;
   width: number 
   height: number  
   maze: Grid  
@@ -98,6 +101,7 @@ export class MazeGenerator {
 export type LevelParams = {
   width: number;  // Amplada del laberint
   height: number;  // Alçada del laberint
+  difficulty: Diff;  // Dificultat del nivell
   memorizeTime: number;  // Temps de memorització
   stars: readonly number[];  // Llindars d'estrelles
   levelNumber: number;  // Número del nivell
@@ -108,8 +112,9 @@ export function generateLevel(params: LevelParams): Level {
   const gen = new MazeGenerator(params.width, params.height);
   
   return {
-    id: `custom_level_${params.levelNumber}`, 
+    id: `${params.difficulty}-level-${params.levelNumber}`,
     number: params.levelNumber,
+    difficulty: params.difficulty,
     maze: gen.generate(), 
     width: params.width,
     height: params.height,

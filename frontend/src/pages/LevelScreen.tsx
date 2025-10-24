@@ -5,6 +5,7 @@ import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
+import { saveLevelCompletion } from '../utils/progress';
 
 type Phase = "memorize" | "playing" | "completed";
 
@@ -24,7 +25,7 @@ export default function LevelScreen({
   level: Level;
   onBack: () => void;
   onRetry: () => void;
-}) {
+}) {  
   const audio = useGameAudio();
   const memorizeDuration = level.memorizeTime;
 
@@ -47,6 +48,19 @@ export default function LevelScreen({
 
   const currentStars = useMemo(() => getStars(points), [points]);
   const prevStarsRef = useRef(getStars(POINTS_START));
+
+  // Guardar el progrés quan es completa el nivell
+  useEffect(() => {
+    if (phase === "completed") {
+      saveLevelCompletion(
+        level.difficulty as 'easy' | 'normal' | 'hard',
+        level.number,
+        currentStars,
+        gameTime,
+        points
+      );
+    }
+  }, [phase, level.difficulty, level.number, currentStars, gameTime, points]); 
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {

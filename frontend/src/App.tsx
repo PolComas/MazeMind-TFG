@@ -83,6 +83,7 @@ export default function App() {
     const num = Number(path.split('/').pop() || 1);
     const level = generateLevel({
       levelNumber: num,
+      difficulty: 'easy',
       width: 7,
       height: 7,
       memorizeTime: 10,
