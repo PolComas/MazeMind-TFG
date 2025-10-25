@@ -6,6 +6,8 @@ import { useSettings } from '../context/SettingsContext';
 
 import HomeScreenSettings from '../components/settings/HomeScreenSettings'; 
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
+import LevelSelectSettings from '../components/settings/LevelSelectSettings';
+import LevelSelectPreview from '../components/settings/LevelSelectPreview';
 
 type Props = {
   onBack: () => void;
@@ -140,8 +142,10 @@ export default function SettingsScreen({ onBack }: Props) {
             </button>
             {activeSection === 'levelSelect' && (
               <div style={styles.accordionContent}>
-                <p>Configuració de LevelSelect (Properament)...</p>
-                {/* <LevelSelectSettings settings={currentSettings.visuals.levelSelect} onChange={(key, value) => handleVisualChange('levelSelect', key, value)} /> */}
+                <LevelSelectSettings 
+                  settings={currentSettings.visuals.levelSelect} 
+                  onChange={(key, value) => handleVisualChange('levelSelect', key, value)} 
+                />
               </div>
             )}
           </div>
@@ -198,7 +202,11 @@ export default function SettingsScreen({ onBack }: Props) {
               <HomeScreenPreview settings={currentSettings.visuals.home} />
             )}
             
-            {activeSection !== 'home' && (
+            {activeSection === 'levelSelect' && (
+              <LevelSelectPreview settings={currentSettings.visuals.levelSelect} />
+            )}
+
+            {activeSection !== 'home' && activeSection !== 'levelSelect' && (
                <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
                  {activeSection 
                    ? `Previsualització de "${activeSection}" (Properament)...`

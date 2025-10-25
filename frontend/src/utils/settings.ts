@@ -12,6 +12,11 @@ export type VisualSettings = {
   accentColor1: string; 
   accentColor2: string;
 
+  // Colors semàntics per dificultat
+  easyColor: string;
+  normalColor: string;
+  hardColor: string;
+
   // Laberint
   mazePathColor?: string;
   mazeWallColor?: string;
@@ -51,6 +56,10 @@ const DEFAULT_VISUALS: VisualSettings = {
     accentColor1: ORIGINAL_PALETTE.playBtnFrom,
     accentColor2: ORIGINAL_PALETTE.playBtnTo,
     
+    easyColor: ORIGINAL_PALETTE.easyGreen,
+    normalColor: ORIGINAL_PALETTE.normalYellow,
+    hardColor: ORIGINAL_PALETTE.hardRed,
+
     // Valors específics del laberint per defecte
     mazePathColor: '#EEF2FF',
     mazeWallColor: '#3B82F6', 
@@ -81,7 +90,11 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     borderColor: ORIGINAL_PALETTE.borderColor,
     accentColor1: ORIGINAL_PALETTE.playBtnFrom,
     accentColor2: ORIGINAL_PALETTE.playBtnTo,
-
+    // Dificultats
+    easyColor: ORIGINAL_PALETTE.easyGreen,
+    normalColor: ORIGINAL_PALETTE.normalYellow,
+    hardColor: ORIGINAL_PALETTE.hardRed,
+    // Laberint
     mazePathColor: '#EEF2FF',
     mazeWallColor: '#3B82F6',
     mazePlayerColor: '#111',
@@ -99,6 +112,10 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     // Accents
     accentColor1: '#56B4E9',
     accentColor2: '#0072B2',
+    // Dificultats
+    easyColor: '#34D399',
+    normalColor: '#FBBF24',
+    hardColor: '#F87171',
     // Laberint
     mazePathColor: '#EEF2FF',
     mazeWallColor: '#2D6CDF',
@@ -117,6 +134,10 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     // Accents
     accentColor1: '#4C6FFF',
     accentColor2: '#CC79A7',
+    // Dificultats
+    easyColor: '#22C55E',
+    normalColor: '#F59E0B',
+    hardColor: '#EF4444',
     // Laberint
     mazePathColor: '#FFFFFF',
     mazeWallColor: '#2F3A8A',
@@ -134,6 +155,10 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     // Accents
     accentColor1: '#2563eb',
     accentColor2: '#2563eb',
+    // Dificultats
+    easyColor: '#39FF14',
+    normalColor: '#FFFF00',
+    hardColor: '#FF3131',
     // Laberint
     mazePathColor: '#000000',
     mazeWallColor: '#FFFFFF',
