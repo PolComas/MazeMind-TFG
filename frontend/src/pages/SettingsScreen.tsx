@@ -8,6 +8,8 @@ import HomeScreenSettings from '../components/settings/HomeScreenSettings';
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
 import LevelSelectSettings from '../components/settings/LevelSelectSettings';
 import LevelSelectPreview from '../components/settings/LevelSelectPreview';
+import LevelScreenSettings from '../components/settings/LevelScreenSettings';
+import LevelScreenPreview from '../components/settings/LevelScreenPreview';
 
 type Props = {
   onBack: () => void;
@@ -151,22 +153,24 @@ export default function SettingsScreen({ onBack }: Props) {
           </div>
 
           {/* Secció LevelScreen */}
-          <div style={styles.accordionItem}>
-            <button 
-              style={styles.accordionHeader} 
-              onClick={() => toggleSection('levelScreen')}
-              aria-expanded={activeSection === 'levelScreen'}
-            >
-              <span>🕹️ Pantalla de Joc</span>
-               {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </button>
-            {activeSection === 'levelScreen' && (
-              <div style={styles.accordionContent}>
-                <p>Configuració de LevelScreen (Properament)...</p>
-                 {/* <LevelScreenSettings settings={currentSettings.visuals.levelScreen} onChange={(key, value) => handleVisualChange('levelScreen', key, value)} /> */}
-              </div>
-            )}
-          </div>
+        <div style={styles.accordionItem}>
+          <button 
+            style={styles.accordionHeader} 
+            onClick={() => toggleSection('levelScreen')}
+            aria-expanded={activeSection === 'levelScreen'}
+          >
+            <span>🕹️ Pantalla de Joc</span>
+              {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {activeSection === 'levelScreen' && (
+            <div style={styles.accordionContent}>
+              <LevelScreenSettings 
+                settings={currentSettings.visuals.levelScreen} 
+                onChange={(key, value) => handleVisualChange('levelScreen', key, value)} 
+              />
+            </div>
+          )}
+        </div>
 
           {/* Secció Configuració de Joc */}
            <div style={styles.accordionItem}>
@@ -201,19 +205,22 @@ export default function SettingsScreen({ onBack }: Props) {
             {activeSection === 'home' && (
               <HomeScreenPreview settings={currentSettings.visuals.home} />
             )}
-            
+
             {activeSection === 'levelSelect' && (
               <LevelSelectPreview settings={currentSettings.visuals.levelSelect} />
             )}
 
-            {activeSection !== 'home' && activeSection !== 'levelSelect' && (
-               <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
-                 {activeSection 
-                   ? `Previsualització de "${activeSection}" (Properament)...`
-                   : "Selecciona una secció per veure la previsualització."}
-              </p>
+            {activeSection === 'levelScreen' && (
+              <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
             )}
-            {/* TODO: Afegir previews per a 'levelSelect', 'levelScreen' quan activeSection correspongui */}
+
+            {activeSection !== 'home' && activeSection !== 'levelSelect' && activeSection !== 'levelScreen' && (
+                <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
+                  {activeSection 
+                    ? `Previsualització de "${activeSection}" (Properament)...`
+                    : "Selecciona una secció per veure la previsualització."}
+                </p>
+            )}
           </div>
           <div style={styles.legend}>
             <p>Llegenda (Properament)...</p>

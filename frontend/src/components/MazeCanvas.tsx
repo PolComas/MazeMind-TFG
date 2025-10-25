@@ -14,11 +14,14 @@ type Props = {
     wall_thickness?: number
     exit_color?: string
     player_color?: string
+    player_path_color?: string;
+    crash_help_color?: string;
   }
   // Props per a les ajudes 
   showReveal?: boolean
   showPlayerPath?: boolean
   crashPosition?: Pos | null
+  forcePathHistory?: Pos[] // Per el preview de LevelScreenSettings
 }
 
 // Renderitzar el laberint en un canvas HTML5
@@ -30,12 +33,13 @@ export default function MazeCanvas({
   showReveal = false,
   showPlayerPath = false,
   crashPosition = null,
+  forcePathHistory,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   
   // Guardar les posicions del jugador per dibuixar el camí
   const pathHistoryRef = useRef<Pos[]>([])
-
+  
   // Configuració per defecte
   const s = {
     path_color: '#EEF2FF',
@@ -43,6 +47,8 @@ export default function MazeCanvas({
     wall_thickness: 3,
     exit_color: '#F59E0B',
     player_color: '#111',
+    player_path_color: 'rgba(0, 0, 0, 0.4)',
+    crash_help_color: '#E11D48',
     ...settings,
   }
 
@@ -56,12 +62,22 @@ export default function MazeCanvas({
     }
 
     // Afegir la posició actual a l'historial si canvia
-    if (playerPos) {
-      const lastPos = pathHistoryRef.current[pathHistoryRef.current.length - 1]
-      // Només afegir si és una cel·la nova
-      if (!lastPos || lastPos.x !== playerPos.x || lastPos.y !== playerPos.y) {
-        pathHistoryRef.current.push(playerPos)
+    let currentPath: Pos[] = [];
+    if (forcePathHistory) {
+      // Per al preview, utilitzem l'historial forçat
+      currentPath = forcePathHistory;
+    } else {
+      // Comportament normal: construir l'historial dinàmicament
+      if (phase === 'memorize') {
+        pathHistoryRef.current = []
       }
+      if (playerPos) {
+        const lastPos = pathHistoryRef.current[pathHistoryRef.current.length - 1]
+        if (!lastPos || lastPos.x !== playerPos.x || lastPos.y !== playerPos.y) {
+          pathHistoryRef.current.push(playerPos)
+        }
+      }
+      currentPath = pathHistoryRef.current;
     }
 
     // Dibuixar el laberint
@@ -86,14 +102,14 @@ export default function MazeCanvas({
       ctx.fill()
 
       // Camí del jugador
-      if (phase === 'playing' && showPlayerPath && pathHistoryRef.current.length > 1) {
-        ctx.strokeStyle = s.player_color
+      if (phase === 'playing' && showPlayerPath && currentPath.length > 1) {
+        ctx.strokeStyle = s.player_path_color
         ctx.lineWidth = s.wall_thickness 
         ctx.globalAlpha = 0.4 
         ctx.beginPath()
-        const start = pathHistoryRef.current[0]
+        const start = currentPath[0]
         ctx.moveTo(start.x * cell + cell / 2, start.y * cell + cell / 2)
-        for (const pos of pathHistoryRef.current.slice(1)) {
+        for (const pos of currentPath.slice(1)) {
           ctx.lineTo(pos.x * cell + cell / 2, pos.y * cell + cell / 2)
         }
         ctx.stroke()
@@ -123,7 +139,7 @@ export default function MazeCanvas({
 
       // Ajuda de Xoc: destacar les parets en la zona 3x3 al voltant de la cel·la de xoc
       if (phase === 'playing' && crashPosition) {
-        ctx.strokeStyle = '#E11D48'
+        ctx.strokeStyle = s.crash_help_color
         ctx.lineWidth = s.wall_thickness + 2
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
@@ -168,7 +184,9 @@ export default function MazeCanvas({
   }, [
     level, phase, playerPos, 
     showReveal, showPlayerPath, crashPosition,
-    s.path_color, s.wall_color, s.wall_thickness, s.exit_color, s.player_color
+    s.path_color, s.wall_color, s.wall_thickness, s.exit_color, s.player_color,
+    s.player_path_color, s.crash_help_color,
+    forcePathHistory
   ])
 
   // Renderitza el canvas

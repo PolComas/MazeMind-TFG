@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react';
 import HomeScreen from './components/HomeScreen';
 import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
-import { generateLevel } from './maze/maze_generator';
+import { generateLevel, type Level } from './maze/maze_generator';
 import AuthModal from './components/AuthModal'; 
 import SettingsScreen from './pages/SettingsScreen';
+
+// Nivells desats
+import easyLevel1 from './levels/easy-level-1.json';
+
+const savedLevels: Record<string, Level> = {
+  'easy-1': easyLevel1 as Level,
+};
 
 type User = {
   id: string;
@@ -87,14 +94,23 @@ export default function App() {
   // --- Pantalla de Nivell Individual ---
   if (path.startsWith('/level/')) {
     const num = Number(path.split('/').pop() || 1);
-    const level = generateLevel({
-      levelNumber: num,
-      difficulty: 'easy',
-      width: 7,
-      height: 7,
-      memorizeTime: 10,
-      stars: [60, 45, 30], 
-    }); 
+    
+    const levelKey = `easy-${num}`; 
+    let level: Level;
+    
+    // Carregar nivell desat o generar-ne un de nou
+    if (savedLevels[levelKey]) {
+      level = savedLevels[levelKey];
+    } else {
+      level = generateLevel({
+        levelNumber: num,
+        difficulty: 'easy',
+        width: 7,
+        height: 7,
+        memorizeTime: 10,
+        stars: [60, 45, 30], 
+      }); 
+    }
     return (
       <LevelScreen
         key={navKey} 

@@ -1,6 +1,6 @@
 import React from "react";
-import { PALETTE } from "./palette";
 import { Eye, Footprints, Skull } from "lucide-react";
+import { useSettings } from '../context/SettingsContext';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60).toString();
@@ -37,6 +37,87 @@ export default function GameHUD({
   onTogglePathHelp,
   onToggleCrashHelp
 }: Props) {
+  // Obtenir configuració visual
+  const { getVisualSettings } = useSettings();
+  const screenSettings = getVisualSettings('levelScreen');
+
+  const styles: Record<string, React.CSSProperties> = {
+    container: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '12px',
+      width: '100%',
+      alignItems: 'stretch',
+    },
+    card: {
+      background: screenSettings.surfaceColor,
+      border: `1px solid ${screenSettings.borderColor}`,
+      borderRadius: 14,
+      padding: '12px 16px',
+      color: screenSettings.textColor,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px',
+      flexGrow: 1,
+      flexBasis: '180px', 
+    },
+    helpsCard: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: '8px',
+      flexBasis: '300px', 
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    label: {
+      fontSize: 14,
+      color: screenSettings.subtextColor,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontWeight: 500,
+    },
+    valueLarge: {
+      fontSize: 'clamp(24px, 4vw, 32px)',
+      fontWeight: 700,
+      lineHeight: 1,
+    },
+    valueSmall: {
+      fontSize: 'clamp(18px, 3vw, 22px)',
+      fontWeight: 700,
+      lineHeight: 1,
+    },
+    pointsStars: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      gap: '8px',
+    },
+    stars: {
+      fontSize: 18,
+      color: screenSettings.normalColor,
+      lineHeight: 1.2,
+    },
+    helpButton: {
+      background: 'rgba(255,255,255,0.08)',
+      border: `1px solid ${screenSettings.borderColor}`,
+      color: screenSettings.subtextColor,
+      padding: '8px 10px',
+      borderRadius: 8,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: 13,
+      fontWeight: 600,
+      flexGrow: 1,
+    },
+    helpActive: {
+      background: screenSettings.easyColor,
+      color: '#000',
+      borderColor: 'transparent',
+    },
+  };
   return (
     <div style={styles.container}>
       {/* CARD 1: TEMPS */}
@@ -90,82 +171,3 @@ export default function GameHUD({
     </div>
   );
 }
-
-// Estils pel HUD
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '12px',
-    width: '100%',
-    alignItems: 'stretch',
-  },
-  card: {
-    background: PALETTE.surface,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    borderRadius: 14,
-    padding: '12px 16px',
-    color: PALETTE.text,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    flexGrow: 1,
-    flexBasis: '180px', 
-  },
-  helpsCard: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: '8px',
-    flexBasis: '300px', 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 14,
-    color: PALETTE.subtext,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontWeight: 500,
-  },
-  valueLarge: {
-    fontSize: 'clamp(24px, 4vw, 32px)',
-    fontWeight: 700,
-    lineHeight: 1,
-  },
-  valueSmall: {
-    fontSize: 'clamp(18px, 3vw, 22px)',
-    fontWeight: 700,
-    lineHeight: 1,
-  },
-  pointsStars: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: '8px',
-  },
-  stars: {
-    fontSize: 18,
-    color: PALETTE.focus || '#F0E442',
-    lineHeight: 1.2,
-  },
-  helpButton: {
-    background: 'rgba(255,255,255,0.08)',
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    color: PALETTE.subtext,
-    padding: '8px 10px',
-    borderRadius: 8,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: 13,
-    fontWeight: 600,
-    flexGrow: 1,
-  },
-  helpActive: {
-    background: PALETTE.accentGreen || '#64FFDA',
-    color: '#000',
-    borderColor: 'transparent',
-  },
-};

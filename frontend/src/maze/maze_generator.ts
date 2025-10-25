@@ -1,5 +1,5 @@
 export type Dir = 'top' | 'right' | 'bottom' | 'left' 
-export type Cell = { walls: Record<Dir, boolean>; visited: boolean } // Parets i si ha estat visitada
+export type Cell = { walls: Record<Dir, boolean>; visited?: boolean } // Parets i si ha estat visitada
 export type Grid = Cell[][]
 
 export type Diff = 'easy' | 'normal' | 'hard';

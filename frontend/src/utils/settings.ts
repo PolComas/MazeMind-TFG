@@ -23,6 +23,10 @@ export type VisualSettings = {
   mazePlayerColor?: string;
   mazeExitColor?: string;
   mazeWallThickness?: number;
+
+  // Colors per a les ajudes
+  playerPathColor?: string;
+  crashHelpColor?: string;
 };
 
 // Configuració per a cada pantalla
@@ -66,6 +70,9 @@ const DEFAULT_VISUALS: VisualSettings = {
     mazePlayerColor: '#111',
     mazeExitColor: '#F59E0B',
     mazeWallThickness: 3,
+    // Colors d'ajuda per defecte
+    playerPathColor: 'rgba(0, 0, 0, 0.4)',
+    crashHelpColor: '#E11D48',
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -100,6 +107,9 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazePlayerColor: '#111',
     mazeExitColor: '#F59E0B',
     mazeWallThickness: 3,
+    // Colors d'ajuda
+    playerPathColor: 'rgba(0, 0, 0, 0.4)',
+    crashHelpColor: '#E11D48',
   },
   // Tema Fosc
   'Fosc': {
@@ -122,6 +132,9 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazePlayerColor: '#0B1021',
     mazeExitColor: '#F0B429',
     mazeWallThickness: 3,
+    // Colors d'ajuda
+    playerPathColor: 'rgba(255, 255, 255, 0.4)',
+    crashHelpColor: '#E11D48',
   },
   // Tema Clar
   'Clar': {
@@ -144,6 +157,9 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazePlayerColor: '#0B1021',
     mazeExitColor: '#D55E00', 
     mazeWallThickness: 3,
+    // Colors d'ajuda
+    playerPathColor: 'rgba(0, 0, 0, 0.4)',
+    crashHelpColor: '#EF4444',
   },
   // Tema Alt Contrast
   'Alt Contrast': {
@@ -165,6 +181,9 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazePlayerColor: '#2563eb',
     mazeExitColor: '#2563eb',
     mazeWallThickness: 4,
+    // Colors d'ajuda
+    playerPathColor: '#39FF14',
+    crashHelpColor: '#FF3131',
   },
 };
 

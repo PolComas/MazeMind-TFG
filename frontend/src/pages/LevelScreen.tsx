@@ -6,6 +6,7 @@ import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
 import { saveLevelCompletion } from '../utils/progress';
+import { useSettings } from '../context/SettingsContext';
 
 type Phase = "memorize" | "playing" | "completed";
 
@@ -27,6 +28,11 @@ export default function LevelScreen({
   onRetry: () => void;
 }) {  
   const audio = useGameAudio();
+
+  // Obtenir configuració visual
+  const { getVisualSettings } = useSettings();
+  const screenSettings = getVisualSettings('levelScreen');
+
   const memorizeDuration = level.memorizeTime;
 
   const [phase, setPhase] = useState<Phase>("memorize");
@@ -230,6 +236,125 @@ export default function LevelScreen({
     return () => window.removeEventListener('keydown', handleKey);
   }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points]);
 
+  // Objecte de configuració per al MazeCanvas
+  const mazeSettings = useMemo(() => ({
+    path_color: screenSettings.mazePathColor || '#EEF2FF',
+    wall_color: screenSettings.mazeWallColor || '#3B82F6',
+    wall_thickness: screenSettings.mazeWallThickness || 3,
+    exit_color: screenSettings.mazeExitColor || screenSettings.normalColor || '#F59E0B',
+    player_color: screenSettings.mazePlayerColor || '#111',
+    player_path_color: screenSettings.playerPathColor || 'rgba(0, 0, 0, 0.4)',
+    crash_help_color: screenSettings.crashHelpColor || '#E11D48',
+  }), [screenSettings]);
+
+  const styles: Record<string, React.CSSProperties> = {
+    page: {
+      minHeight: "100svh",
+      width: "100%",
+      margin: 0,
+      background: screenSettings.backgroundColor,
+      color: screenSettings.textColor,
+      boxSizing: "border-box",
+      padding: "clamp(16px, 3vw, 24px)",
+      display: "flex",
+      flexDirection: "column",
+      gap: "clamp(12px, 2vw, 16px)",
+      alignItems: "center", 
+    },
+    headerRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 16,
+      flexShrink: 0,
+      width: "100%", 
+      maxWidth: "980px", 
+    },
+    title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
+    ghostBtn: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: `1px solid ${screenSettings.borderColor}`,
+      background: screenSettings.surfaceColor,
+      color: screenSettings.textColor,
+      cursor: "pointer",
+      fontSize: 16,
+      whiteSpace: "nowrap",
+    },
+    mainArea: {
+      flexGrow: 1,
+      display: "flex",
+      flexDirection: "column",
+      gap: "clamp(12px, 2vw, 16px)",
+      minHeight: 0,
+      width: "100%",
+      maxWidth: "980px", 
+    },
+    memorizePanel: {
+      background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
+      borderRadius: 16,
+      padding: "16px clamp(16px, 3vw, 24px) 20px",
+      boxShadow: PALETTE.shadow,
+      textAlign: "center",
+      flexShrink: 0,
+    },
+    memorizeHeading: {
+      margin: 0,
+      fontSize: "clamp(16px, 2vw, 18px)",
+      opacity: 0.95,
+    },
+    memorizeCounter: {
+      fontSize: "clamp(40px, 6vw, 56px)",
+      fontWeight: 800,
+      marginTop: 6,
+    },
+    progressTrack: {
+      marginTop: 10,
+      height: 10,
+      borderRadius: 999,
+      background: "rgba(255,255,255,.35)",
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      background: screenSettings.surfaceColor,
+      borderRadius: 999,
+    },
+    boardWrap: {
+      flexGrow: 1,
+      display: "grid",
+      placeItems: "center",
+      minHeight: 0,
+    },
+    boardInner: {
+      width: '100%',
+      height: '100%',
+      aspectRatio: '1 / 1',
+      maxWidth: 'calc(100vh - 300px)',
+      maxHeight: '100%',
+      background: screenSettings.mazePathColor,
+      borderRadius: 16,
+      boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
+      overflow: "hidden",
+      position: 'relative', 
+    },
+    footer: { 
+      flexShrink: 0,
+      width: "100%",
+      maxWidth: "980px",
+      textAlign: "center",
+    },
+    tip: { 
+      display: 'inline-block',
+      background: screenSettings.surfaceColor,
+      border: `1px solid ${screenSettings.borderColor}`,
+      padding: '10px 16px',
+      borderRadius: 10,
+      color: screenSettings.subtextColor,
+      fontSize: 14,
+    },
+  };
+
   return (
     <div style={styles.page}>
       {/* HEADER */}
@@ -281,6 +406,7 @@ export default function LevelScreen({
               phase={phase} 
               playerPos={playerPos} 
               showReveal={showReveal}
+              settings={mazeSettings}
               showPlayerPath={isPathHelpActive}
               crashPosition={crashedAt}
             />
@@ -315,111 +441,3 @@ export default function LevelScreen({
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100svh",
-    width: "100%",
-    margin: 0,
-    background: PALETTE.bg,
-    color: PALETTE.text,
-    boxSizing: "border-box",
-    padding: "clamp(16px, 3vw, 24px)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "clamp(12px, 2vw, 16px)",
-    alignItems: "center", 
-  },
-  headerRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 16,
-    flexShrink: 0,
-    width: "100%", 
-    maxWidth: "980px", 
-  },
-  title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
-  ghostBtn: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`, 
-    background: PALETTE.surface,
-    color: PALETTE.text,
-    cursor: "pointer",
-    fontSize: 16,
-    whiteSpace: "nowrap",
-  },
-  mainArea: {
-    flexGrow: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "clamp(12px, 2vw, 16px)",
-    minHeight: 0,
-    width: "100%",
-    maxWidth: "980px", 
-  },
-  memorizePanel: {
-    background: `linear-gradient(90deg, ${PALETTE.accentBlue || '#5C6CFF'}, ${PALETTE.accentViolet || '#a78bfa'})`,
-    borderRadius: 16,
-    padding: "16px clamp(16px, 3vw, 24px) 20px",
-    boxShadow: PALETTE.shadow,
-    textAlign: "center",
-    flexShrink: 0,
-  },
-  memorizeHeading: {
-    margin: 0,
-    fontSize: "clamp(16px, 2vw, 18px)",
-    opacity: 0.95,
-  },
-  memorizeCounter: {
-    fontSize: "clamp(40px, 6vw, 56px)",
-    fontWeight: 800,
-    marginTop: 6,
-  },
-  progressTrack: {
-    marginTop: 10,
-    height: 10,
-    borderRadius: 999,
-    background: "rgba(255,255,255,.35)",
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    background: PALETTE.surface,
-    borderRadius: 999,
-  },
-  boardWrap: {
-    flexGrow: 1,
-    display: "grid",
-    placeItems: "center",
-    minHeight: 0,
-  },
-  boardInner: {
-    width: '100%',
-    height: '100%',
-    aspectRatio: '1 / 1',
-    maxWidth: 'calc(100vh - 300px)',
-    maxHeight: '100%',
-    background: '#EEF2FF',
-    borderRadius: 16,
-    boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
-    overflow: "hidden",
-    position: 'relative', 
-  },
-  footer: { 
-    flexShrink: 0,
-    width: "100%",
-    maxWidth: "980px",
-    textAlign: "center",
-  },
-  tip: { 
-    display: 'inline-block',
-    background: PALETTE.surface,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    padding: '10px 16px',
-    borderRadius: 10,
-    color: PALETTE.subtext,
-    fontSize: 14,
-  },
-};

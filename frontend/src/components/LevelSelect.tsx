@@ -6,6 +6,10 @@ import { loadProgress, getLevelStats, type GameProgress, type LevelProgress } fr
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 
+// TEMPORAL: Funcions per generar i descarregar nivells de prova
+import { downloadJSON } from '../maze/save_maze';
+import { generateLevel, type LevelParams } from '../maze/maze_generator';
+
 type Diff = 'easy' | 'normal' | 'hard';
 
 const DIFF_LABEL: Record<Diff, string> = {
@@ -19,6 +23,28 @@ const difficultyIcons: Record<Diff, React.ReactNode> = {
   easy: <Dumbbell size={16} />,
   normal: <Zap size={16} />,
   hard: <Flame size={16} />,
+};
+
+// Funció TEMPORAL per generar i descarregar nivells de prova
+const handleGenerateAndDownload = (diff: 'easy' | 'normal' | 'hard', num: number) => {
+  const params: LevelParams = {
+    levelNumber: num,
+    difficulty: diff,
+    width: 7,
+    height: 7,
+    memorizeTime: 10,
+    stars: [60, 45, 30],
+  };
+
+  const levelData = generateLevel(params);
+  
+  const cleanMaze = levelData.maze.map(row => 
+    row.map(cell => ({ walls: cell.walls }))
+  );
+  
+  const dataToSave = { ...levelData, maze: cleanMaze };
+  
+  downloadJSON(dataToSave, `${diff}-level-${num}.json`);
 };
 
 export default function LevelSelect({
@@ -243,6 +269,13 @@ export default function LevelSelect({
           <button style={styles.practiceBtn} onClick={onPracticeClick}>
             <Dumbbell size={18} /> Mode Pràctica
           </button>
+
+          {/* EINA TEMPORAL DE DESENVOLUPAMENT */}
+          {/*<div style={{ background: 'red', padding: 10, borderRadius: 8, marginTop: 20 }}>
+            <button onClick={() => handleGenerateAndDownload('easy', 1)}>
+              Generar i Descarregar
+            </button>
+          </div>*/}
         </footer>
       </div>
     </main>
