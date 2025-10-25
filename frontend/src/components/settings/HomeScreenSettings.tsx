@@ -1,113 +1,120 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { VisualSettings } from '../../utils/settings'; 
 import { PALETTE } from '../palette';
+import ColorPickerWithTextInput from './ColorPickerWithTextInput';
 
 type Props = {
   settings: VisualSettings;
   onChange: (key: keyof VisualSettings, value: string | number) => void; 
 };
 
+// Funció per extreure colors d'un gradient
+const extractGradientColors = (gradient: string): [string, string] => {
+  const hexColors = gradient.match(/#[0-9A-Fa-f]{6}/g);
+  if (hexColors && hexColors.length >= 2) {
+    return [hexColors[0], hexColors[1]]; 
+  }
+  // Valor per defecte si no es poden extreure
+  return [PALETTE.playBtnFrom || '#5b21b6', PALETTE.playBtnTo || '#7e22ce']; 
+};
+
 export default function HomeScreenSettings({ settings, onChange }: Props) {
-  // Helper per gestionar canvis als inputs de color
-  const handleColorChange = (key: keyof VisualSettings, e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(key, e.target.value);
+  // Estats locals per als colors del gradient
+  const [bgColor1, setBgColor1] = useState(() => extractGradientColors(settings.backgroundColor)[0]);
+  const [bgColor2, setBgColor2] = useState(() => extractGradientColors(settings.backgroundColor)[1]);
+
+  // Actualitzar l'estat intern si la configuració externa canvia
+  useEffect(() => {
+    const [color1, color2] = extractGradientColors(settings.backgroundColor);
+    setBgColor1(color1);
+    setBgColor2(color2);
+  }, [settings.backgroundColor]);
+
+  // Funció per reconstruir i notificar el canvi del gradient
+  const updateGradient = useCallback((color1: string, color2: string) => {
+    const newGradient = `linear-gradient(145deg, ${color1} 0%, ${color2} 100%)`;
+    onChange('backgroundColor', newGradient);
+  }, [onChange]);
+
+  // Gestors de canvi per als colors del gradient
+  const handleBgColor1Change = (value: string) => {
+    setBgColor1(value);
+    updateGradient(value, bgColor2);
+  };
+
+  const handleBgColor2Change = (value: string) => {
+    setBgColor2(value);
+    updateGradient(bgColor1, value);
   };
 
   return (
-    <div style={styles.container}>
-      <h3 style={styles.sectionTitle}>Pantalla d'Inici</h3>
-      
-      {/* Grup per als colors de Fons */}
-      <div style={styles.settingGroup}>
-        <label htmlFor="home-bg-color" style={styles.label}>Color de Fons (Gradient)</label>
-        <input 
-          id="home-bg-color"
-          type="text" 
-          value={settings.backgroundColor} 
-          onChange={(e) => onChange('backgroundColor', e.target.value)} 
-          style={styles.input}
-          aria-describedby="bg-description"
+    <div style={styles.container}>    
+      {/* Fons */}
+      <div style={styles.gradientGroup}>
+          <label style={styles.label}>Gradient de Fons</label>
+          <ColorPickerWithTextInput
+            label="Color 1"
+            value={bgColor1}
+            onChange={handleBgColor1Change}
+            inputId="home-bg-color1"
+          />
+          <ColorPickerWithTextInput
+            label="Color 2"
+            value={bgColor2}
+            onChange={handleBgColor2Change}
+            inputId="home-bg-color2"
+          />
+      </div>
+      {/* --- Graella de Dues Columnes --- */}
+      <div style={styles.grid}>
+
+        {/* --- Columna Esquerra --- */}
+        <div style={styles.column}>
+          {/* Text Principal */}
+          <ColorPickerWithTextInput
+            label="Color de Text Principal"
+            value={settings.textColor}
+            onChange={(value) => onChange('textColor', value)}
+            inputId="home-text-color"
+          />
+
+          {/* Accent Principal */}
+           <ColorPickerWithTextInput
+            label="Color d'Accent Principal"
+            value={settings.accentColor1}
+            onChange={(value) => onChange('accentColor1', value)}
+            inputId="home-accent1-color"
+          />
+
+        </div>
+
+        {/* --- Columna Dreta --- */}
+        <div style={styles.column}>
+          {/* Text Secundari */}
+           <ColorPickerWithTextInput
+            label="Color de Text Secundari"
+            value={settings.subtextColor}
+            onChange={(value) => onChange('subtextColor', value)}
+            inputId="home-subtext-color"
+          /> 
+
+           {/* Accent Secundari */}
+           <ColorPickerWithTextInput
+            label="Color d'Accent Secundari"
+            value={settings.accentColor2}
+            onChange={(value) => onChange('accentColor2', value)}
+            inputId="home-accent2-color"
+          />
+        </div>
+
+        {/* Superfícies (Targetes) */}
+          <ColorPickerWithTextInput
+          label="Color de les Targetes"
+          value={settings.surfaceColor.startsWith('rgba') ? '#ffffff' : settings.surfaceColor} 
+          onChange={(value) => onChange('surfaceColor', value)}
+          inputId="home-surface-color"
         />
-        <small id="bg-description" style={styles.description}>Pots posar un color sòlid (#rrggbb) o un gradient CSS.</small>
-      </div>
-
-      {/* Grup per als colors de Text */}
-      <div style={styles.settingGroup}>
-        <label htmlFor="home-text-color" style={styles.label}>Color de Text Principal</label>
-        <div style={styles.colorInputWrapper}>
-          <input 
-            id="home-text-color"
-            type="color" 
-            value={settings.textColor} 
-            onChange={(e) => handleColorChange('textColor', e)} 
-            style={styles.colorInput}
-          />
-          <span style={styles.colorValue}>{settings.textColor}</span>
-        </div>
-      </div>
-      
-      <div style={styles.settingGroup}>
-        <label htmlFor="home-subtext-color" style={styles.label}>Color de Text Secundari</label>
-         <div style={styles.colorInputWrapper}>
-          <input 
-            id="home-subtext-color"
-            type="color" 
-            value={settings.subtextColor} 
-            onChange={(e) => handleColorChange('subtextColor', e)} 
-            style={styles.colorInput}
-          />
-          <span style={styles.colorValue}>{settings.subtextColor}</span>
-        </div>
-      </div>
-
-      {/* Grup per als colors de Superfícies (targetes) */}
-      <div style={styles.settingGroup}>
-        <label htmlFor="home-surface-color" style={styles.label}>Color de Superfícies (Targetes)</label>
-        <div style={styles.colorInputWrapper}>
-          <input 
-            id="home-surface-color"
-            type="color" 
-            value={settings.surfaceColor.startsWith('rgba') ? '#ffffff' : settings.surfaceColor} // L'input color no accepta rgba bé
-            onChange={(e) => handleColorChange('surfaceColor', e)} 
-            style={styles.colorInput}
-            aria-describedby='surface-alpha-info'
-          />
-          <span style={styles.colorValue}>{settings.surfaceColor}</span> 
-        </div>
-         <small id="surface-alpha-info" style={styles.description}>Nota: L'opacitat del fons de les targetes es manté (efecte vidre).</small>
-      </div>
-      
-      {/* Grup per als colors d'Accent (botons, etc.) */}
-      <div style={styles.settingGroup}>
-        <label htmlFor="home-accent1-color" style={styles.label}>Color d'Accent Principal (Botó Jugar)</label>
-        <div style={styles.colorInputWrapper}>
-          <input 
-            id="home-accent1-color"
-            type="color" 
-            value={settings.accentColor1} 
-            onChange={(e) => handleColorChange('accentColor1', e)} 
-            style={styles.colorInput}
-          />
-           <span style={styles.colorValue}>{settings.accentColor1}</span>
-        </div>
-      </div>
-
-       <div style={styles.settingGroup}>
-        <label htmlFor="home-accent2-color" style={styles.label}>Color d'Accent Secundari (Focus, etc.)</label>
-        <div style={styles.colorInputWrapper}>
-          <input 
-            id="home-accent2-color"
-            type="color" 
-            value={settings.accentColor2} 
-            onChange={(e) => handleColorChange('accentColor2', e)} 
-            style={styles.colorInput}
-          />
-           <span style={styles.colorValue}>{settings.accentColor2}</span>
-        </div>
-      </div>
-
-      {/* TODO: Afegir més opcions (vora, ombra, etc.) */}
-
+      </div> 
     </div>
   );
 }
@@ -117,19 +124,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
-  },
-  sectionTitle: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    color: PALETTE.accentCyan || '#67e8f9',
-    margin: '0 0 8px 0',
-    borderBottom: `1px solid ${PALETTE.borderColor || 'rgba(255, 255, 255, 0.1)'}`,
-    paddingBottom: '8px',
-  },
-  settingGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
   },
   label: {
     fontSize: '0.875rem',
@@ -162,14 +156,23 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     background: 'transparent',
   },
-  colorValue: {
-    fontSize: '0.875rem',
-    color: PALETTE.subtext,
-    fontFamily: 'monospace',
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '24px',
   },
-  description: {
-    fontSize: '0.75rem',
-    color: PALETTE.subtext + '90',
-    marginTop: '-2px',
+  column: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  gradientGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      background: 'rgba(10, 25, 47, 0.7)',
+      padding: '12px',
+      borderRadius: '6px',
+      border: `1px solid ${PALETTE.borderColor || 'rgba(255, 255, 255, 0.1)'}`,
   },
 };

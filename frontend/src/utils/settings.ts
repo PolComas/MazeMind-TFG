@@ -1,3 +1,5 @@
+import { PALETTE as ORIGINAL_PALETTE } from '../components/palette';
+
 export type VisualSettings = {
   // Colors generals
   backgroundColor: string;
@@ -41,20 +43,20 @@ const STORAGE_KEY = 'mazeMindSettings';
 
 // --- VALORS PER DEFECTE ---
 const DEFAULT_VISUALS: VisualSettings = {
-  backgroundColor: "linear-gradient(145deg, #1e1b4b 0%, #0c0a1d 100%)", 
-  textColor: "#f1f5f9",        
-  subtextColor: "#a8b2d1",
-  surfaceColor: "rgba(30, 41, 59, 0.5)",
-  borderColor: "rgba(255, 255, 255, 0.1)",
-  accentColor1: "#f472b6",
-  accentColor2: "#67e8f9", 
-
-  // Laberint
-  mazePathColor: '#EEF2FF',
-  mazeWallColor: '#3B82F6',
-  mazePlayerColor: '#111',
-  mazeExitColor: '#F59E0B',
-  mazeWallThickness: 3,
+  backgroundColor: ORIGINAL_PALETTE.bg,
+    textColor: ORIGINAL_PALETTE.text,
+    subtextColor: ORIGINAL_PALETTE.subtext,
+    surfaceColor: ORIGINAL_PALETTE.surface,
+    borderColor: ORIGINAL_PALETTE.borderColor,
+    accentColor1: ORIGINAL_PALETTE.playBtnFrom,
+    accentColor2: ORIGINAL_PALETTE.playBtnTo,
+    
+    // Valors específics del laberint per defecte
+    mazePathColor: '#EEF2FF',
+    mazeWallColor: '#3B82F6', 
+    mazePlayerColor: '#111',
+    mazeExitColor: '#F59E0B',
+    mazeWallThickness: 3,
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -66,6 +68,78 @@ const DEFAULT_SETTINGS: AppSettings = {
   game: {
     soundEffects: true,
     backgroundMusic: true,
+  },
+};
+
+// Temes predefinits
+export const PRESET_THEMES: Record<string, VisualSettings> = {
+  'Per Defecte': {
+    backgroundColor: ORIGINAL_PALETTE.bg,
+    textColor: ORIGINAL_PALETTE.text,
+    subtextColor: ORIGINAL_PALETTE.subtext,
+    surfaceColor: ORIGINAL_PALETTE.surface,
+    borderColor: ORIGINAL_PALETTE.borderColor,
+    accentColor1: ORIGINAL_PALETTE.playBtnFrom,
+    accentColor2: ORIGINAL_PALETTE.playBtnTo,
+
+    mazePathColor: '#EEF2FF',
+    mazeWallColor: '#3B82F6',
+    mazePlayerColor: '#111',
+    mazeExitColor: '#F59E0B',
+    mazeWallThickness: 3,
+  },
+  // Tema Fosc
+  'Fosc': {
+    backgroundColor:
+      'radial-gradient(1200px 600px at 20% 0%, rgba(86,180,233,0.12), transparent 60%), linear-gradient(145deg, #0B1021 0%, #141A32 100%)',
+    textColor: '#FFFFFF',
+    subtextColor: 'rgba(255,255,255,0.85)',
+    surfaceColor: '#131A33',
+    borderColor: 'rgba(255,255,255,0.18)',
+    // Accents
+    accentColor1: '#56B4E9',
+    accentColor2: '#0072B2',
+    // Laberint
+    mazePathColor: '#EEF2FF',
+    mazeWallColor: '#2D6CDF',
+    mazePlayerColor: '#0B1021',
+    mazeExitColor: '#F0B429',
+    mazeWallThickness: 3,
+  },
+  // Tema Clar
+  'Clar': {
+    backgroundColor:
+      'linear-gradient(180deg, #F7FAFF 0%, #EAF1FF 100%)',
+    textColor: '#0B1021',
+    subtextColor: '#334155',
+    surfaceColor: '#FFFFFF',
+    borderColor: 'rgba(2,6,23,0.12)',
+    // Accents
+    accentColor1: '#4C6FFF',
+    accentColor2: '#CC79A7',
+    // Laberint
+    mazePathColor: '#FFFFFF',
+    mazeWallColor: '#2F3A8A',
+    mazePlayerColor: '#0B1021',
+    mazeExitColor: '#D55E00', 
+    mazeWallThickness: 3,
+  },
+  // Tema Alt Contrast
+  'Alt Contrast': {
+    backgroundColor: '#000000',
+    textColor: '#FFFFFF',
+    subtextColor: '#FFFFFF',
+    surfaceColor: '#000000',
+    borderColor: '#FFFFFF', 
+    // Accents
+    accentColor1: '#2563eb',
+    accentColor2: '#2563eb',
+    // Laberint
+    mazePathColor: '#000000',
+    mazeWallColor: '#FFFFFF',
+    mazePlayerColor: '#2563eb',
+    mazeExitColor: '#2563eb',
+    mazeWallThickness: 4,
   },
 };
 
