@@ -2,6 +2,7 @@ import React from "react";
 import { User, LogOut } from 'lucide-react';
 import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
+import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 
 type UserType = { id: string; email: string; };
@@ -32,6 +33,23 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
     } else {
       onUserClick();
     }
+  };
+
+  const audio = useGameAudio();
+
+  const onNavigateWithSound = () => {
+    audio.playFail();
+    onNavigate();
+  };
+
+  const onSettingsWithSound = () => {
+    audio.playFail();
+    onSettingsClick();
+  };
+
+  const handleUserInteractionWithSound = () => {
+    audio.playFail();
+    handleUserInteraction();
   };
 
   // Estils dinàmics utilitzant 'screenSettings'
@@ -160,7 +178,8 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
       {/* Botó d'usuari */}
       <button 
         style={styles.userButton} 
-        onClick={handleUserInteraction} 
+        onClick={handleUserInteractionWithSound} 
+        onMouseEnter={() => audio.playHover()}
         aria-label={user ? `Compte de ${user.email}. Tancar sessió.` : "Iniciar sessió o registrar-se"}
       >
         {/* Icona condicional */}
@@ -195,7 +214,8 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
           <button
             type="button"
             style={styles.playBtn}
-            onClick={onNavigate}
+            onClick={onNavigateWithSound}
+            onMouseEnter={() => audio.playHover()}
             aria-label="Jugar a MazeMind"
           >
             <span aria-hidden="true">▶</span> Jugar
@@ -204,7 +224,8 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
           <button
             type="button"
             style={styles.secondaryBtn}
-            onClick={onSettingsClick}
+            onClick={onSettingsWithSound}
+            onMouseEnter={() => audio.playHover()}
             aria-label="Obrir configuració"
           >
             <span aria-hidden="true">⚙</span> Configuració

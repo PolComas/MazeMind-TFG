@@ -2,6 +2,7 @@
 import React from 'react';
 import { PALETTE } from './palette';
 import { RefreshCcw, ArrowLeft } from 'lucide-react'; // Icones pels botons
+import { useGameAudio } from '../audio/sound';
 
 // Props que rep el modal
 type Props = {
@@ -26,6 +27,9 @@ function displayStars(count: number) {
 }
 
 export default function CompletionModal({ levelNumber, stars, time, points, onRetry, onBack }: Props) {
+  // Gestionar àudio
+  const audio = useGameAudio();
+
   return (
     // Fons semitransparent que cobreix tota la pantalla
     <div style={styles.overlay}>
@@ -51,10 +55,10 @@ export default function CompletionModal({ levelNumber, stars, time, points, onRe
 
         {/* Botons */}
         <div style={styles.actions}>
-          <button style={styles.retryButton} onClick={onRetry}>
+          <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetry}>
             <RefreshCcw size={18} /> Tornar a Jugar
           </button>
-          <button style={styles.backButton} onClick={onBack}>
+          <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBack}>
             <ArrowLeft size={18} /> Tornar als Nivells
           </button>
         </div>

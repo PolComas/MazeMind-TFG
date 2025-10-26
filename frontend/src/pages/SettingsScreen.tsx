@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { PALETTE } from '../components/palette'; 
-import { loadSettings, saveSettings, type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
+import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { useGameAudio } from '../audio/sound';
 
 import HomeScreenSettings from '../components/settings/HomeScreenSettings'; 
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
@@ -19,18 +20,47 @@ type Props = {
 type AccordionSection = keyof ScreenSettings | 'game';
 
 export default function SettingsScreen({ onBack }: Props) {
+  // Obtenir so de joc
+  const audio = useGameAudio();
+
+  const onBackWithSound = () => {
+    audio.playFail();
+    onBack();
+  }
+
   // Obtenir la configuració i la funció d'actualització del context
   const { settings: initialSettings, updateSettings: saveAndApplySettings } = useSettings();
 
   // Estat local per a la configuració que s'està editant
   const [currentSettings, setCurrentSettings] = useState<AppSettings>(() => JSON.parse(JSON.stringify(initialSettings)));
   const [activeSection, setActiveSection] = useState<AccordionSection | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const saveTimeoutRef = React.useRef<number | null>(null);
 
   // Funció per desar els canvis
   const handleSave = useCallback(() => {
-    saveAndApplySettings(currentSettings); 
-    alert("Configuració desada i aplicada!"); 
-  }, [currentSettings, saveAndApplySettings]);
+    saveAndApplySettings(currentSettings);
+    audio.playFail();
+    setSaveSuccess(true);
+
+    // Netejar qualsevol timeout anterior
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Amagar el missatge després de 1,5 segons
+    saveTimeoutRef.current = window.setTimeout(() => {
+      setSaveSuccess(false);
+      saveTimeoutRef.current = null;
+    }, 1500);
+  }, [currentSettings, saveAndApplySettings, audio]);
+
+  // Netejar timeout al desmontar
+  React.useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   // Funció per actualitzar un valor a l'estat actual
   const updateSetting = useCallback((keyPath: string, value: any) => {
@@ -53,6 +83,7 @@ export default function SettingsScreen({ onBack }: Props) {
   // Obrir/tancar secció de l'acordió
   const toggleSection = (section: AccordionSection) => {
     setActiveSection(prev => (prev === section ? null : section));
+    audio.playSlide();
   };
 
   // Funció per passar els paràmetres correctes a cada component de configuració
@@ -66,6 +97,7 @@ export default function SettingsScreen({ onBack }: Props) {
 
   // Funció per aplicar un tema predefinit
   const applyPresetTheme = useCallback((themeName: keyof typeof PRESET_THEMES) => {
+    audio.playBtnSound();
     const themeSettings = PRESET_THEMES[themeName];
     if (!themeSettings) return;
 
@@ -84,7 +116,7 @@ export default function SettingsScreen({ onBack }: Props) {
     <div style={styles.page}>
       {/* Capçalera */}
       <header style={styles.header}>
-        <button onClick={onBack} style={styles.backButton} aria-label="Tornar">
+        <button onClick={onBackWithSound} style={styles.backButton} aria-label="Tornar" onMouseEnter={() => audio.playHover()}>
           <ArrowLeft size={20} /> Tornar
         </button>
         <h1 style={styles.title}>Configuració i Accessibilitat</h1>
@@ -103,6 +135,7 @@ export default function SettingsScreen({ onBack }: Props) {
                   key={themeName}
                   style={styles.presetButton}
                   onClick={() => applyPresetTheme(themeName as keyof typeof PRESET_THEMES)}
+                  onMouseEnter={() => audio.playHover()}
                 >
                   {themeName}
                 </button>
@@ -191,9 +224,14 @@ export default function SettingsScreen({ onBack }: Props) {
           </div>
 
 
-          <button onClick={handleSave} style={styles.saveButton}>
+          <button onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>
             <Save size={18} /> Desar Configuració
           </button>
+          {saveSuccess && (
+            <div role="status" aria-live="polite" style={{ textAlign: 'center', color: '#059669', marginTop: 8, fontWeight: 700 }}>
+              Configuració seleccionada aplicada correctament!
+            </div>
+          )}
         </div>
 
         {/* Columna Dreta: Previsualització */}

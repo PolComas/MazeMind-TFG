@@ -212,7 +212,7 @@ export default function LevelSelect({
     <main style={styles.page}>
       <div style={styles.container}>
         <header style={styles.header}>
-          <button style={styles.backBtn} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
+          <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
             <span aria-hidden="true">←</span> Inici
           </button>
           <div style={{ textAlign: 'center' }}>
@@ -266,7 +266,7 @@ export default function LevelSelect({
 
           {/* Peu de pàgina amb botó de mode pràctica */}
         <footer style={styles.footer}>
-          <button style={styles.practiceBtn} onClick={onPracticeClick}>
+          <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
             <Dumbbell size={18} /> Mode Pràctica
           </button>
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PALETTE } from './palette'; 
 import { X } from 'lucide-react'; 
+import { useGameAudio } from '../audio/sound';
 
 type User = { id: string, email: string };
 
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
+  // Gestionar àudio
+  const audio = useGameAudio();
   // Estats per als camps del formulari
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

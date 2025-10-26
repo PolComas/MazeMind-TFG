@@ -13,6 +13,7 @@ import winSound from './win.wav';
 import failSound from './fail.mp3';
 import playBtnSound from './play.wav';
 import slideSound from './slide2.wav';
+import hoverSound from './hover2.mp3';
 
 // Tipus de configuració d'un so
 type SoundConfig = { src: string; volume?: number; loop?: boolean }
@@ -32,6 +33,7 @@ const soundMap: Record<string, SoundConfig> = {
   fail: { src: failSound, volume: 0.7 },
   playBtn: { src: playBtnSound, volume: 0.7 },
   slide: { src: slideSound, volume: 0.8 },  
+  hover: { src: hoverSound, volume: 0.5 },
 };
 
 type SoundKey = keyof typeof soundMap;
@@ -43,6 +45,14 @@ const playSound = (audio: HTMLAudioElement | null | undefined) => {
   audio.play().catch(e => console.error("Error en reproduir àudio:", e));
 };
 
+
+// Helper per reproduir sons que poden solapar-se
+const playOverlapSound = (audio: HTMLAudioElement | null | undefined) => {
+  if (!audio) return;
+  const clone = audio.cloneNode(true) as HTMLAudioElement;
+  clone.volume = audio.volume;
+  clone.play().catch(e => console.error("Error en reproduir àudio:", e));
+};
 
 export const useGameAudio = () => {
   // Carregar tots els sons
@@ -58,6 +68,8 @@ export const useGameAudio = () => {
       const audio = new Audio(config.src);
       audio.loop = !!config.loop;
       audio.volume = config.volume ?? 1.0;
+      audio.preload = 'auto';
+      audio.load();
       cache.set(k, audio);
     }
     return cache;
@@ -71,12 +83,13 @@ export const useGameAudio = () => {
     playCrash: useCallback(() => playSound(audioCache.get('crash')), [audioCache]),
     playStarLoss: useCallback(() => playSound(audioCache.get('starLoss')), [audioCache]),
     playReveal: useCallback(() => playSound(audioCache.get('reveal')), [audioCache]),
-    playToggleOn: useCallback(() => playSound(audioCache.get('toggleOn')), [audioCache]),
-    playToggleOff: useCallback(() => playSound(audioCache.get('toggleOff')), [audioCache]),
+    playToggleOn: useCallback(() => playOverlapSound(audioCache.get('toggleOn')), [audioCache]),
+    playToggleOff: useCallback(() => playOverlapSound(audioCache.get('toggleOff')), [audioCache]),
     playWin: useCallback(() => playSound(audioCache.get('win')), [audioCache]),
-    playFail: useCallback(() => playSound(audioCache.get('fail')), [audioCache]),
-    playBtnSound: useCallback(() => playSound(audioCache.get('playBtn')), [audioCache]),
-    playSlide: useCallback(() => playSound(audioCache.get('slide')), [audioCache]),
+    playFail: useCallback(() => playOverlapSound(audioCache.get('fail')), [audioCache]),
+    playBtnSound: useCallback(() => playOverlapSound(audioCache.get('playBtn')), [audioCache]),
+    playSlide: useCallback(() => playOverlapSound(audioCache.get('slide')), [audioCache]),
+    playHover: useCallback(() => playOverlapSound(audioCache.get('hover')), [audioCache]),
 
     startMusic: useCallback(() => {
       audioCache.get('music')?.play().catch(e => console.error("Error al reproduir música:", e));

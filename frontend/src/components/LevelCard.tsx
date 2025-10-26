@@ -2,6 +2,7 @@ import React from 'react';
 import { PALETTE } from './palette'; 
 import { Dumbbell, Zap, Flame, Lock, Play, Star, Clock } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { useGameAudio } from '../audio/sound';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -23,6 +24,9 @@ function formatTime(seconds: number | null): string | null {
 }
 
 export default function LevelCard({ index, unlocked, difficulty, stars, bestTime, onPlay }: Props) {
+  // Gestionar àudio
+  const audio = useGameAudio();
+  
   // Estil segons la dificultat
   const difficultyLabel = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
   
@@ -177,6 +181,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
             <button 
               style={{ ...styles.playBtnBase, background: difficultyStyles[difficulty].accent, color: PALETTE.bg }} 
               onClick={onPlay}
+              onMouseEnter={() => audio.playHover()}
               aria-label={accessiblePlayLabel}
             >
               <Play size={16} /> Jugar

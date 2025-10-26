@@ -359,11 +359,11 @@ export default function LevelScreen({
     <div style={styles.page}>
       {/* HEADER */}
       <header style={styles.headerRow}>
-        <button type="button" onClick={onBackWithSound} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
+        <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
           <span aria-hidden="true">←</span> Nivells
         </button>
         <h1 style={styles.title}>Nivell {level.number}</h1>
-        <button type="button" onClick={onRetryWithSound} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
+        <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
           <span aria-hidden="true">↻</span> Reintentar
         </button>
       </header>
