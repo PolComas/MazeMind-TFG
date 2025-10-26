@@ -11,6 +11,7 @@ import LevelSelectSettings from '../components/settings/LevelSelectSettings';
 import LevelSelectPreview from '../components/settings/LevelSelectPreview';
 import LevelScreenSettings from '../components/settings/LevelScreenSettings';
 import LevelScreenPreview from '../components/settings/LevelScreenPreview';
+import LevelScreenLegend from '../components/settings/LevelScreenLegend';
 
 type Props = {
   onBack: () => void;
@@ -260,8 +261,13 @@ export default function SettingsScreen({ onBack }: Props) {
                 </p>
             )}
           </div>
+          {/* Llegenda */}
           <div style={styles.legend}>
-            <p>Llegenda (Properament)...</p>
+            {activeSection === 'levelScreen' ? (
+              <LevelScreenLegend settings={currentSettings.visuals.levelScreen} />
+            ) : (
+              <p>Pàgina sense llegenda</p>
+            )}
           </div>
         </aside>
       </div>
