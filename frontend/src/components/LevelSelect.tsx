@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
-import { Dumbbell, Zap, Flame } from 'lucide-react';
+import { Dumbbell, Zap, Flame, CircleQuestionMarkIcon } from 'lucide-react';
 import { loadProgress, getLevelStats, type GameProgress } from '../utils/progress';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
+import HowToPlayModal from './HowToPlayModal';
 
 // TEMPORAL: Funcions per generar i descarregar nivells de prova
 //import { downloadJSON } from '../maze/save_maze';
@@ -50,9 +51,11 @@ const difficultyIcons: Record<Diff, React.ReactNode> = {
 export default function LevelSelect({
   onPlayLevel: originalOnPlayLevel,
   onBack: originalOnBack,
+  onStartTutorial,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
+  onStartTutorial: () => void;
 }) {
   const audio = useGameAudio();
 
@@ -69,6 +72,9 @@ export default function LevelSelect({
 
   const [difficulty, setDifficulty] = useState<Diff>('easy');
   const [progress] = useState<GameProgress>(() => loadProgress());
+
+  // Estat per al modal "Com Jugar"
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   // Indicador lliscant
   const diffBarRef = useRef<HTMLDivElement>(null);
@@ -209,75 +215,91 @@ export default function LevelSelect({
   };
 
   return (
-    <main style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
-            <span aria-hidden="true">←</span> Inici
-          </button>
-          <div style={{ textAlign: 'center' }}>
-            <h1 style={styles.title}>Selecciona el Nivell</h1>
-          </div>
-          {/* Element buit per equilibrar el flexbox */}
-          <div style={{ width: 100 }} /> 
-        </header>
-
-        {/* Barra de selecció de dificultat */}
-        <div role="tablist" aria-label="Selector de dificultat" style={styles.diffBarContainer} ref={diffBarRef} >
-          <div style={{ ...styles.diffIndicator, ...indicatorStyle }} />
-
-          {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
-            <button
-              key={d}
-              role="tab" 
-              onClick={() => { audio.playSlide(); setDifficulty(d); }}
-              aria-selected={difficulty === d} 
-              style={{
-                ...styles.diffTab, 
-                color: difficulty === d ? screenSettings.textColor : screenSettings.subtextColor,
-              }}
-            >
-              {difficultyIcons[d]} 
-              {DIFF_LABEL[d]}
+    <>
+      <main style={styles.page}>
+        <div style={styles.container}>
+          <header style={styles.header}>
+            <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
+              <span aria-hidden="true">←</span> Inici
             </button>
-          ))}
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={styles.title}>Selecciona el Nivell</h1>
+            </div>
+            {/* Element buit per equilibrar el flexbox */}
+            <div style={{ width: 100 }} /> 
+          </header>
+
+          {/* Barra de selecció de dificultat */}
+          <div role="tablist" aria-label="Selector de dificultat" style={styles.diffBarContainer} ref={diffBarRef} >
+            <div style={{ ...styles.diffIndicator, ...indicatorStyle }} />
+
+            {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
+              <button
+                key={d}
+                role="tab" 
+                onClick={() => { audio.playSlide(); setDifficulty(d); }}
+                aria-selected={difficulty === d} 
+                style={{
+                  ...styles.diffTab, 
+                  color: difficulty === d ? screenSettings.textColor : screenSettings.subtextColor,
+                }}
+              >
+                {difficultyIcons[d]} 
+                {DIFF_LABEL[d]}
+              </button>
+            ))}
+          </div>
+
+          {/* Graella de nivells */}
+          <section aria-label={`Nivells de dificultat ${DIFF_LABEL[difficulty]}`}>
+            <div style={styles.grid}>
+              {levels.map(n => {
+                const stats = getLevelStats(progress, difficulty, n);
+
+                return (
+                  <LevelCard
+                    key={`${difficulty}-${n}`}
+                    index={n}
+                    unlocked={n <= unlockedCount}
+                    difficulty={difficulty} 
+                    stars={stats?.stars ?? 0}
+                    bestTime={stats?.bestTime ?? null}
+                    onPlay={() => onPlayLevelWithSound(n, difficulty)}
+                  />
+                );
+              })}
+            </div>
+          </section>
+
+            {/* Peu de pàgina amb botó de mode pràctica */}
+          <footer style={styles.footer}>
+            <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
+              <Dumbbell size={18} style={{ marginBottom: -1 }} /> Mode Pràctica
+            </button>
+
+            <div style={{ width: 12 }} />
+
+            {/* NOU: Botó "Com Jugar" */}
+            <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={() => { audio.playBtnSound(); setShowHowToPlay(true); }}>
+              <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> Com Jugar
+            </button>
+
+            {/* EINA TEMPORAL DE DESENVOLUPAMENT */}
+            {/*<div style={{ background: 'red', padding: 10, borderRadius: 8, marginTop: 20 }}>
+              <button onClick={() => handleGenerateAndDownload('easy', 1)}>
+                Generar i Descarregar
+              </button>
+            </div>*/}
+          </footer>
         </div>
+      </main>
 
-        {/* Graella de nivells */}
-        <section aria-label={`Nivells de dificultat ${DIFF_LABEL[difficulty]}`}>
-          <div style={styles.grid}>
-            {levels.map(n => {
-              const stats = getLevelStats(progress, difficulty, n);
-
-              return (
-                <LevelCard
-                  key={`${difficulty}-${n}`}
-                  index={n}
-                  unlocked={n <= unlockedCount}
-                  difficulty={difficulty} 
-                  stars={stats?.stars ?? 0}
-                  bestTime={stats?.bestTime ?? null}
-                  onPlay={() => onPlayLevelWithSound(n, difficulty)}
-                />
-              );
-            })}
-          </div>
-        </section>
-
-          {/* Peu de pàgina amb botó de mode pràctica */}
-        <footer style={styles.footer}>
-          <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
-            <Dumbbell size={18} /> Mode Pràctica
-          </button>
-
-          {/* EINA TEMPORAL DE DESENVOLUPAMENT */}
-          {/*<div style={{ background: 'red', padding: 10, borderRadius: 8, marginTop: 20 }}>
-            <button onClick={() => handleGenerateAndDownload('easy', 1)}>
-              Generar i Descarregar
-            </button>
-          </div>*/}
-        </footer>
-      </div>
-    </main>
+    {/* Renderitzar el modal */}
+    <HowToPlayModal 
+        open={showHowToPlay}
+        onClose={() => setShowHowToPlay(false)}
+        onStartTutorial={onStartTutorial}
+      />
+    </>
   );  
 }

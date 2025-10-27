@@ -7,6 +7,7 @@ import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
 import { saveLevelCompletion } from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
+import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
 
 type Phase = "memorize" | "playing" | "completed";
 
@@ -29,10 +30,14 @@ export default function LevelScreen({
   level,
   onBack: onBackOriginal,
   onRetry: originalOnRetry,
+  isTutorialMode,
+  onCompleteTutorial,
 }: {
   level: Level;
   onBack: () => void;
   onRetry: () => void;
+  isTutorialMode: boolean;
+  onCompleteTutorial: () => void;
 }) {  
   const audio = useGameAudio();
 
@@ -47,6 +52,9 @@ export default function LevelScreen({
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
   const total = useRef(memorizeDuration);
   const [playerPos, setPlayerPos] = useState({ x: level.start.x, y: level.start.y });
+
+  // Estat per al pas del tutorial
+  const [tutorialStep, setTutorialStep] = useState(isTutorialMode ? 0 : -1);
 
   // Estats per al Joc
   const [gameTime, setGameTime] = useState(0);
@@ -65,7 +73,7 @@ export default function LevelScreen({
 
   // Guardar el progrés quan es completa el nivell
   useEffect(() => {
-    if (phase === "completed") {
+    if (phase === "completed" && !isTutorialMode) {
       saveLevelCompletion(
         level.difficulty as 'easy' | 'normal' | 'hard',
         level.number,
@@ -74,7 +82,7 @@ export default function LevelScreen({
         points
       );
     }
-  }, [phase, level.difficulty, level.number, currentStars, gameTime, points]); 
+  }, [phase, isTutorialMode, level.difficulty, level.number, currentStars, gameTime, points]);
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {
@@ -99,7 +107,7 @@ export default function LevelScreen({
 
   // Compte enrere (Memorize)
   useEffect(() => {
-    if (phase !== "memorize") return;
+    if (phase !== "memorize" || isTutorialMode) return;
     const tickMs = 1000;
     const id = setInterval(() => {
       setRemaining((r) => {
@@ -121,11 +129,11 @@ export default function LevelScreen({
       });
     }, tickMs);
     return () => clearInterval(id);
-  }, [phase, level.start.x, level.start.y, audio]);
+  }, [phase, level.start.x, level.start.y, audio, isTutorialMode]);
 
   // Efectes pel Joc (Temps i Punts)
   useEffect(() => {
-    if (phase !== 'playing'){
+    if (phase !== 'playing' || (isTutorialMode && tutorialStep >= 0)){
       audio.stopMusic();
       return;
     }
@@ -134,13 +142,10 @@ export default function LevelScreen({
 
     const gameTick = setInterval(() => {
       setGameTime(t => t + 1);
-
-    let pointLoss = POINTS_LOSS_PER_SECOND;
-    if (isPathHelpActive) pointLoss += POINTS_LOSS_PATH_HELP;
-
-
-    setPoints(p => Math.max(0, p - pointLoss));
-      }, 1000);
+      let pointLoss = POINTS_LOSS_PER_SECOND;
+      if (isPathHelpActive) pointLoss += POINTS_LOSS_PATH_HELP;
+      setPoints(p => Math.max(0, p - pointLoss));
+    }, 1000);
 
     return () => {
       clearInterval(gameTick);
@@ -248,6 +253,31 @@ export default function LevelScreen({
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, settings]);
+
+  // Funcions per controlar el tutorial
+  const handleNextTutorialStep = () => {
+    const nextStep = tutorialStep + 1;
+
+    if (nextStep >= tutorialSteps.length) {
+      setTutorialStep(-1);
+      onCompleteTutorial();
+      setRemaining(level.memorizeTime);
+    } else {
+      setTutorialStep(nextStep);
+      if (phase !== 'memorize') setPhase('memorize');
+      setRemaining(level.memorizeTime);
+    }
+  };
+
+  const handleSkipTutorial = () => {
+    setTutorialStep(-1);
+    onCompleteTutorial();
+    setPhase("memorize");
+    setRemaining(level.memorizeTime);
+    setPlayerPos({ x: level.start.x, y: level.start.y });
+    setGameTime(0);
+    setPoints(POINTS_START);
+  };
 
   // Objecte de configuració per al MazeCanvas
   const mazeSettings = useMemo(() => ({
@@ -446,7 +476,7 @@ export default function LevelScreen({
       </footer>
 
       {/* Nivell completat */}
-      {phase === "completed" && (
+      {phase === "completed" && !isTutorialMode && (
         <CompletionModal
           levelNumber={level.number}
           stars={currentStars} 
@@ -454,6 +484,15 @@ export default function LevelScreen({
           points={points}
           onRetry={onRetryWithSound} 
           onBack={onBackWithSound}
+        />
+      )}
+
+      {/* NOU: Renderitzem l'overlay del tutorial */}
+      {isTutorialMode && tutorialStep >= 0 && tutorialStep < tutorialSteps.length && (
+        <TutorialOverlay 
+          step={tutorialStep}
+          onNext={handleNextTutorialStep}
+          onSkip={handleSkipTutorial}
         />
       )}
     </div>

@@ -18,9 +18,14 @@ type User = {
   email: string; 
 };
 
+const base = import.meta.env.BASE_URL || '/';
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null); 
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Estat per al mode tutorial
+  const [isTutorialMode, setIsTutorialMode] = useState(false);
 
   // --- Lògica de Navegació ---
   const [path, setPath] = useState(window.location.pathname);
@@ -31,15 +36,28 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   const go = (p: string) => {
-    // Si naveguem a la mateixa ruta, incrementem navKey per forçar remuntatge (reiniciar nivell)
-    window.history.pushState({}, '', p);
-    if (p === path) {
+    // Qualsevol navegació normal desactiva el mode tutorial
+    setIsTutorialMode(false);
+
+    // Construïm la ruta per a pushState i per a l'estat intern
+    const targetPath = base === '/' ? p : `${base.replace(/\/$/, '')}${p}`;
+    window.history.pushState({}, '', targetPath);
+
+    if (targetPath === path) {
       setNavKey((k) => k + 1);
-      setPath(p);
     } else {
-      setPath(p);
+      setPath(targetPath);
       setNavKey(0);
     }
+  };
+
+  // Funció per iniciar el tutorial
+  const startTutorial = () => {
+    setIsTutorialMode(true);
+    const tutorialLevelPath = fullPath('/level/1');
+    window.history.pushState({}, '', tutorialLevelPath);
+    setPath(tutorialLevelPath);
+    setNavKey(k => k + 1);
   };
 
   useEffect(() => {
@@ -76,24 +94,34 @@ export default function App() {
     console.log("Usuari desconnectat");
   };
 
+  // Helper per construir rutes completes
+  const fullPath = (relativePath: string) => {
+    if (base === '/') return relativePath;
+    return `${base.replace(/\/$/, '')}${relativePath}`;
+  }
+
   // Pantalla de Configuració
-  if (path === '/settings') {
+  if (path === fullPath('/settings')) {
     return <SettingsScreen onBack={() => go('/')} />;
   }
 
   // Pantalla de Selecció de Nivell
-  if (path === '/levels') {
+  if (path === fullPath('/levels')) {
     return (
-      <LevelSelect 
-        onPlayLevel={(n) => go(`/level/${n}`)} 
+      <LevelSelect
+        onPlayLevel={(n) => go(`/level/${n}`)}
         onBack={() => go('/')}
+        onStartTutorial={startTutorial}
       />
     );
   }
 
   // --- Pantalla de Nivell Individual ---
-  if (path.startsWith('/level/')) {
-    const num = Number(path.split('/').pop() || 1);
+  const levelBasePath = fullPath('/level/');
+  if (path.startsWith(levelBasePath)) {
+    // Extraiem el número de nivell de la URL completa
+    const numStr = path.substring(levelBasePath.length);
+    const num = Number(numStr || 1);
     
     const levelKey = `easy-${num}`; 
     let level: Level;
@@ -117,28 +145,52 @@ export default function App() {
         level={level}
         onBack={() => go('/levels')}
         onRetry={() => go(`/level/${num}`)}
+        isTutorialMode={isTutorialMode}
+        onCompleteTutorial={() => setIsTutorialMode(false)}
       />
     );
   }
 
   // --- Pantalla d'Inici ---
-  return (
-    <> 
-      <HomeScreen 
-        user={user} 
-        onNavigate={() => go('/levels')} 
-        onUserClick={() => setShowAuthModal(true)} 
-        onLogout={handleLogout} 
-        onSettingsClick={() => go('/settings')}
-      />
+  if (path === base.replace(/\/$/, '') || path === base || path === fullPath('/')) {
+     return (
+       <>
+         <HomeScreen
+           user={user}
+           onNavigate={() => go('/levels')}
+           onUserClick={() => setShowAuthModal(true)}
+           onLogout={handleLogout}
+           onSettingsClick={() => go('/settings')}
+         />
+         {showAuthModal && (
+           <AuthModal
+             onClose={() => setShowAuthModal(false)}
+             onLogin={handleLogin}
+             onRegister={handleRegister}
+           />
+         )}
+       </>
+     );
+  }
 
-      {showAuthModal && (
-        <AuthModal 
-          onClose={() => setShowAuthModal(false)}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
+  // --- Fallback ---
+  console.warn(`Ruta desconeguda: ${path}. Redirigint a HomeScreen.`);
+   return (
+      <>
+        <HomeScreen
+          user={user}
+          onNavigate={() => go('/levels')}
+          onUserClick={() => setShowAuthModal(true)}
+          onLogout={handleLogout}
+          onSettingsClick={() => go('/settings')}
         />
-      )}
-    </>
-  );
+        {showAuthModal && (
+          <AuthModal
+            onClose={() => setShowAuthModal(false)}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+          />
+        )}
+      </>
+    );
 }
