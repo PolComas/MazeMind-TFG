@@ -1,5 +1,4 @@
-// components/settings/LevelScreenSettings.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { VisualSettings } from '../../utils/settings'; 
 import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';

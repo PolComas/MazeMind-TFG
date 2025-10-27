@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { PALETTE } from '../components/palette'; 
 import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
@@ -22,6 +22,12 @@ type Props = {
 // 'home', 'levelSelect', 'levelScreen', 'game'
 type AccordionSection = keyof ScreenSettings | 'game';
 
+// Tecles a comprovar que no es repeteixin
+const keybindingActions: (keyof GameSettings)[] = [
+  'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash'
+];
+
 export default function SettingsScreen({ onBack }: Props) {
   // Obtenir so de joc
   const audio = useGameAudio();
@@ -40,8 +46,33 @@ export default function SettingsScreen({ onBack }: Props) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const saveTimeoutRef = React.useRef<number | null>(null);
 
+  // Funció per detectar duplicats
+  const duplicateActions = useMemo(() => {
+    const keyUsageMap = new Map<string, (keyof GameSettings)[]>();
+    for (const action of keybindingActions) {
+      const key = currentSettings.game[action] as string;
+      if (!keyUsageMap.has(key)) {
+        keyUsageMap.set(key, []);
+      }
+      keyUsageMap.get(key)!.push(action);
+    }
+    const duplicates = new Set<keyof GameSettings>();
+    for (const actions of keyUsageMap.values()) {
+      if (actions.length > 1) {
+        actions.forEach(action => duplicates.add(action));
+      }
+    }
+    return duplicates;
+  }, [currentSettings.game]);
+
   // Funció per desar els canvis
   const handleSave = useCallback(() => {
+    //  Comprovació tecles abans de desar
+    if (duplicateActions.size > 0) {
+      setActiveSection('game');
+      return;
+    }
+
     saveAndApplySettings(currentSettings);
     audio.playFail();
     setSaveSuccess(true);

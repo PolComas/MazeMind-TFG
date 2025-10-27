@@ -5,6 +5,7 @@ type Props = {
   label: string;
   value: string;
   onChange: (key: string) => void;
+  isError?: boolean;
 };
 
 // Helper per formatar tecles
@@ -14,7 +15,7 @@ const formatKey = (key: string) => {
   return key;
 };
 
-export default function KeybindingInput({ label, value, onChange }: Props) {
+export default function KeybindingInput({ label, value, onChange, isError = false }: Props) {
   // Estat per saber si estem escoltant una nova tecla
   const [isListening, setIsListening] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -57,7 +58,10 @@ export default function KeybindingInput({ label, value, onChange }: Props) {
   }, [isListening, onChange]);
 
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.container,
+      borderColor: isError ? PALETTE.hardRed : PALETTE.borderColor,
+    }}>
       <label style={styles.label}>{label}</label>
       <button
         ref={buttonRef}
@@ -65,6 +69,7 @@ export default function KeybindingInput({ label, value, onChange }: Props) {
         style={{
           ...styles.button,
           ...(isListening ? styles.buttonListening : {}),
+          ...(isError ? styles.buttonError : {}),
         }}
       >
         {isListening ? 'Prement una tecla...' : formatKey(value)}
@@ -105,5 +110,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: PALETTE.accentPink,
     borderColor: PALETTE.accentPink,
     outline: 'none',
+  },
+  buttonError: {
+    color: PALETTE.hardRed,
+    borderColor: PALETTE.hardRed,
   },
 };
