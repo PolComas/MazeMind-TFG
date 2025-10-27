@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { User, LogOut } from 'lucide-react';
 import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
+import { loadProgress, getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
 
 type UserType = { id: string; email: string; };
 
@@ -15,16 +16,34 @@ type Props = {
   onSettingsClick: () => void;
 };
 
-const stats = [
-  { icon: "🎯", label: "Nivells Superats", value: 0 },
-  { icon: "🏆", label: "Estrelles", value: 0 },
-  { icon: "⚡️", label: "Nivells Perfectes", value: 0 },
-];
-
 export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, onSettingsClick }: Props) {
   // Obtenir la configuració específica per home
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
+
+  // Carregar el progrés quan el component es munta
+  const [progress] = useState<GameProgress>(() => loadProgress());
+
+  // Calcular les estadístiques dinàmicament
+  const playerStats = useMemo(() => {
+    return [
+      { 
+        icon: "🎯", 
+        label: "Nivells Superats", 
+        value: getTotalCompletedLevels(progress) 
+      },
+      { 
+        icon: "🏆", 
+        label: "Estrelles", 
+        value: getTotalStars(progress) 
+      },
+      { 
+        icon: "⚡️", 
+        label: "Nivells Perfectes", 
+        value: getTotalPerfectLevels(progress) 
+      },
+    ];
+  }, [progress]);
 
   // Gestionar clic a botó usuari
   const handleUserInteraction = () => {
@@ -200,10 +219,10 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
 
         {/* Estadístiques */}
         <ul style={styles.statsGrid} aria-label="Estadístiques de progrés">
-          {stats.map(s => (
+          {playerStats.map(s => ( 
             <li key={s.label} style={styles.statCard}>
               <div aria-hidden="true" style={styles.statIcon}>{s.icon}</div>
-              <div style={styles.statValue} aria-live="polite">{s.value}</div>
+              <div style={styles.statValue} aria-live="polite">{s.value}</div> 
               <div style={styles.statLabel}>{s.label}</div>
             </li>
           ))}

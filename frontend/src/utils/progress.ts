@@ -24,6 +24,21 @@ const INITIAL_PROGRESS: GameProgress = {
   highestUnlocked: { easy: 1, normal: 1, hard: 1 },
 };
 
+// Calcula el nombre total de nivells superats (amb almenys 1 estrella)
+export function getTotalCompletedLevels(progress: GameProgress): number {
+  return Object.values(progress.levels).filter(level => level.stars > 0).length;
+}
+
+// Calcula el nombre total d'estrelles aconseguides
+export function getTotalStars(progress: GameProgress): number {
+  return Object.values(progress.levels).reduce((sum, level) => sum + level.stars, 0);
+}
+
+// Calcula el nombre total de nivells perfectes (amb 3 estrelles)
+export function getTotalPerfectLevels(progress: GameProgress): number {
+  return Object.values(progress.levels).filter(level => level.stars === 3).length;
+}
+
 // Carregar el progrés des de localStorage
 export function loadProgress(): GameProgress {
   try {
