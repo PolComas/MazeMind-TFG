@@ -40,6 +40,15 @@ export type ScreenSettings = {
 export type GameSettings = {
   soundEffects: boolean;
   backgroundMusic: boolean;
+  // Tecles de moviment
+  keyMoveUp: string;
+  keyMoveDown: string;
+  keyMoveLeft: string;
+  keyMoveRight: string;
+  // Tecles d'ajuda
+  keyHelpReveal: string;
+  keyHelpPath: string;
+  keyHelpCrash: string;
 };
 
 // Tipus complet per a tota la configuració guardada
@@ -84,6 +93,13 @@ const DEFAULT_SETTINGS: AppSettings = {
   game: {
     soundEffects: true,
     backgroundMusic: true,
+    keyMoveUp: 'w',
+    keyMoveDown: 's',
+    keyMoveLeft: 'a',
+    keyMoveRight: 'd',
+    keyHelpReveal: 'h',
+    keyHelpPath: 'j',
+    keyHelpCrash: 'k',
   },
 };
 

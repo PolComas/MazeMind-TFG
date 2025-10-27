@@ -12,6 +12,8 @@ import LevelSelectPreview from '../components/settings/LevelSelectPreview';
 import LevelScreenSettings from '../components/settings/LevelScreenSettings';
 import LevelScreenPreview from '../components/settings/LevelScreenPreview';
 import LevelScreenLegend from '../components/settings/LevelScreenLegend';
+import GameSettingsComponent from '../components/settings/GameSettingsComponent';
+import type { GameSettings } from '../utils/settings';
 
 type Props = {
   onBack: () => void;
@@ -92,7 +94,7 @@ export default function SettingsScreen({ onBack }: Props) {
     updateSetting(`visuals.${screen}.${key}`, value);
   };
 
-  const handleGameChange = (key: keyof AppSettings['game'], value: boolean | number) => {
+  const handleGameChange = (key: keyof GameSettings, value: boolean | string) => {
     updateSetting(`game.${key}`, value);
   };
 
@@ -187,42 +189,44 @@ export default function SettingsScreen({ onBack }: Props) {
           </div>
 
           {/* Secció LevelScreen */}
-        <div style={styles.accordionItem}>
-          <button 
-            style={styles.accordionHeader} 
-            onClick={() => toggleSection('levelScreen')}
-            aria-expanded={activeSection === 'levelScreen'}
-          >
-            <span>🕹️ Pantalla de Joc</span>
-              {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {activeSection === 'levelScreen' && (
-            <div style={styles.accordionContent}>
-              <LevelScreenSettings 
-                settings={currentSettings.visuals.levelScreen} 
-                onChange={(key, value) => handleVisualChange('levelScreen', key, value)} 
-              />
-            </div>
-          )}
-        </div>
-
-          {/* Secció Configuració de Joc */}
-           <div style={styles.accordionItem}>
+          <div style={styles.accordionItem}>
             <button 
               style={styles.accordionHeader} 
-              onClick={() => toggleSection('game')}
-              aria-expanded={activeSection === 'game'}
+              onClick={() => toggleSection('levelScreen')}
+              aria-expanded={activeSection === 'levelScreen'}
             >
-              <span>🔊 Configuració de Joc</span>
-               {activeSection === 'game' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              <span>🕹️ Pantalla de Joc</span>
+                {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
-            {activeSection === 'game' && (
+            {activeSection === 'levelScreen' && (
               <div style={styles.accordionContent}>
-                <p>Controls de Joc (Properament)...</p>
-                 {/* <GameSettingsComponent settings={currentSettings.game} onChange={handleGameChange} /> */}
+                <LevelScreenSettings 
+                  settings={currentSettings.visuals.levelScreen} 
+                  onChange={(key, value) => handleVisualChange('levelScreen', key, value)} 
+                />
               </div>
             )}
           </div>
+
+           {/* Secció Configuració de Joc */}
+           <div style={styles.accordionItem}>
+              <button 
+                style={styles.accordionHeader} 
+                onClick={() => toggleSection('game')}
+                aria-expanded={activeSection === 'game'}
+              >
+                <span>🔊 Configuració de Joc</span>
+                {activeSection === 'game' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+              {activeSection === 'game' && (
+                <div style={styles.accordionContent}>
+                  <GameSettingsComponent
+                    settings={currentSettings.game}
+                    onChange={handleGameChange}
+                  />
+                </div>
+              )}
+            </div>
 
 
           <button onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>

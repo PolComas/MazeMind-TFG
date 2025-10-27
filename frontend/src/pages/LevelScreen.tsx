@@ -18,6 +18,13 @@ const POINTS_LOSS_CRASH_HELP = 20;
 const POINTS_COST_REVEAL = 50;
 const REVEAL_DURATION_MS = 500; // 0.5 segons
 
+// Helper per formatar tecles
+const formatKey = (key: string) => {
+  if (key === ' ') return 'Espai';
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+};
+
 export default function LevelScreen({
   level,
   onBack: onBackOriginal,
@@ -30,8 +37,9 @@ export default function LevelScreen({
   const audio = useGameAudio();
 
   // Obtenir configuració visual
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const screenSettings = getVisualSettings('levelScreen');
+  const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
 
   const memorizeDuration = level.memorizeTime;
 
@@ -182,27 +190,32 @@ export default function LevelScreen({
   useEffect(() => {
     if (phase !== "playing") return;
 
+    // Obtenir les tecles de la configuració
+    const { game: gameSettings } = settings;
+
     const handleKey = (e: KeyboardEvent) => {
       if (showReveal) return;
       setCrashedAt(null);
 
+      const key = e.key.toLowerCase();
+
       // Ajudes
-      if (e.key === 'h' || e.key === 'H') { onRevealHelp(); return; }
-      if (e.key === 'j' || e.key === 'J') { onTogglePathHelp(); return; }
-      if (e.key === 'k' || e.key === 'K') { onToggleCrashHelp(); return; }
+      if (e.key === gameSettings.keyHelpReveal) { onRevealHelp(); return; }
+      if (key === gameSettings.keyHelpPath) { onTogglePathHelp(); return; }
+      if (key === gameSettings.keyHelpCrash) { onToggleCrashHelp(); return; }
 
       // Moviment
       const { x, y } = playerPos;
       let newX = x, newY = y;
       let didCrash = false;
 
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+      if (e.key === 'ArrowUp' || key === gameSettings.keyMoveUp) {
         if (level.maze[y][x].walls.top) { didCrash = true; } else { newY -= 1; }
-      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+      } else if (e.key === 'ArrowDown' || key === gameSettings.keyMoveDown) {
         if (level.maze[y][x].walls.bottom) { didCrash = true; } else { newY += 1; }
-      } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+      } else if (e.key === 'ArrowLeft' || key === gameSettings.keyMoveLeft) {
         if (level.maze[y][x].walls.left) { didCrash = true; } else { newX -= 1; }
-      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+      } else if (e.key === 'ArrowRight' || key === gameSettings.keyMoveRight) {
         if (level.maze[y][x].walls.right) { didCrash = true; } else { newX += 1; }
       } else {
         return;
@@ -234,7 +247,7 @@ export default function LevelScreen({
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points]);
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, settings]);
 
   // Objecte de configuració per al MazeCanvas
   const mazeSettings = useMemo(() => ({
@@ -418,11 +431,16 @@ export default function LevelScreen({
       <footer style={styles.footer}>
         {phase === 'playing' ? (
           <p style={styles.tip}>
-            Utilitza les <kbd>Fletxes</kbd> o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> per moure’t.
+            Utilitza les <kbd>Fletxes</kbd> o
+            <kbd> {formatKey(keyMoveUp)}</kbd>
+            <kbd>{formatKey(keyMoveLeft)}</kbd>
+            <kbd>{formatKey(keyMoveDown)}</kbd>
+            <kbd>{formatKey(keyMoveRight)} </kbd> 
+            per moure’t.
           </p>
         ) : phase === 'memorize' ? (
           <p style={styles.tip}>
-            Memoritza el camí des de l'inici (negre) fins al final (taronja).
+            Memoritza el camí des de l'inici (cercle) fins al final (quadrat).
           </p>
         ) : null }
       </footer>

@@ -15,6 +15,12 @@ type Props = {
 export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
+
+  const onCloseWithSound = () => {
+    audio.playFail();
+    onClose();
+  };
+
   // Estats per als camps del formulari
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,10 +63,10 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   };
 
   return (
-    <div style={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div style={styles.overlay} onClick={onCloseWithSound} role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* Botó per tancar el modal */}
-        <button style={styles.closeButton} onClick={onClose} aria-label="Tancar modal d'autenticació">
+        <button style={styles.closeButton} onClick={onCloseWithSound} aria-label="Tancar modal d'autenticació">
           <X size={20} />
         </button>
 

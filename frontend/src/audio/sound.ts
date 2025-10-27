@@ -14,6 +14,7 @@ import failSound from './fail.mp3';
 import playBtnSound from './play.wav';
 import slideSound from './slide2.wav';
 import hoverSound from './hover2.mp3';
+import { useSettings } from '../context/SettingsContext';
 
 // Tipus de configuració d'un so
 type SoundConfig = { src: string; volume?: number; loop?: boolean }
@@ -55,6 +56,10 @@ const playOverlapSound = (audio: HTMLAudioElement | null | undefined) => {
 };
 
 export const useGameAudio = () => {
+  // Obtenim la configuració
+  const { settings } = useSettings();
+  const { soundEffects, backgroundMusic } = settings.game;
+
   // Carregar tots els sons
   const audioCache = useMemo<Map<SoundKey, HTMLAudioElement | null>>(() => {
     if (typeof window === 'undefined') {
@@ -77,24 +82,41 @@ export const useGameAudio = () => {
 
   // Retornem un objecte amb funcions estables (useCallback)
   return {
-    playTick: useCallback(() => playSound(audioCache.get('tick')), [audioCache]),
-    playTickFinal: useCallback(() => playSound(audioCache.get('tickFinal')), [audioCache]),
-    playStart: useCallback(() => playSound(audioCache.get('start')), [audioCache]),
-    playCrash: useCallback(() => playSound(audioCache.get('crash')), [audioCache]),
-    playStarLoss: useCallback(() => playSound(audioCache.get('starLoss')), [audioCache]),
-    playReveal: useCallback(() => playSound(audioCache.get('reveal')), [audioCache]),
-    playToggleOn: useCallback(() => playOverlapSound(audioCache.get('toggleOn')), [audioCache]),
-    playToggleOff: useCallback(() => playOverlapSound(audioCache.get('toggleOff')), [audioCache]),
-    playWin: useCallback(() => playSound(audioCache.get('win')), [audioCache]),
-    playFail: useCallback(() => playOverlapSound(audioCache.get('fail')), [audioCache]),
-    playBtnSound: useCallback(() => playOverlapSound(audioCache.get('playBtn')), [audioCache]),
-    playSlide: useCallback(() => playOverlapSound(audioCache.get('slide')), [audioCache]),
-    playHover: useCallback(() => playOverlapSound(audioCache.get('hover')), [audioCache]),
+    playTick: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('tick')); }, [audioCache, soundEffects]),
+    playTickFinal: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('tickFinal')); }, [audioCache, soundEffects]),
+    playStart: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('start')); }, [audioCache, soundEffects]),
+    playCrash: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('crash')); }, [audioCache, soundEffects]),
+    playStarLoss: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('starLoss')); }, [audioCache, soundEffects]),
+    playReveal: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('reveal')); }, [audioCache, soundEffects]),
+    playToggleOn: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('toggleOn')); }, [audioCache, soundEffects]),
+    playToggleOff: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('toggleOff')); }, [audioCache, soundEffects]),
+    playWin: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('win')); }, [audioCache, soundEffects]),
+    playFail: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('fail')); }, [audioCache, soundEffects]),
+    playBtnSound: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('playBtn')); }, [audioCache, soundEffects]),
+    playSlide: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('slide')); }, [audioCache, soundEffects]),
+    playHover: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('hover')); }, [audioCache, soundEffects]),
 
+    // Música de fons
     startMusic: useCallback(() => {
-      audioCache.get('music')?.play().catch(e => console.error("Error al reproduir música:", e));
-    }, [audioCache]),
-    
+      if (!backgroundMusic) {
+        const m = audioCache.get('music');
+        if (m) { m.pause(); m.currentTime = 0; }
+        return;
+      }
+      const m = audioCache.get('music');
+      if (!m) return;
+      m.play().catch(e => {
+        console.error("Error al reproduir música:", e);
+        const resume = () => {
+          m.play().catch(() => {});
+          window.removeEventListener('pointerdown', resume);
+          window.removeEventListener('keydown', resume);
+        };
+        window.addEventListener('pointerdown', resume, { once: true });
+        window.addEventListener('keydown', resume, { once: true });
+      });
+    }, [audioCache, backgroundMusic]),
+
     stopMusic: useCallback(() => {
       const music = audioCache.get('music');
       if (music) {

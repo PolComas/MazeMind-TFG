@@ -1,14 +1,14 @@
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame } from 'lucide-react';
-import { loadProgress, getLevelStats, type GameProgress, type LevelProgress } from '../utils/progress';
+import { loadProgress, getLevelStats, type GameProgress } from '../utils/progress';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 
 // TEMPORAL: Funcions per generar i descarregar nivells de prova
-import { downloadJSON } from '../maze/save_maze';
-import { generateLevel, type LevelParams } from '../maze/maze_generator';
+//import { downloadJSON } from '../maze/save_maze';
+//import { generateLevel, type LevelParams } from '../maze/maze_generator';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -26,26 +26,26 @@ const difficultyIcons: Record<Diff, React.ReactNode> = {
 };
 
 // Funció TEMPORAL per generar i descarregar nivells de prova
-const handleGenerateAndDownload = (diff: 'easy' | 'normal' | 'hard', num: number) => {
-  const params: LevelParams = {
-    levelNumber: num,
-    difficulty: diff,
-    width: 7,
-    height: 7,
-    memorizeTime: 10,
-    stars: [60, 45, 30],
-  };
+// const handleGenerateAndDownload = (diff: 'easy' | 'normal' | 'hard', num: number) => {
+//   const params: LevelParams = {
+//     levelNumber: num,
+//     difficulty: diff,
+//     width: 7,
+//     height: 7,
+//     memorizeTime: 10,
+//     stars: [60, 45, 30],
+//   };
 
-  const levelData = generateLevel(params);
+//   const levelData = generateLevel(params);
   
-  const cleanMaze = levelData.maze.map(row => 
-    row.map(cell => ({ walls: cell.walls }))
-  );
+//   const cleanMaze = levelData.maze.map(row => 
+//     row.map(cell => ({ walls: cell.walls }))
+//   );
   
-  const dataToSave = { ...levelData, maze: cleanMaze };
+//   const dataToSave = { ...levelData, maze: cleanMaze };
   
-  downloadJSON(dataToSave, `${diff}-level-${num}.json`);
-};
+//   downloadJSON(dataToSave, `${diff}-level-${num}.json`);
+// };
 
 export default function LevelSelect({
   onPlayLevel: originalOnPlayLevel,

@@ -15,6 +15,13 @@ function getStars(points: number) {
   return '☆☆☆';
 }
 
+// Helper per formatar la tecla
+const formatKey = (key: string) => {
+  if (key === ' ') return 'Espai';
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+};
+
 // Props que el component rebrà
 type Props = {
   gameTime: number;
@@ -38,8 +45,9 @@ export default function GameHUD({
   onToggleCrashHelp
 }: Props) {
   // Obtenir configuració visual
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const screenSettings = getVisualSettings('levelScreen');
+  const { game: gameSettings } = settings;
 
   const styles: Record<string, React.CSSProperties> = {
     container: {
@@ -141,31 +149,31 @@ export default function GameHUD({
           style={styles.helpButton}
           onClick={onRevealHelp}
           disabled={revealCharges === 0}
-          title="Mostra el laberint (H) | Cost: 50 pts"
+          title={`Mostra el laberint (${formatKey(gameSettings.keyHelpReveal)}) | Cost: 50 pts`}
         >
           <Eye size={18} />
           <span>Revelar ({revealCharges})</span>
-          <kbd>H</kbd>
+          <kbd>{formatKey(gameSettings.keyHelpReveal)}</kbd>
         </button>
 
         <button
           style={{...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {})}}
           onClick={onTogglePathHelp}
-          title="Mostra el camí recorregut (J) | Cost: -2 pts/s"
+          title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -2 pts/s`}
         >
           <Footprints size={18} />
           <span>Camí</span>
-          <kbd>J</kbd>
+          <kbd>{formatKey(gameSettings.keyHelpPath)}</kbd>
         </button>
 
         <button
           style={{...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {})}}
           onClick={onToggleCrashHelp}
-          title="Mostra parets properes al xocar (K) | Cost: -1 pts/s"
+          title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
         >
           <Skull size={18} />
           <span>Ajuda Xoc</span>
-          <kbd>K</kbd>
+          <kbd>{formatKey(gameSettings.keyHelpCrash)}</kbd>
         </button>
       </div>
     </div>
