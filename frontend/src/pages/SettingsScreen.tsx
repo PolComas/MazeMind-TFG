@@ -42,7 +42,10 @@ export default function SettingsScreen({ onBack }: Props) {
 
   // Estat local per a la configuració que s'està editant
   const [currentSettings, setCurrentSettings] = useState<AppSettings>(() => JSON.parse(JSON.stringify(initialSettings)));
+  // Quina secció de l'acordió està oberta
   const [activeSection, setActiveSection] = useState<AccordionSection | null>(null);
+  // Quina secció es mostra a la previsualització (manté l'última seleccionada)
+  const [previewSection, setPreviewSection] = useState<AccordionSection | 'home'>('home');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const saveTimeoutRef = React.useRef<number | null>(null);
 
@@ -70,6 +73,7 @@ export default function SettingsScreen({ onBack }: Props) {
     //  Comprovació tecles abans de desar
     if (duplicateActions.size > 0) {
       setActiveSection('game');
+      setPreviewSection('game');
       return;
     }
 
@@ -116,7 +120,14 @@ export default function SettingsScreen({ onBack }: Props) {
 
   // Obrir/tancar secció de l'acordió
   const toggleSection = (section: AccordionSection) => {
-    setActiveSection(prev => (prev === section ? null : section));
+    setActiveSection(prev => {
+      const next = (prev === section ? null : section);
+      // Si s'està obrint la secció, fem que la previsualització canviï a aquesta.
+      if (next === section) setPreviewSection(section);
+      // Si s'està tancant (next === null) no canviem previewSection: volem mantenir
+      // l'última vista seleccionada.
+      return next;
+    });
     audio.playSlide();
   };
 
@@ -276,29 +287,31 @@ export default function SettingsScreen({ onBack }: Props) {
             <span>Vista Prèvia en Temps Real</span>
           </div>
           <div style={styles.previewContent}>
-            {activeSection === 'home' && (
+            {previewSection === 'home' && (
               <HomeScreenPreview settings={currentSettings.visuals.home} />
             )}
 
-            {activeSection === 'levelSelect' && (
+            {previewSection === 'levelSelect' && (
               <LevelSelectPreview settings={currentSettings.visuals.levelSelect} />
             )}
 
-            {activeSection === 'levelScreen' && (
+            {previewSection === 'levelScreen' && (
               <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
             )}
 
-            {activeSection !== 'home' && activeSection !== 'levelSelect' && activeSection !== 'levelScreen' && (
+            {previewSection === 'game' && (
+              <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
+            )}
+
+            {!previewSection && (
                 <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
-                  {activeSection 
-                    ? `Previsualització de "${activeSection}" (Properament)...`
-                    : "Selecciona una secció per veure la previsualització."}
+                  {"Selecciona una secció per veure la previsualització."}
                 </p>
             )}
           </div>
           {/* Llegenda */}
           <div style={styles.legend}>
-            {activeSection === 'levelScreen' ? (
+            {previewSection === 'levelScreen' || previewSection === 'game' ? (
               <LevelScreenLegend settings={currentSettings.visuals.levelScreen} />
             ) : (
               <p>Pàgina sense llegenda</p>
