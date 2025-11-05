@@ -6,6 +6,7 @@ import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
 import GameOverModal from '../components/GameOverModal';
+import PracticeCompletionModal from '../components/PracticeCompletionModal';
 import { saveLevelCompletion, type GameProgress} from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
@@ -30,6 +31,13 @@ const formatKey = (key: string) => {
   return key;
 };
 
+// Helper per als títols de dificultat
+const DIFF_LABEL: Record<string, string> = {
+  easy: 'Fàcil',
+  normal: 'Normal',
+  hard: 'Difícil',
+};
+
 export default function LevelScreen({
   level,
   onBack: onBackOriginal,
@@ -37,6 +45,7 @@ export default function LevelScreen({
   isTutorialMode,
   onCompleteTutorial,
   onLevelComplete,
+  isPracticeMode,
 }: {
   level: Level;
   onBack: () => void;
@@ -44,6 +53,7 @@ export default function LevelScreen({
   isTutorialMode: boolean;
   onCompleteTutorial: () => void;
   onLevelComplete: (newProgress: GameProgress) => void;
+  isPracticeMode: boolean;
 }) {  
   const audio = useGameAudio();
 
@@ -88,7 +98,7 @@ export default function LevelScreen({
 
   // Guardar el progrés quan es completa el nivell
   useEffect(() => {
-    if (phase === "completed" && !isTutorialMode) {
+    if (phase === "completed" && !isTutorialMode && !isPracticeMode) {
       const newProgress = saveLevelCompletion(
         level.difficulty as 'easy' | 'normal' | 'hard',
         level.number,
@@ -98,7 +108,8 @@ export default function LevelScreen({
       );
       onLevelComplete(newProgress);
     }
-  }, [phase, isTutorialMode, level.difficulty, level.number, currentStars, gameTime, points, onLevelComplete]);
+  }, [phase, isTutorialMode, level.difficulty, level.number, currentStars,
+    gameTime, points, onLevelComplete, isPracticeMode]);
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {
@@ -228,6 +239,40 @@ export default function LevelScreen({
     onBackOriginal();
   }, [onBackOriginal, audio]);
 
+  const handleRetryNewMaze = useCallback(() => {
+    audio.playFail(); 
+    audio.stopMusic();
+    originalOnRetry(); 
+  }, [originalOnRetry, audio]);
+
+  const handleBack = useCallback(() => {
+    audio.playFail(); 
+    audio.stopMusic();
+    onBackOriginal();
+  }, [onBackOriginal, audio]);
+
+
+  const handleRetrySameMaze = useCallback(() => {
+    audio.playFail();
+    audio.stopMusic();
+    
+    // Resetejem tots els estats del joc al seu valor inicial
+    setPhase("memorize");
+    setRemaining(memorizeDuration);
+    setPlayerPos({ x: level.start.x, y: level.start.y });
+    setPlayerPath([{ x: level.start.x, y: level.start.y }]);
+    setGameTime(0);
+    setPoints(POINTS_START);
+    setLives(isHardMode ? LIVES : -1);
+    setRevealCharges(3);
+    setIsPathHelpActive(false);
+    setIsCrashHelpActive(false);
+    setCrashedAt(null);
+  }, [
+    memorizeDuration, level.start.x, level.start.y, 
+    isHardMode, audio
+  ]);
+  
   // Gestió de Teclat (Moviment + Ajudes)
   useEffect(() => {
     if (phase !== "playing") return;
@@ -357,6 +402,7 @@ export default function LevelScreen({
     setPoints(POINTS_START);
   };
 
+  
   // Objecte de configuració per al MazeCanvas
   const mazeSettings = useMemo(() => ({
     path_color: screenSettings.mazePathColor || '#EEF2FF',
@@ -476,14 +522,25 @@ export default function LevelScreen({
     },
   };
 
+  const title = useMemo(() => {
+    if (isPracticeMode) {
+      // level.number === 99 mode lliure
+      if (level.number === 99) return "Mode Lliure";
+      // Per als modes "IA" i "Normal"
+      return "Mode Pràctica";
+    }
+    // Títol normal per a la campanya
+    return `Nivell ${level.number} - ${DIFF_LABEL[level.difficulty]}`;
+  }, [isPracticeMode, level.number, level.difficulty]);
+
   return (
     <div style={styles.page}>
       {/* HEADER */}
       <header style={styles.headerRow}>
         <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
-          <span aria-hidden="true">←</span> Nivells
+          <span aria-hidden="true">←</span> Tornar
         </button>
-        <h1 style={styles.title}>Nivell {level.number}</h1>
+        <h1 style={styles.title}>{title}</h1>
         <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
           <span aria-hidden="true">↻</span> Reintentar
         </button>
@@ -576,7 +633,18 @@ export default function LevelScreen({
         />
       )}
 
-      {/* NOU: Renderitzem l'overlay del tutorial */}
+      {/* Modal de Pràctica */}
+      {(phase === "completed" || phase === "failed") && isPracticeMode && (
+        <PracticeCompletionModal
+          status={phase}
+          time={gameTime}
+          onRetrySameMaze={handleRetrySameMaze}
+          onRetryNewMaze={handleRetryNewMaze}
+          onBackToSettings={handleBack}
+        />
+      )}
+
+      {/* Renderitzar l'overlay del tutorial */}
       {isTutorialMode && tutorialStep >= 0 && tutorialStep < tutorialSteps.length && (
         <TutorialOverlay 
           step={tutorialStep}

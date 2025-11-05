@@ -117,7 +117,6 @@ export default function App() {
 
   // Pantalles de Pràctica
   if (path === fullPath('/practice/free')) {
-    
     // Funció que construeix la URL i navega
     const handleStartCustomGame = (config: CustomLevelConfig) => {
       const params = new URLSearchParams();
@@ -163,11 +162,15 @@ export default function App() {
       <LevelScreen
         key={navKey} 
         level={level}
-        onBack={() => go('/levels')}
-        onRetry={() => go(path)} 
+        onBack={() => go('/practice/free')}
+        onRetry={() => {
+          const search = window.location.search;
+          go(`/level/custom${search}`);
+        }}
         isTutorialMode={false}
         onCompleteTutorial={() => {}}
         onLevelComplete={(newProgress) => setProgress(newProgress)}
+        isPracticeMode={true}
       />
     );
   }
@@ -191,6 +194,7 @@ export default function App() {
         isTutorialMode={false}
         onCompleteTutorial={() => {}}
         onLevelComplete={(newProgress) => setProgress(newProgress)}
+        isPracticeMode={true}
       />
     );
   }
@@ -214,6 +218,7 @@ export default function App() {
         isTutorialMode={false}
         onCompleteTutorial={() => {}}
         onLevelComplete={(newProgress) => setProgress(newProgress)}
+        isPracticeMode={true}
       />
     );
   }
@@ -271,6 +276,7 @@ export default function App() {
         isTutorialMode={isTutorialMode}
         onCompleteTutorial={() => setIsTutorialMode(false)}
         onLevelComplete={(newProgress) => setProgress(newProgress)}
+        isPracticeMode={false}
       />
     );
   }

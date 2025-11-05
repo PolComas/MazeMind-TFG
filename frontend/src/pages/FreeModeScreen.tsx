@@ -21,20 +21,31 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('levelSelect');
 
-  const [width, setWidth] = useState(7);
-  const [height, setHeight] = useState(7);
-  const [time, setTime] = useState(10);
+  // Mantenir les entrades com a cadenes per permetre l'edició lliure (esborrar, valors parcials)
+  const [width, setWidth] = useState('7');
+  const [height, setHeight] = useState('7');
+  const [time, setTime] = useState('10');
   const [difficulty, setDifficulty] = useState<'normal' | 'hard'>('normal');
 
   const handleStart = () => {
-    // Validem i netegem els valors
+    const parsedWidth = parseInt(width, 10);
+    const parsedHeight = parseInt(height, 10);
+    const parsedTime = parseInt(time, 10);
+
+    const widthValid = !Number.isNaN(parsedWidth) && parsedWidth >= 5 && parsedWidth <= 25;
+    const heightValid = !Number.isNaN(parsedHeight) && parsedHeight >= 5 && parsedHeight <= 25;
+    const timeValid = !Number.isNaN(parsedTime) && parsedTime >= 3 && parsedTime <= 60;
+
+    if (!widthValid || !heightValid || !timeValid) return;
+
+    // Valors vàlids i ajustats
     const config: CustomLevelConfig = {
-      width: clamp(Math.round(width), 5, 25),
-      height: clamp(Math.round(height), 5, 25),
-      time: clamp(Math.round(time), 3, 60),
+      width: clamp(parsedWidth, 5, 25),
+      height: clamp(parsedHeight, 5, 25),
+      time: clamp(parsedTime, 3, 60),
       difficulty: difficulty,
     };
-    
+
     // Passem la configuració neta al pare (App.tsx)
     onStartGame(config);
   };
@@ -69,7 +80,6 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
         color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
         fontSize: 16, width: '100%', boxSizing: 'border-box',
     },
-    // NOU: Estil pel selector
     select: {
         background: 'rgba(0,0,0,0.2)', border: `1px solid ${screenSettings.borderColor}`,
         color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
@@ -98,24 +108,81 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
         <div style={styles.form}>
           <div>
             <label style={styles.label} htmlFor="width">Amplada (Min: 5, Max: 25)</label>
-            <input 
-              style={styles.input} type="number" id="width" 
-              value={width} onChange={(e) => setWidth(Number(e.target.value))}
-            />
+            {(() => {
+              const parsed = parseInt(width, 10);
+              const valid = !Number.isNaN(parsed) && parsed >= 5 && parsed <= 25;
+              const showError = width.trim() !== '' && !valid;
+              const inputStyle = { ...styles.input, border: `1px solid ${showError ? '#ef4444' : screenSettings.borderColor}` };
+              return (
+                <>
+                  <input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-invalid={showError}
+                    aria-describedby={showError ? 'width-error' : undefined}
+                    style={inputStyle} type="text" id="width"
+                    value={width} onChange={(e) => setWidth(e.target.value)}
+                  />
+                  {showError && (
+                    <div id="width-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
+                      Amplada invàlida — ha de ser entre 5 i 25.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <div>
             <label style={styles.label} htmlFor="height">Alçada (Min: 5, Max: 25)</label>
-            <input 
-              style={styles.input} type="number" id="height" 
-              value={height} onChange={(e) => setHeight(Number(e.target.value))}
-            />
+            {(() => {
+              const parsed = parseInt(height, 10);
+              const valid = !Number.isNaN(parsed) && parsed >= 5 && parsed <= 25;
+              const showError = height.trim() !== '' && !valid;
+              const inputStyle = { ...styles.input, border: `1px solid ${showError ? '#ef4444' : screenSettings.borderColor}` };
+              return (
+                <>
+                  <input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-invalid={showError}
+                    aria-describedby={showError ? 'height-error' : undefined}
+                    style={inputStyle} type="text" id="height"
+                    value={height} onChange={(e) => setHeight(e.target.value)}
+                  />
+                  {showError && (
+                    <div id="height-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
+                      Alçada invàlida — ha de ser entre 5 i 25.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <div>
             <label style={styles.label} htmlFor="time">Temps de Memorització (Min: 3, Max: 60)</label>
-            <input 
-              style={styles.input} type="number" id="time" 
-              value={time} onChange={(e) => setTime(Number(e.target.value))}
-            />
+            {(() => {
+              const parsed = parseInt(time, 10);
+              const valid = !Number.isNaN(parsed) && parsed >= 3 && parsed <= 60;
+              const showError = time.trim() !== '' && !valid;
+              const inputStyle = { ...styles.input, border: `1px solid ${showError ? '#ef4444' : screenSettings.borderColor}` };
+              return (
+                <>
+                  <input
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-invalid={showError}
+                    aria-describedby={showError ? 'time-error' : undefined}
+                    style={inputStyle} type="text" id="time"
+                    value={time} onChange={(e) => setTime(e.target.value)}
+                  />
+                  {showError && (
+                    <div id="time-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
+                      Temps invàlid — ha de ser entre 3 i 60 segons.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
           {/* Selector de dificultat (vides) */}
           <div>
@@ -129,9 +196,26 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
             </select>
           </div>
           
-          <button style={styles.playBtn} onClick={handleStart}>
-            Jugar
-          </button>
+          {(() => {
+            const parsedWidth = parseInt(width, 10);
+            const parsedHeight = parseInt(height, 10);
+            const parsedTime = parseInt(time, 10);
+            const widthValid = !Number.isNaN(parsedWidth) && parsedWidth >= 5 && parsedWidth <= 25;
+            const heightValid = !Number.isNaN(parsedHeight) && parsedHeight >= 5 && parsedHeight <= 25;
+            const timeValid = !Number.isNaN(parsedTime) && parsedTime >= 3 && parsedTime <= 60;
+            const allValid = width.trim() !== '' && height.trim() !== '' && time.trim() !== '' && widthValid && heightValid && timeValid;
+            return (
+              <button
+                style={{ ...styles.playBtn, opacity: allValid ? 1 : 0.5, cursor: allValid ? 'pointer' : 'not-allowed' }}
+                onClick={handleStart}
+                disabled={!allValid}
+                aria-disabled={!allValid}
+                title={allValid ? 'Jugar' : 'Corregeix valors invàlids abans de jugar'}
+              >
+                Jugar
+              </button>
+            );
+          })()}
         </div>
       </div>
     </main>
