@@ -32,11 +32,6 @@ export default function SettingsScreen({ onBack }: Props) {
   // Obtenir so de joc
   const audio = useGameAudio();
 
-  const onBackWithSound = () => {
-    audio.playFail();
-    onBack();
-  }
-
   // Obtenir la configuració i la funció d'actualització del context
   const { settings: initialSettings, updateSettings: saveAndApplySettings } = useSettings();
 
@@ -48,6 +43,40 @@ export default function SettingsScreen({ onBack }: Props) {
   const [previewSection, setPreviewSection] = useState<AccordionSection | 'home'>('home');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const saveTimeoutRef = React.useRef<number | null>(null);
+
+  // Mostrar modal si l'usuari intenta sortir amb canvis no desats
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+
+  // Indicador si hi ha canvis entre l'estat original i l'estat local
+  const isDirty = useMemo(() => {
+    try {
+      return JSON.stringify(initialSettings) !== JSON.stringify(currentSettings);
+    } catch (e) {
+      return false;
+    }
+  }, [initialSettings, currentSettings]);
+
+  const onBackWithSound = () => {
+    if (isDirty) {
+      setShowUnsavedModal(true);
+      return;
+    }
+    audio.playFail();
+    onBack();
+  }
+
+  // Actions per al modal d'avís
+  const handleSaveAndExit = () => {
+    handleSave();
+    setShowUnsavedModal(false);
+    setTimeout(() => onBack(), 180);
+  };
+
+  const handleDiscardAndExit = () => {
+    setShowUnsavedModal(false);
+    setCurrentSettings(JSON.parse(JSON.stringify(initialSettings)));
+    setTimeout(() => onBack(), 60);
+  };
 
   // Funció per detectar duplicats
   const duplicateActions = useMemo(() => {
@@ -319,6 +348,22 @@ export default function SettingsScreen({ onBack }: Props) {
           </div>
         </aside>
       </div>
+
+      {/* Modal d'avís per canvis no desats */}
+      {showUnsavedModal && (
+        <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.66)', zIndex: 60 }}>
+          <div style={{ width: 'min(560px, 92%)', background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: 20, boxShadow: PALETTE.shadow }} role="dialog" aria-modal="true">
+            <h3 style={{ margin: 0, marginBottom: 8 }}>Tens canvis no desats</h3>
+            <p style={{ marginTop: 0, color: PALETTE.subtext }}>Vols desar els canvis abans de sortir?</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button onClick={() => setShowUnsavedModal(false)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>Cancel·lar</button>
+              <button onClick={handleDiscardAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>Descartar i sortir</button>
+              <button onClick={handleSaveAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: PALETTE.easyGreen, color: '#0A192F', fontWeight: 700 }}>Desar i sortir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
