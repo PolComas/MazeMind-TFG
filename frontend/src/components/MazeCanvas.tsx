@@ -165,7 +165,7 @@ export default function MazeCanvas({
       }
 
       // Jugador
-      if (phase === 'playing' && playerPos) {
+      if ((phase === 'playing' || phase === 'memorize') && playerPos) {
         const px = playerPos.x * cell + cell / 2  
         const py = playerPos.y * cell + cell / 2
         const radius = cell * 0.3

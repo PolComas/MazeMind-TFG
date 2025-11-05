@@ -5,6 +5,7 @@ import LevelScreen from './pages/LevelScreen';
 import { generateLevel, type Level } from './maze/maze_generator';
 import AuthModal from './components/AuthModal'; 
 import SettingsScreen from './pages/SettingsScreen';
+import { loadProgress, type GameProgress } from './utils/progress';
 
 // Nivells desats
 import easyLevel1 from './levels/easy-level-1.json';
@@ -26,6 +27,9 @@ export default function App() {
 
   // Estat per al mode tutorial
   const [isTutorialMode, setIsTutorialMode] = useState(false);
+
+  // L'estat del progrés
+  const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
 
   // --- Lògica de Navegació ---
   const [path, setPath] = useState(window.location.pathname);
@@ -109,6 +113,7 @@ export default function App() {
   if (path === fullPath('/levels')) {
     return (
       <LevelSelect
+        progress={progress}
         onPlayLevel={(n) => go(`/level/${n}`)}
         onBack={() => go('/')}
         onStartTutorial={startTutorial}
@@ -147,6 +152,7 @@ export default function App() {
         onRetry={() => go(`/level/${num}`)}
         isTutorialMode={isTutorialMode}
         onCompleteTutorial={() => setIsTutorialMode(false)}
+        onLevelComplete={(newProgress) => setProgress(newProgress)}
       />
     );
   }
@@ -156,6 +162,7 @@ export default function App() {
      return (
        <>
          <HomeScreen
+           progress={progress}
            user={user}
            onNavigate={() => go('/levels')}
            onUserClick={() => setShowAuthModal(true)}
@@ -178,6 +185,7 @@ export default function App() {
    return (
       <>
         <HomeScreen
+          progress={progress}
           user={user}
           onNavigate={() => go('/levels')}
           onUserClick={() => setShowAuthModal(true)}

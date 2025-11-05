@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame, CircleQuestionMarkIcon } from 'lucide-react';
-import { loadProgress, getLevelStats, type GameProgress } from '../utils/progress';
+import { getLevelStats, type GameProgress } from '../utils/progress';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import HowToPlayModal from './HowToPlayModal';
@@ -52,10 +52,12 @@ export default function LevelSelect({
   onPlayLevel: originalOnPlayLevel,
   onBack: originalOnBack,
   onStartTutorial,
+  progress,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
   onStartTutorial: () => void;
+  progress: GameProgress;
 }) {
   const audio = useGameAudio();
 
@@ -71,7 +73,7 @@ export default function LevelSelect({
   };
 
   const [difficulty, setDifficulty] = useState<Diff>('easy');
-  const [progress] = useState<GameProgress>(() => loadProgress());
+  //const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Estat per al modal "Com Jugar"
   const [showHowToPlay, setShowHowToPlay] = useState(false);

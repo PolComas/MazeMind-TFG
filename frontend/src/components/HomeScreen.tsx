@@ -4,7 +4,7 @@ import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
-import { loadProgress, getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
+import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
 
 type UserType = { id: string; email: string; };
 
@@ -14,15 +14,16 @@ type Props = {
   onUserClick: () => void;
   onLogout: () => void;
   onSettingsClick: () => void;
+  progress: GameProgress;
 };
 
-export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, onSettingsClick }: Props) {
+export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, onSettingsClick, progress }: Props) {
   // Obtenir la configuració específica per home
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
 
   // Carregar el progrés quan el component es munta
-  const [progress] = useState<GameProgress>(() => loadProgress());
+  //const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Calcular les estadístiques dinàmicament
   const playerStats = useMemo(() => {
@@ -55,6 +56,9 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
   };
 
   const audio = useGameAudio();
+
+  const [playFocused, setPlayFocused] = useState(false);
+  const [settingsFocused, setSettingsFocused] = useState(false);
 
   const onNavigateWithSound = () => {
     audio.playFail();
@@ -232,9 +236,14 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
         <nav id="actions" aria-label="Accions" style={styles.actionsCol}>
           <button
             type="button"
-            style={styles.playBtn}
+            style={{
+              ...styles.playBtn,
+              ...(playFocused ? { outline: `3px solid ${screenSettings.accentColor1}`, transform: 'translateY(-1px) scale(1.01)' } : {}),
+            }}
             onClick={onNavigateWithSound}
             onMouseEnter={() => audio.playHover()}
+            onFocus={() => { setPlayFocused(true); audio.playHover(); }}
+            onBlur={() => setPlayFocused(false)}
             aria-label="Jugar a MazeMind"
           >
             <span aria-hidden="true">▶</span> Jugar
@@ -242,9 +251,14 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
 
           <button
             type="button"
-            style={styles.secondaryBtn}
+            style={{
+              ...styles.secondaryBtn,
+              ...(settingsFocused ? { outline: `3px solid ${screenSettings.accentColor2}`, transform: 'translateY(-1px) scale(1.01)' } : {}),
+            }}
             onClick={onSettingsWithSound}
             onMouseEnter={() => audio.playHover()}
+            onFocus={() => { setSettingsFocused(true); audio.playHover(); }}
+            onBlur={() => setSettingsFocused(false)}
             aria-label="Obrir configuració"
           >
             <span aria-hidden="true">⚙</span> Configuració

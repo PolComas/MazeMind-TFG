@@ -5,7 +5,7 @@ import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
-import { saveLevelCompletion } from '../utils/progress';
+import { saveLevelCompletion, type GameProgress} from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
 
@@ -32,12 +32,14 @@ export default function LevelScreen({
   onRetry: originalOnRetry,
   isTutorialMode,
   onCompleteTutorial,
+  onLevelComplete,
 }: {
   level: Level;
   onBack: () => void;
   onRetry: () => void;
   isTutorialMode: boolean;
   onCompleteTutorial: () => void;
+  onLevelComplete: (newProgress: GameProgress) => void;
 }) {  
   const audio = useGameAudio();
 
@@ -74,15 +76,16 @@ export default function LevelScreen({
   // Guardar el progrés quan es completa el nivell
   useEffect(() => {
     if (phase === "completed" && !isTutorialMode) {
-      saveLevelCompletion(
+      const newProgress = saveLevelCompletion(
         level.difficulty as 'easy' | 'normal' | 'hard',
         level.number,
         currentStars,
         gameTime,
         points
       );
+      onLevelComplete(newProgress);
     }
-  }, [phase, isTutorialMode, level.difficulty, level.number, currentStars, gameTime, points]);
+  }, [phase, isTutorialMode, level.difficulty, level.number, currentStars, gameTime, points, onLevelComplete]);
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {
@@ -131,27 +134,48 @@ export default function LevelScreen({
     return () => clearInterval(id);
   }, [phase, level.start.x, level.start.y, audio, isTutorialMode]);
 
-  // Efectes pel Joc (Temps i Punts)
+  // Refs per les ajudes
+  const pathHelpRef = useRef(isPathHelpActive);
   useEffect(() => {
-    if (phase !== 'playing' || (isTutorialMode && tutorialStep >= 0)){
+    pathHelpRef.current = isPathHelpActive;
+  }, [isPathHelpActive]);
+
+  const crashHelpRef = useRef(isCrashHelpActive);
+  useEffect(() => {
+    crashHelpRef.current = isCrashHelpActive;
+  }, [isCrashHelpActive]);
+
+  // Efecte només per a la música
+  useEffect(() => {
+    const shouldPlayMusic = phase === 'playing' && !(isTutorialMode && tutorialStep >= 0);
+
+    if (shouldPlayMusic) {
+      audio.startMusic();
+      return () => audio.stopMusic();
+    } else {
       audio.stopMusic();
+    }
+  }, [phase, isTutorialMode, tutorialStep, audio]);
+
+  // Efecte del temporitzador
+  useEffect(() => {
+    if (phase !== 'playing' || (isTutorialMode && tutorialStep >= 0)) {
       return;
     }
 
-    audio.startMusic();
-
     const gameTick = setInterval(() => {
       setGameTime(t => t + 1);
-      let pointLoss = POINTS_LOSS_PER_SECOND;
-      if (isPathHelpActive) pointLoss += POINTS_LOSS_PATH_HELP;
-      setPoints(p => Math.max(0, p - pointLoss));
+
+      setPoints(p => {
+        let pointLoss = POINTS_LOSS_PER_SECOND;
+        if (pathHelpRef.current) pointLoss += POINTS_LOSS_PATH_HELP;
+        // if (crashHelpRef.current) pointLoss += POINTS_LOSS_CRASH_HELP;
+        return Math.max(0, p - pointLoss);
+      });
     }, 1000);
 
-    return () => {
-      clearInterval(gameTick);
-      audio.stopMusic();
-    };
-  }, [phase, isPathHelpActive, isCrashHelpActive, audio]);
+    return () => clearInterval(gameTick);
+  }, [phase, isTutorialMode, tutorialStep]);
 
   
   // Lògica d'Ajudes
