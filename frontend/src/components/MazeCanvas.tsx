@@ -6,7 +6,7 @@ type Pos = { x: number; y: number }
 // Tipus per a les props del component MazeCanvas
 type Props = {
   level: Level  
-  phase?: 'memorize' | 'playing' | 'completed'  
+  phase?: 'memorize' | 'playing' | 'completed' | 'failed'
   playerPos?: Pos
   settings?: {
     path_color?: string

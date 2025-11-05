@@ -10,7 +10,8 @@ export const PALETTE = {
   accentCyan: "#67e8f9",                     
   accentGreen: "#34D399",
   accentBlue: '#5C6CFF',
-
+  accentRed: '#FF4D4D',
+  
   // Colors per dificultats
   easyGreen: "#34D399",   
   normalYellow: "#FBBF24", 

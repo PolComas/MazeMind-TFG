@@ -5,11 +5,12 @@ import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
 import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
+import GameOverModal from '../components/GameOverModal';
 import { saveLevelCompletion, type GameProgress} from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
 
-type Phase = "memorize" | "playing" | "completed";
+type Phase = "memorize" | "playing" | "completed" | "failed";
 
 // Constants del Joc
 const POINTS_START = 1000;
@@ -19,6 +20,8 @@ const POINTS_LOSS_CRASH_HELP = 20;
 const POINTS_COST_REVEAL = 50;
 const REVEAL_DURATION_MS = 500; // 0.5 segons
 const LIVES = 3;
+
+type Pos = { x: number; y: number };
 
 // Helper per formatar tecles
 const formatKey = (key: string) => {
@@ -55,6 +58,8 @@ export default function LevelScreen({
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
   const total = useRef(memorizeDuration);
   const [playerPos, setPlayerPos] = useState({ x: level.start.x, y: level.start.y });
+
+  const [playerPath, setPlayerPath] = useState<Pos[]>([{ x: level.start.x, y: level.start.y }]);
 
   // Estat per al pas del tutorial
   const [tutorialStep, setTutorialStep] = useState(isTutorialMode ? 0 : -1);
@@ -286,11 +291,12 @@ export default function LevelScreen({
 
           if (newLives <= 0) {
             setLives(0);
-            console.warn("GAME OVER - Sense vides");
-            onRetryWithSound(); 
+            audio.stopMusic();
+            setPhase("failed");
           } else {
             setLives(newLives);
             setPlayerPos({ x: level.start.x, y: level.start.y });
+            setPlayerPath([{ x: level.start.x, y: level.start.y }]);
           }
           
           return; 
@@ -309,6 +315,7 @@ export default function LevelScreen({
       // Actualitzar la posició del jugador
       if (newX >= 0 && newX < level.width && newY >= 0 && newY < level.height) {
         setPlayerPos({ x: newX, y: newY });
+        setPlayerPath(prev => [...prev, { x: newX, y: newY }]);
       }
 
       // Lògica de Victòria
@@ -321,7 +328,9 @@ export default function LevelScreen({
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, settings, isHardMode, lives, onRetryWithSound]);
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, 
+    onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, 
+    settings, isHardMode, lives, onRetryWithSound, onBackWithSound]);
 
   // Funcions per controlar el tutorial
   const handleNextTutorialStep = () => {
@@ -523,6 +532,7 @@ export default function LevelScreen({
               settings={mazeSettings}
               showPlayerPath={isPathHelpActive}
               crashPosition={crashedAt}
+              forcePathHistory={playerPath}
             />
           </div>
         </section>
@@ -554,6 +564,14 @@ export default function LevelScreen({
           time={gameTime}
           points={points}
           onRetry={onRetryWithSound} 
+          onBack={onBackWithSound}
+        />
+      )}
+
+      {/* Modal de Game Over */}
+      {phase === "failed" && (
+        <GameOverModal
+          onRetry={onRetryWithSound}
           onBack={onBackWithSound}
         />
       )}
