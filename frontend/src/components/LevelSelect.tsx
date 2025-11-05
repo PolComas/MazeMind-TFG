@@ -6,6 +6,7 @@ import { getLevelStats, type GameProgress } from '../utils/progress';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import HowToPlayModal from './HowToPlayModal';
+import PracticeModeModal from './PracticeModeModal';
 
 // TEMPORAL: Funcions per generar i descarregar nivells de prova
 //import { downloadJSON } from '../maze/save_maze';
@@ -55,6 +56,9 @@ export default function LevelSelect({
   progress,
   selectedDifficulty,
   onDifficultyChange,
+  onStartPracticeIA,
+  onStartPracticeNormal,
+  onStartPracticeFree,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
@@ -62,6 +66,9 @@ export default function LevelSelect({
   progress: GameProgress;
   selectedDifficulty: Diff;
   onDifficultyChange: (d: Diff) => void;
+  onStartPracticeIA: () => void;
+  onStartPracticeNormal: () => void;
+  onStartPracticeFree: () => void;
 }) {
   const audio = useGameAudio();
 
@@ -82,6 +89,7 @@ export default function LevelSelect({
 
   // Estat per al modal "Com Jugar"
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   // Indicador lliscant
   const diffBarRef = useRef<HTMLDivElement>(null);
@@ -126,6 +134,7 @@ export default function LevelSelect({
 
   const onPracticeClick = useCallback(() => {
     audio.playFail(); 
+    setShowPracticeModal(true);
   }, [audio]);
 
   const styles: Record<string, React.CSSProperties> = {
@@ -286,7 +295,7 @@ export default function LevelSelect({
 
             <div style={{ width: 12 }} />
 
-            {/* NOU: Botó "Com Jugar" */}
+            {/* Botó "Com Jugar" */}
             <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={() => { audio.playBtnSound(); setShowHowToPlay(true); }}>
               <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> Com Jugar
             </button>
@@ -306,6 +315,15 @@ export default function LevelSelect({
         open={showHowToPlay}
         onClose={() => setShowHowToPlay(false)}
         onStartTutorial={onStartTutorial}
+      />
+
+      {/* Renderitzar el modal de Pràctica */}
+      <PracticeModeModal
+        open={showPracticeModal}
+        onClose={() => setShowPracticeModal(false)}
+        onStartIA={onStartPracticeIA}
+        onStartNormal={onStartPracticeNormal}
+        onStartFree={onStartPracticeFree}
       />
     </>
   );  

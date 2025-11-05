@@ -7,6 +7,7 @@ import AuthModal from './components/AuthModal';
 import SettingsScreen from './pages/SettingsScreen';
 import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
+import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 
 // Nivells desats
 import easyLevel1 from './levels/easy-level-1.json';
@@ -114,6 +115,109 @@ export default function App() {
     return <SettingsScreen onBack={() => go('/')} />;
   }
 
+  // Pantalles de Pràctica
+  if (path === fullPath('/practice/free')) {
+    
+    // Funció que construeix la URL i navega
+    const handleStartCustomGame = (config: CustomLevelConfig) => {
+      const params = new URLSearchParams();
+      params.append('w', String(config.width));
+      params.append('h', String(config.height));
+      params.append('t', String(config.time));
+      params.append('d', config.difficulty);
+      
+      // Naveguem a la nova URL personalitzada
+      go(`/level/custom?${params.toString()}`);
+    };
+
+    return (
+      <FreeModeScreen
+        onBack={() => go('/levels')}
+        onStartGame={handleStartCustomGame}
+      />
+    );
+  }
+
+  // Llegir la URL del Mode Lliure
+  const customLevelPath = fullPath('/level/custom');
+  if (path.startsWith(customLevelPath)) {
+    
+    // Paràmetres de la URL actual
+    const params = new URLSearchParams(window.location.search);
+    const w = parseInt(params.get('w') || '7');
+    const h = parseInt(params.get('h') || '7');
+    const t = parseInt(params.get('t') || '10');
+    const d = (params.get('d') || 'normal') as 'normal' | 'hard';
+
+    // Generar un nivell 100% personalitzat
+    const level = generateLevel({
+      levelNumber: 99,
+      difficulty: d,
+      width: w,
+      height: h,
+      memorizeTime: t,
+      stars: [60, 45, 30],
+    });
+
+    return (
+      <LevelScreen
+        key={navKey} 
+        level={level}
+        onBack={() => go('/levels')}
+        onRetry={() => go(path)} 
+        isTutorialMode={false}
+        onCompleteTutorial={() => {}}
+        onLevelComplete={(newProgress) => setProgress(newProgress)}
+      />
+    );
+  }
+
+  // Pràctica Normal
+  if (path === fullPath('/practice/normal')) {
+    const level = generateLevel({
+      levelNumber: 1,
+      difficulty: 'normal',
+      width: 10,
+      height: 10,
+      memorizeTime: 8,
+      stars: [60, 45, 30],
+    });
+    return (
+      <LevelScreen
+        key={navKey}
+        level={level}
+        onBack={() => go('/levels')}
+        onRetry={() => go('/practice/normal')}
+        isTutorialMode={false}
+        onCompleteTutorial={() => {}}
+        onLevelComplete={(newProgress) => setProgress(newProgress)}
+      />
+    );
+  }
+
+  // Pràctica IA
+  if (path === fullPath('/practice/ia')) {
+    const level = generateLevel({
+      levelNumber: 1,
+      difficulty: 'easy',
+      width: 7,
+      height: 7,
+      memorizeTime: 12,
+      stars: [60, 45, 30],
+    });
+    return (
+      <LevelScreen
+        key={navKey}
+        level={level}
+        onBack={() => go('/levels')}
+        onRetry={() => go('/practice/ia')}
+        isTutorialMode={false}
+        onCompleteTutorial={() => {}}
+        onLevelComplete={(newProgress) => setProgress(newProgress)}
+      />
+    );
+  }
+
   // Pantalla de Selecció de Nivell
   if (path === fullPath('/levels')) {
     return (
@@ -124,6 +228,9 @@ export default function App() {
         onStartTutorial={startTutorial}
         selectedDifficulty={selectedDifficulty}
         onDifficultyChange={setSelectedDifficulty}
+        onStartPracticeIA={() => go('/practice/ia')}
+        onStartPracticeNormal={() => go('/practice/normal')}
+        onStartPracticeFree={() => go('/practice/free')}
       />
     );
   }

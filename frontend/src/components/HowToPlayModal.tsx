@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull, Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull, Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, TrendingUp } from 'lucide-react';
 import { PALETTE } from './palette';
 import { useSettings } from '../context/SettingsContext';
 
@@ -249,18 +249,30 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
                 <div style={styles.stepItem}>
                     <Dumbbell size={20} color={PALETTE.easyGreen} style={{flexShrink: 0}}/>
                     <div>
-                        <h4 style={{...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}>Pràctica</h4>
+                        <h4 style={{...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}>Pràctica IA</h4>
                         <p style={styles.cardText}>Entrena sense pressió. Juga laberints aleatoris adaptats al teu nivell a partir de la IA.</p>
                     </div>
                 </div>
              </div>
+
+             {/* Pràctica Normal/Score */}
+             <div style={styles.card}>
+                <div style={styles.stepItem}>
+                    <TrendingUp size={20} color={PALETTE.normalYellow} style={{flexShrink: 0}}/>
+                    <div>
+                        <h4 style={{...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}>Pràctica Score</h4>
+                        <p style={styles.cardText}>Juga laberints aleatoris que van pujant de dificultat i consegueix la puntuació més alta (mida, temps).</p>
+                    </div>
+                </div>
+             </div>
+
              {/* Mode Lliure */}
              <div style={styles.card}>
                 <div style={styles.stepItem}>
                     <Edit size={20} color={PALETTE.normalYellow} style={{flexShrink: 0}}/>
                     <div>
                         <h4 style={{...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0}}>Lliure / Creador</h4>
-                        <p style={styles.cardText}>Defineix la mida del laberint, el temps de memorització i juga al teu gust.</p>
+                        <p style={styles.cardText}>Defineix la mida del laberint, el temps de memorització, mode de dificultat i juga al teu gust.</p>
                     </div>
                 </div>
              </div>
