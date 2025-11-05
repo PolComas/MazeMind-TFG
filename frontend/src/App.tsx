@@ -6,6 +6,7 @@ import { generateLevel, type Level } from './maze/maze_generator';
 import AuthModal from './components/AuthModal'; 
 import SettingsScreen from './pages/SettingsScreen';
 import { loadProgress, type GameProgress } from './utils/progress';
+import type { Diff } from './maze/maze_generator';
 
 // Nivells desats
 import easyLevel1 from './levels/easy-level-1.json';
@@ -34,6 +35,10 @@ export default function App() {
   // --- Lògica de Navegació ---
   const [path, setPath] = useState(window.location.pathname);
   const [navKey, setNavKey] = useState(0);
+
+  // Estat per a la dificultat seleccionada
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Diff>('easy');
+
   useEffect(() => {
     const onPop = () => setPath(window.location.pathname);
     window.addEventListener('popstate', onPop);
@@ -117,6 +122,8 @@ export default function App() {
         onPlayLevel={(n, diff) => go(`/level/${diff}/${n}`)}
         onBack={() => go('/')}
         onStartTutorial={startTutorial}
+        selectedDifficulty={selectedDifficulty}
+        onDifficultyChange={setSelectedDifficulty}
       />
     );
   }

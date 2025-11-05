@@ -53,11 +53,15 @@ export default function LevelSelect({
   onBack: originalOnBack,
   onStartTutorial,
   progress,
+  selectedDifficulty,
+  onDifficultyChange,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
   onStartTutorial: () => void;
   progress: GameProgress;
+  selectedDifficulty: Diff;
+  onDifficultyChange: (d: Diff) => void;
 }) {
   const audio = useGameAudio();
 
@@ -72,7 +76,8 @@ export default function LevelSelect({
     hard: screenSettings.hardColor,
   };
 
-  const [difficulty, setDifficulty] = useState<Diff>('easy');
+  const difficulty = selectedDifficulty;
+  //const [difficulty, setDifficulty] = useState<Diff>('easy');
   //const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Estat per al modal "Com Jugar"
@@ -239,7 +244,7 @@ export default function LevelSelect({
               <button
                 key={d}
                 role="tab" 
-                onClick={() => { audio.playSlide(); setDifficulty(d); }}
+                onClick={() => { audio.playSlide(); onDifficultyChange(d); }}
                 aria-selected={difficulty === d} 
                 style={{
                   ...styles.diffTab, 
