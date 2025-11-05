@@ -18,6 +18,7 @@ const POINTS_LOSS_PATH_HELP = 2; // Cost extra per segon
 const POINTS_LOSS_CRASH_HELP = 20; 
 const POINTS_COST_REVEAL = 50;
 const REVEAL_DURATION_MS = 500; // 0.5 segons
+const LIVES = 3;
 
 // Helper per formatar tecles
 const formatKey = (key: string) => {
@@ -61,6 +62,13 @@ export default function LevelScreen({
   // Estats per al Joc
   const [gameTime, setGameTime] = useState(0);
   const [points, setPoints] = useState(POINTS_START);
+
+  // Comprovar si estem en mode difícil
+  const isHardMode = level.difficulty === 'hard';
+
+  // Estat per a les vides
+  // -1 --> les vides no estan actives (no és mode difícil)
+  const [lives, setLives] = useState(isHardMode ? LIVES : -1);
 
   // Sorolls Estrella
   const getStars = (p: number) => {
@@ -223,34 +231,71 @@ export default function LevelScreen({
     const { game: gameSettings } = settings;
 
     const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || (target as any).isContentEditable)) return;
+
       if (showReveal) return;
       setCrashedAt(null);
 
       const key = e.key.toLowerCase();
 
       // Ajudes
-      if (e.key === gameSettings.keyHelpReveal) { onRevealHelp(); return; }
-      if (key === gameSettings.keyHelpPath) { onTogglePathHelp(); return; }
-      if (key === gameSettings.keyHelpCrash) { onToggleCrashHelp(); return; }
+      if (e.key === gameSettings.keyHelpReveal || key === (gameSettings.keyHelpReveal || '').toLowerCase()) {
+        e.preventDefault();
+        onRevealHelp();
+        return;
+      }
+      if (key === (gameSettings.keyHelpPath || '').toLowerCase()) {
+        e.preventDefault();
+        onTogglePathHelp();
+        return;
+      }
+      if (key === (gameSettings.keyHelpCrash || '').toLowerCase()) {
+        e.preventDefault();
+        onToggleCrashHelp();
+        return;
+      }
 
       // Moviment
       const { x, y } = playerPos;
       let newX = x, newY = y;
       let didCrash = false;
 
-      if (e.key === 'ArrowUp' || key === gameSettings.keyMoveUp) {
+      if (e.key === 'ArrowUp' || key === (gameSettings.keyMoveUp || '').toLowerCase()) {
+        e.preventDefault();
         if (level.maze[y][x].walls.top) { didCrash = true; } else { newY -= 1; }
-      } else if (e.key === 'ArrowDown' || key === gameSettings.keyMoveDown) {
+      } else if (e.key === 'ArrowDown' || key === (gameSettings.keyMoveDown || '').toLowerCase()) {
+        e.preventDefault();
         if (level.maze[y][x].walls.bottom) { didCrash = true; } else { newY += 1; }
-      } else if (e.key === 'ArrowLeft' || key === gameSettings.keyMoveLeft) {
+      } else if (e.key === 'ArrowLeft' || key === (gameSettings.keyMoveLeft || '').toLowerCase()) {
+        e.preventDefault();
         if (level.maze[y][x].walls.left) { didCrash = true; } else { newX -= 1; }
-      } else if (e.key === 'ArrowRight' || key === gameSettings.keyMoveRight) {
+      } else if (e.key === 'ArrowRight' || key === (gameSettings.keyMoveRight || '').toLowerCase()) {
+        e.preventDefault();
         if (level.maze[y][x].walls.right) { didCrash = true; } else { newX += 1; }
       } else {
         return;
       }
 
       if (didCrash) {
+        // Lògica de Vides
+        if (isHardMode) {
+          audio.playCrash();
+
+          const newLives = lives - 1;
+
+          if (newLives <= 0) {
+            setLives(0);
+            console.warn("GAME OVER - Sense vides");
+            onRetryWithSound(); 
+          } else {
+            setLives(newLives);
+            setPlayerPos({ x: level.start.x, y: level.start.y });
+          }
+          
+          return; 
+        }
+
         if (isCrashHelpActive) {
           // Mostrar l'ajuda de xoc
           audio.playCrash();
@@ -276,7 +321,7 @@ export default function LevelScreen({
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, settings]);
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, settings, isHardMode, lives, onRetryWithSound]);
 
   // Funcions per controlar el tutorial
   const handleNextTutorialStep = () => {
@@ -461,6 +506,8 @@ export default function LevelScreen({
             onRevealHelp={onRevealHelp}
             onTogglePathHelp={onTogglePathHelp}
             onToggleCrashHelp={onToggleCrashHelp}
+            lives={lives}
+            difficulty={level.difficulty as 'easy' | 'normal' | 'hard'}
           />
         )}
 

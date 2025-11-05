@@ -58,7 +58,7 @@ export default function App() {
   // Funció per iniciar el tutorial
   const startTutorial = () => {
     setIsTutorialMode(true);
-    const tutorialLevelPath = fullPath('/level/1');
+    const tutorialLevelPath = fullPath('/level/easy/1');
     window.history.pushState({}, '', tutorialLevelPath);
     setPath(tutorialLevelPath);
     setNavKey(k => k + 1);
@@ -114,7 +114,7 @@ export default function App() {
     return (
       <LevelSelect
         progress={progress}
-        onPlayLevel={(n) => go(`/level/${n}`)}
+        onPlayLevel={(n, diff) => go(`/level/${diff}/${n}`)}
         onBack={() => go('/')}
         onStartTutorial={startTutorial}
       />
@@ -122,13 +122,17 @@ export default function App() {
   }
 
   // --- Pantalla de Nivell Individual ---
-  const levelBasePath = fullPath('/level/');
-  if (path.startsWith(levelBasePath)) {
-    // Extraiem el número de nivell de la URL completa
-    const numStr = path.substring(levelBasePath.length);
+  const levelPathRegex = new RegExp(`^${fullPath('/level')}\/([a-z]+)\/(\\d+)$`);
+  const match = path.match(levelPathRegex);
+
+  if (match) {
+    // match[1] és la dificultat (ex: "hard")
+    // match[2] és el número (ex: "5")
+    const difficulty = match[1] as 'easy' | 'normal' | 'hard';
+    const numStr = match[2];
     const num = Number(numStr || 1);
     
-    const levelKey = `easy-${num}`; 
+    const levelKey = `${difficulty}-${num}`; 
     let level: Level;
     
     // Carregar nivell desat o generar-ne un de nou
@@ -137,7 +141,7 @@ export default function App() {
     } else {
       level = generateLevel({
         levelNumber: num,
-        difficulty: 'easy',
+        difficulty: difficulty, 
         width: 7,
         height: 7,
         memorizeTime: 10,
@@ -149,7 +153,7 @@ export default function App() {
         key={navKey} 
         level={level}
         onBack={() => go('/levels')}
-        onRetry={() => go(`/level/${num}`)}
+        onRetry={() => go(`/level/${difficulty}/${num}`)}
         isTutorialMode={isTutorialMode}
         onCompleteTutorial={() => setIsTutorialMode(false)}
         onLevelComplete={(newProgress) => setProgress(newProgress)}

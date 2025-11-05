@@ -32,6 +32,8 @@ type Props = {
   onRevealHelp: () => void;
   onTogglePathHelp: () => void;
   onToggleCrashHelp: () => void;
+  lives: number;
+  difficulty: 'easy' | 'normal' | 'hard';
 };
 
 export default function GameHUD({
@@ -42,7 +44,9 @@ export default function GameHUD({
   isCrashHelpActive,
   onRevealHelp,
   onTogglePathHelp,
-  onToggleCrashHelp
+  onToggleCrashHelp,
+  lives,
+  difficulty
 }: Props) {
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
@@ -125,6 +129,12 @@ export default function GameHUD({
       color: '#000',
       borderColor: 'transparent',
     },
+    livesText: {
+      fontSize: 'clamp(20px, 4vw, 28px)',
+      fontWeight: 700,
+      lineHeight: 1,
+      letterSpacing: '0.1em',
+    },
   };
   return (
     <div style={styles.container}>
@@ -133,6 +143,17 @@ export default function GameHUD({
         <span style={styles.label}>⏱ Temps</span>
         <span style={styles.valueLarge}>{formatTime(gameTime)}</span>
       </div>
+
+      {/* Card de Vides (només en difícil) */}
+      {difficulty === 'hard' && (
+        <div style={styles.card}>
+          <span style={styles.label}>❤️ Vides</span>
+          <span style={styles.livesText} aria-label={`${lives} vides restants`}>
+            {'❤️'.repeat(lives)}
+            {'🖤'.repeat(Math.max(0, 3 - lives))}
+          </span>
+        </div>
+      )}
 
       {/* CARD 2: OBJECTIU */}
       <div style={styles.card}>
