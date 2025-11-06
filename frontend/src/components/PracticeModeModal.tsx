@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X, BrainCircuit, TrendingUp, Edit } from 'lucide-react';
-import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
 import { loadPracticeBestScore } from '../utils/practiceProgress';
+import { useSettings } from '../context/SettingsContext';
+import type { VisualSettings } from '../utils/settings';
+import { applyAlpha } from '../utils/color';
 
 type Props = {
   open: boolean;
@@ -12,46 +14,55 @@ type Props = {
   onStartFree: () => void;
 };
 
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(10, 25, 47, 0.8)',
-    backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center',
-    zIndex: 60, padding: '16px',
-  },
-  modalContent: {
-    background: 'rgba(30, 41, 59, 1)', color: PALETTE.text,
-    borderRadius: '16px', border: `1px solid ${PALETTE.borderColor}`,
-    maxWidth: '500px', width: '100%',
-    boxShadow: PALETTE.shadow, position: 'relative',
-  },
-  header: {
-    padding: '16px 24px', borderBottom: `1px solid ${PALETTE.borderColor}`,
-    display: 'flex', alignItems: 'center', gap: '12px',
-  },
-  title: { fontSize: '1.5rem', fontWeight: 700, margin: 0 },
-  closeButton: {
-    position: 'absolute', top: '12px', right: '12px',
-    background: 'transparent', border: 'none', color: PALETTE.subtext,
-    cursor: 'pointer', padding: '4px', borderRadius: '50%',
-  },
-  body: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' },
-  card: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: `1px solid ${PALETTE.borderColor}`,
-    borderRadius: '12px', padding: '20px',
-    display: 'flex', alignItems: 'center', gap: '16px',
-    cursor: 'pointer', transition: 'all 0.2s ease',
-  },
-  cardIcon: {
-    width: '48px', height: '48px', borderRadius: '50%',
-    display: 'grid', placeItems: 'center', flexShrink: 0,
-  },
-  cardTitle: { fontWeight: 600, fontSize: '1.1rem', margin: 0 },
-  cardText: { fontSize: '0.9rem', color: PALETTE.subtext, margin: '4px 0 0 0' },
+const buildStyles = (visuals: VisualSettings): Record<string, React.CSSProperties> => {
+  const overlayColor = applyAlpha(visuals.textColor, 0.7);
+  const cardBackground = applyAlpha(visuals.textColor, 0.06);
+
+  return {
+    overlay: {
+      position: 'fixed', inset: 0, background: overlayColor,
+      backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center',
+      zIndex: 60, padding: '16px',
+    },
+    modalContent: {
+      background: visuals.surfaceColor, color: visuals.textColor,
+      borderRadius: '16px', border: `1px solid ${visuals.borderColor}`,
+      maxWidth: '500px', width: '100%',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.45)', position: 'relative',
+    },
+    header: {
+      padding: '16px 24px', borderBottom: `1px solid ${visuals.borderColor}`,
+      display: 'flex', alignItems: 'center', gap: '12px',
+    },
+    title: { fontSize: '1.5rem', fontWeight: 700, margin: 0 },
+    closeButton: {
+      position: 'absolute', top: '12px', right: '12px',
+      background: 'transparent', border: 'none', color: visuals.subtextColor,
+      cursor: 'pointer', padding: '4px', borderRadius: '50%',
+    },
+    body: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' },
+    card: {
+      background: cardBackground,
+      border: `1px solid ${visuals.borderColor}`,
+      borderRadius: '12px', padding: '20px',
+      display: 'flex', alignItems: 'center', gap: '16px',
+      cursor: 'pointer', transition: 'all 0.2s ease',
+    },
+    cardIcon: {
+      width: '48px', height: '48px', borderRadius: '50%',
+      display: 'grid', placeItems: 'center', flexShrink: 0,
+    },
+    cardTitle: { fontWeight: 600, fontSize: '1.1rem', margin: 0 },
+    cardText: { fontSize: '0.9rem', color: visuals.subtextColor, margin: '4px 0 0 0' },
+    bestScoreText: { fontSize: '0.8rem', opacity: 0.9 },
+  };
 };
 
 export default function PracticeModeModal({ open, onClose, onStartIA, onStartNormal, onStartFree }: Props) {
   const audio = useGameAudio();
+  const { getVisualSettings } = useSettings();
+  const visualSettings = getVisualSettings('levelSelect');
+  const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
   const [bestScore, setBestScore] = useState(0);
 
@@ -81,26 +92,26 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
         <div style={styles.body}>
           {/* Opció 1: Pràctica IA */}
           <div style={styles.card} onClick={() => handleSelect(onStartIA)} onMouseEnter={() => audio.playHover()}>
-            <div style={{...styles.cardIcon, background: PALETTE.accentViolet + '30'}}>
-              <BrainCircuit size={24} color={PALETTE.accentViolet} />
+            <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.accentColor2, 0.2) }}>
+              <BrainCircuit size={24} color={visualSettings.accentColor2} />
             </div>
             <div>
               <h3 style={styles.cardTitle}>Pràctica IA</h3>
               <p style={styles.cardText}>Juga laberints aleatoris adaptats al teu nivell.</p>
             </div>
           </div>
-          
+
           {/* Opció 2: Pràctica Normal/Score */}
           <div style={styles.card} onClick={() => handleSelect(onStartNormal)} onMouseEnter={() => audio.playHover()}>
-            <div style={{...styles.cardIcon, background: PALETTE.normalYellow + '30'}}>
-              <TrendingUp size={24} color={PALETTE.normalYellow} />
+            <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.normalColor, 0.2) }}>
+              <TrendingUp size={24} color={visualSettings.normalColor} />
             </div>
             <div>
               <h3 style={styles.cardTitle}>Pràctica Score</h3>
               <p style={styles.cardText}>
                 Juga laberints aleatoris que pugen de dificultat.
                 <br />
-                <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                <span style={styles.bestScoreText}>
                   Millor puntuació: <strong>{Math.round(bestScore)}</strong>
                 </span>
               </p>
@@ -109,8 +120,8 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
 
           {/* Opció 3: Mode Lliure */}
           <div style={styles.card} onClick={() => handleSelect(onStartFree)} onMouseEnter={() => audio.playHover()}>
-            <div style={{...styles.cardIcon, background: PALETTE.easyGreen + '30'}}>
-              <Edit size={24} color={PALETTE.easyGreen} />
+            <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.easyColor, 0.2) }}>
+              <Edit size={24} color={visualSettings.easyColor} />
             </div>
             <div>
               <h3 style={styles.cardTitle}>Mode Lliure / Creació</h3>
