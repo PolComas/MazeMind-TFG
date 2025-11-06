@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import HomeScreen from './components/HomeScreen';
 import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
@@ -10,6 +10,41 @@ import type { Diff } from './maze/maze_generator';
 import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 import PracticeNormalScreen from './pages/PracticeNormalScreen';
 
+const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
+
+const normalizeBasePath = (value: string) => {
+  if (!value || value === '/') {
+    return '';
+  }
+  const trimmed = value.endsWith('/') ? value.slice(0, -1) : value;
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+};
+
+const parsePositiveIntParam = (value: string | null, fallback: number) => {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const normalizeRelativePath = (value: string) => {
+  if (!value) {
+    return '/';
+  }
+  const [pathname, search] = value.split('?');
+  const trimmedPath = pathname ? pathname.replace(/\/+/g, '/') : '/';
+  const cleanedPath = trimmedPath.endsWith('/') && trimmedPath !== '/' ? trimmedPath.slice(0, -1) : trimmedPath;
+  const withLeadingSlash = ensureLeadingSlash(cleanedPath);
+  return search ? `${withLeadingSlash}?${search}` : withLeadingSlash;
+};
+
+const getBrowserPath = () => {
+  if (typeof window === 'undefined') {
+    return '/';
+  }
+  const { pathname, search } = window.location;
+  const pathWithSearch = `${pathname}${search}`;
+  return pathWithSearch || '/';
+};
+
 // Nivells desats
 import easyLevel1 from './levels/easy-level-1.json';
 
@@ -19,13 +54,25 @@ const savedLevels: Record<string, Level> = {
 
 type User = {
   id: string;
-  email: string; 
+  email: string;
 };
 
 const base = import.meta.env.BASE_URL || '/';
+const normalizedBase = normalizeBasePath(base);
+
+type Route =
+  | { type: 'settings' }
+  | { type: 'practice-free' }
+  | { type: 'practice-normal' }
+  | { type: 'practice-ia' }
+  | { type: 'levels' }
+  | { type: 'level'; difficulty: Diff; number: number }
+  | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'> }
+  | { type: 'home' }
+  | { type: 'unknown'; path: string };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null); 
+  const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Estat per al mode tutorial
@@ -35,40 +82,69 @@ export default function App() {
   const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
 
   // --- Lògica de Navegació ---
-  const [path, setPath] = useState(window.location.pathname);
+  const [path, setPath] = useState<string>(() => getBrowserPath());
   const [navKey, setNavKey] = useState(0);
 
   // Estat per a la dificultat seleccionada
   const [selectedDifficulty, setSelectedDifficulty] = useState<Diff>('easy');
 
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const onPop = () => {
+      setNavKey(0);
+      setPath(getBrowserPath());
+    };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
-  const go = (p: string) => {
-    // Qualsevol navegació normal desactiva el mode tutorial
-    setIsTutorialMode(false);
 
-    // Construïm la ruta per a pushState i per a l'estat intern
-    const targetPath = base === '/' ? p : `${base.replace(/\/$/, '')}${p}`;
-    window.history.pushState({}, '', targetPath);
+  const toAbsolutePath = useCallback((relative: string) => {
+    const relativeWithSlash = ensureLeadingSlash(relative);
+    return normalizedBase ? `${normalizedBase}${relativeWithSlash}` : relativeWithSlash;
+  }, []);
 
-    if (targetPath === path) {
-      setNavKey((k) => k + 1);
-    } else {
-      setPath(targetPath);
-      setNavKey(0);
+  const toRelativePath = useCallback((absolute: string) => {
+    if (!absolute) {
+      return '/';
     }
-  };
+    if (!normalizedBase) {
+      return normalizeRelativePath(absolute);
+    }
+    if (absolute.startsWith(normalizedBase)) {
+      const remainder = absolute.slice(normalizedBase.length) || '/';
+      return normalizeRelativePath(remainder);
+    }
+    return normalizeRelativePath(absolute);
+  }, []);
+
+  const relativePath = useMemo(() => toRelativePath(path), [path, toRelativePath]);
+
+  const go = useCallback((relative: string, options?: { preserveTutorial?: boolean }) => {
+    if (!options?.preserveTutorial) {
+      setIsTutorialMode(false);
+    }
+
+    const targetPath = toAbsolutePath(relative);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', targetPath);
+    }
+
+    setPath((currentPath) => {
+      if (currentPath === targetPath) {
+        setNavKey((k) => k + 1);
+        return currentPath;
+      }
+      setNavKey(0);
+      return targetPath;
+    });
+  }, [toAbsolutePath]);
 
   // Funció per iniciar el tutorial
   const startTutorial = () => {
     setIsTutorialMode(true);
-    const tutorialLevelPath = fullPath('/level/easy/1');
-    window.history.pushState({}, '', tutorialLevelPath);
-    setPath(tutorialLevelPath);
-    setNavKey(k => k + 1);
+    go('/level/easy/1', { preserveTutorial: true });
   };
 
   useEffect(() => {
@@ -105,211 +181,210 @@ export default function App() {
     console.log("Usuari desconnectat");
   };
 
-  // Helper per construir rutes completes
-  const fullPath = (relativePath: string) => {
-    if (base === '/') return relativePath;
-    return `${base.replace(/\/$/, '')}${relativePath}`;
-  }
+  const route = useMemo<Route>(() => {
+    if (relativePath === '/settings') {
+      return { type: 'settings' };
+    }
 
-  // Pantalla de Configuració
-  if (path === fullPath('/settings')) {
-    return <SettingsScreen onBack={() => go('/')} />;
-  }
+    if (relativePath === '/practice/free') {
+      return { type: 'practice-free' };
+    }
 
-  // Pantalles de Pràctica
-  if (path === fullPath('/practice/free')) {
-    // Funció que construeix la URL i navega
-    const handleStartCustomGame = (config: CustomLevelConfig) => {
-      const params = new URLSearchParams();
-      params.append('w', String(config.width));
-      params.append('h', String(config.height));
-      params.append('t', String(config.time));
-      params.append('d', config.difficulty);
-      
-      // Naveguem a la nova URL personalitzada
-      go(`/level/custom?${params.toString()}`);
-    };
+    if (relativePath === '/practice/normal') {
+      return { type: 'practice-normal' };
+    }
 
-    return (
-      <FreeModeScreen
-        onBack={() => go('/levels')}
-        onStartGame={handleStartCustomGame}
-      />
-    );
-  }
+    if (relativePath === '/practice/ia') {
+      return { type: 'practice-ia' };
+    }
 
-  // Llegir la URL del Mode Lliure
-  const customLevelPath = fullPath('/level/custom');
-  if (path.startsWith(customLevelPath)) {
-    
-    // Paràmetres de la URL actual
-    const params = new URLSearchParams(window.location.search);
-    const w = parseInt(params.get('w') || '7');
-    const h = parseInt(params.get('h') || '7');
-    const t = parseInt(params.get('t') || '10');
-    const d = (params.get('d') || 'normal') as 'normal' | 'hard';
+    if (relativePath === '/levels') {
+      return { type: 'levels' };
+    }
 
-    // Generar un nivell 100% personalitzat
-    const level = generateLevel({
-      levelNumber: 99,
-      difficulty: d,
-      width: w,
-      height: h,
-      memorizeTime: t,
-      stars: [60, 45, 30],
-    });
+    if (relativePath.startsWith('/level/custom')) {
+      const [, search = ''] = relativePath.split('?');
+      const params = new URLSearchParams(search);
 
-    return (
-      <LevelScreen
-        key={navKey} 
-        level={level}
-        onBack={() => go('/practice/free')}
-        onRetry={() => {
-          const search = window.location.search;
-          go(`/level/custom${search}`);
-        }}
-        isTutorialMode={false}
-        onCompleteTutorial={() => {}}
-        onLevelComplete={(newProgress) => setProgress(newProgress)}
-        isPracticeMode={true}
-      />
-    );
-  }
+      const width = parsePositiveIntParam(params.get('w'), 7);
+      const height = parsePositiveIntParam(params.get('h'), 7);
+      const time = parsePositiveIntParam(params.get('t'), 10);
+      const rawDifficulty = params.get('d');
+      const difficulty = rawDifficulty === 'hard' ? 'hard' : 'normal';
 
-  // Pràctica Normal
-  if (path === fullPath('/practice/normal')) {
-    return (
-      <PracticeNormalScreen
-        key={navKey}  
-        onBack={() => go('/levels')}
-      />
-    );
-  }
+      return { type: 'custom', width, height, time, difficulty };
+    }
 
-  // Pràctica IA
-  if (path === fullPath('/practice/ia')) {
-    const level = generateLevel({
-      levelNumber: 1,
-      difficulty: 'easy',
-      width: 7,
-      height: 7,
-      memorizeTime: 12,
-      stars: [60, 45, 30],
-    });
-    return (
-      <LevelScreen
-        key={navKey}
-        level={level}
-        onBack={() => go('/levels')}
-        onRetry={() => go('/practice/ia')}
-        isTutorialMode={false}
-        onCompleteTutorial={() => {}}
-        onLevelComplete={(newProgress) => setProgress(newProgress)}
-        isPracticeMode={true}
-      />
-    );
-  }
+    const levelMatch = relativePath.match(/^\/level\/(easy|normal|hard)\/(\d+)$/);
+    if (levelMatch) {
+      const [, difficulty, number] = levelMatch;
+      return { type: 'level', difficulty: difficulty as Diff, number: Number(number) };
+    }
 
-  // Pantalla de Selecció de Nivell
-  if (path === fullPath('/levels')) {
-    return (
-      <LevelSelect
+    if (relativePath === '/' || relativePath === '') {
+      return { type: 'home' };
+    }
+
+    return { type: 'unknown', path: relativePath };
+  }, [relativePath]);
+
+  useEffect(() => {
+    if (route.type === 'unknown') {
+      console.warn(`Ruta desconeguda: ${route.path}. Redirigint a HomeScreen.`);
+    }
+  }, [route]);
+
+  const handleStartCustomGame = useCallback((config: CustomLevelConfig) => {
+    const params = new URLSearchParams();
+    params.set('w', String(config.width));
+    params.set('h', String(config.height));
+    params.set('t', String(config.time));
+    params.set('d', config.difficulty);
+
+    go(`/level/custom?${params.toString()}`);
+  }, [go]);
+
+  const renderHome = () => (
+    <>
+      <HomeScreen
         progress={progress}
-        onPlayLevel={(n, diff) => go(`/level/${diff}/${n}`)}
-        onBack={() => go('/')}
-        onStartTutorial={startTutorial}
-        selectedDifficulty={selectedDifficulty}
-        onDifficultyChange={setSelectedDifficulty}
-        onStartPracticeIA={() => go('/practice/ia')}
-        onStartPracticeNormal={() => go('/practice/normal')}
-        onStartPracticeFree={() => go('/practice/free')}
+        user={user}
+        onNavigate={() => go('/levels')}
+        onUserClick={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+        onSettingsClick={() => go('/settings')}
       />
-    );
-  }
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+        />
+      )}
+    </>
+  );
 
-  // --- Pantalla de Nivell Individual ---
-  const levelPathRegex = new RegExp(`^${fullPath('/level')}\/([a-z]+)\/(\\d+)$`);
-  const match = path.match(levelPathRegex);
+  switch (route.type) {
+    case 'settings':
+      return <SettingsScreen onBack={() => go('/')} />;
 
-  if (match) {
-    // match[1] és la dificultat (ex: "hard")
-    // match[2] és el número (ex: "5")
-    const difficulty = match[1] as 'easy' | 'normal' | 'hard';
-    const numStr = match[2];
-    const num = Number(numStr || 1);
-    
-    const levelKey = `${difficulty}-${num}`; 
-    let level: Level;
-    
-    // Carregar nivell desat o generar-ne un de nou
-    if (savedLevels[levelKey]) {
-      level = savedLevels[levelKey];
-    } else {
-      level = generateLevel({
-        levelNumber: num,
-        difficulty: difficulty, 
+    case 'practice-free':
+      return (
+        <FreeModeScreen
+          onBack={() => go('/levels')}
+          onStartGame={handleStartCustomGame}
+        />
+      );
+
+    case 'custom': {
+      const level = generateLevel({
+        levelNumber: 99,
+        difficulty: route.difficulty,
+        width: route.width,
+        height: route.height,
+        memorizeTime: route.time,
+        stars: [60, 45, 30],
+      });
+
+      const retryParams = new URLSearchParams({
+        w: String(route.width),
+        h: String(route.height),
+        t: String(route.time),
+        d: route.difficulty,
+      });
+
+      return (
+        <LevelScreen
+          key={navKey}
+          level={level}
+          onBack={() => go('/practice/free')}
+          onRetry={() => go(`/level/custom?${retryParams.toString()}`)}
+          isTutorialMode={false}
+          onCompleteTutorial={() => {}}
+          onLevelComplete={(newProgress) => setProgress(newProgress)}
+          isPracticeMode={true}
+        />
+      );
+    }
+
+    case 'practice-normal':
+      return (
+        <PracticeNormalScreen
+          key={navKey}
+          onBack={() => go('/levels')}
+        />
+      );
+
+    case 'practice-ia': {
+      const level = generateLevel({
+        levelNumber: 1,
+        difficulty: 'easy',
+        width: 7,
+        height: 7,
+        memorizeTime: 12,
+        stars: [60, 45, 30],
+      });
+      return (
+        <LevelScreen
+          key={navKey}
+          level={level}
+          onBack={() => go('/levels')}
+          onRetry={() => go('/practice/ia')}
+          isTutorialMode={false}
+          onCompleteTutorial={() => {}}
+          onLevelComplete={(newProgress) => setProgress(newProgress)}
+          isPracticeMode={true}
+        />
+      );
+    }
+
+    case 'levels':
+      return (
+        <LevelSelect
+          progress={progress}
+          onPlayLevel={(n, diff) => go(`/level/${diff}/${n}`)}
+          onBack={() => go('/')}
+          onStartTutorial={startTutorial}
+          selectedDifficulty={selectedDifficulty}
+          onDifficultyChange={setSelectedDifficulty}
+          onStartPracticeIA={() => go('/practice/ia')}
+          onStartPracticeNormal={() => go('/practice/normal')}
+          onStartPracticeFree={() => go('/practice/free')}
+        />
+      );
+
+    case 'level': {
+      const { difficulty, number } = route;
+      const levelKey = `${difficulty}-${number}`;
+
+      const level = savedLevels[levelKey] ?? generateLevel({
+        levelNumber: number,
+        difficulty,
         width: 7,
         height: 7,
         memorizeTime: 10,
-        stars: [60, 45, 30], 
-      }); 
-    }
-    return (
-      <LevelScreen
-        key={navKey} 
-        level={level}
-        onBack={() => go('/levels')}
-        onRetry={() => go(`/level/${difficulty}/${num}`)}
-        isTutorialMode={isTutorialMode}
-        onCompleteTutorial={() => setIsTutorialMode(false)}
-        onLevelComplete={(newProgress) => setProgress(newProgress)}
-        isPracticeMode={false}
-      />
-    );
-  }
+        stars: [60, 45, 30],
+      });
 
-  // --- Pantalla d'Inici ---
-  if (path === base.replace(/\/$/, '') || path === base || path === fullPath('/')) {
-     return (
-       <>
-         <HomeScreen
-           progress={progress}
-           user={user}
-           onNavigate={() => go('/levels')}
-           onUserClick={() => setShowAuthModal(true)}
-           onLogout={handleLogout}
-           onSettingsClick={() => go('/settings')}
-         />
-         {showAuthModal && (
-           <AuthModal
-             onClose={() => setShowAuthModal(false)}
-             onLogin={handleLogin}
-             onRegister={handleRegister}
-           />
-         )}
-       </>
-     );
-  }
-
-  // --- Fallback ---
-  console.warn(`Ruta desconeguda: ${path}. Redirigint a HomeScreen.`);
-   return (
-      <>
-        <HomeScreen
-          progress={progress}
-          user={user}
-          onNavigate={() => go('/levels')}
-          onUserClick={() => setShowAuthModal(true)}
-          onLogout={handleLogout}
-          onSettingsClick={() => go('/settings')}
+      return (
+        <LevelScreen
+          key={navKey}
+          level={level}
+          onBack={() => go('/levels')}
+          onRetry={() => go(`/level/${difficulty}/${number}`)}
+          isTutorialMode={isTutorialMode}
+          onCompleteTutorial={() => setIsTutorialMode(false)}
+          onLevelComplete={(newProgress) => setProgress(newProgress)}
+          isPracticeMode={false}
         />
-        {showAuthModal && (
-          <AuthModal
-            onClose={() => setShowAuthModal(false)}
-            onLogin={handleLogin}
-            onRegister={handleRegister}
-          />
-        )}
-      </>
-    );
+      );
+    }
+
+    case 'home':
+      return renderHome();
+
+    case 'unknown':
+    default:
+      return renderHome();
+  }
 }

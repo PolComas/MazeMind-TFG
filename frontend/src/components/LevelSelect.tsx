@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import LevelCard from './LevelCard';
 import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame, CircleQuestionMarkIcon } from 'lucide-react';
@@ -77,11 +77,11 @@ export default function LevelSelect({
   const screenSettings = getVisualSettings('levelSelect');
 
   // Colors per dificultat
-  const difficultyColors: Record<Diff, string> = {
+  const difficultyColors = useMemo<Record<Diff, string>>(() => ({
     easy: screenSettings.easyColor,
     normal: screenSettings.normalColor,
     hard: screenSettings.hardColor,
-  };
+  }), [screenSettings]);
 
   const difficulty = selectedDifficulty;
   //const [difficulty, setDifficulty] = useState<Diff>('easy');
@@ -114,7 +114,7 @@ export default function LevelSelect({
     } else {
       setIndicatorStyle({ opacity: 0 }); 
     }
-  }, [difficulty]);
+  }, [difficulty, difficultyColors]);
 
   // Lògica de nivells desbloquejats
   const levels = Array.from({ length: 15 }, (_, i) => i + 1);
@@ -137,13 +137,13 @@ export default function LevelSelect({
     setShowPracticeModal(true);
   }, [audio]);
 
-  const styles: Record<string, React.CSSProperties> = {
+  const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: { // Fons de pantalla completa amb padding responsiu
       background: screenSettings.backgroundColor,
       color: screenSettings.textColor,
       minHeight: '100svh',
       width: '100vw',
-      padding: 'clamp(16px, 4vw, 32px)', 
+      padding: 'clamp(16px, 4vw, 32px)',
       boxSizing: 'border-box',
     },
     container: { // Contenidor centrat amb amplada màxima
@@ -151,14 +151,14 @@ export default function LevelSelect({
       margin: '0 auto',
     },
     header: { // Capçalera amb flexbox per botó enrere, títol i espai buit
-      display: 'flex', 
+      display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 24,
       gap: 16,
     },
     title: { // Títol de la pàgina amb font responsiva
-      margin: 0, fontSize: 'clamp(24px, 5vw, 32px)' 
+      margin: 0, fontSize: 'clamp(24px, 5vw, 32px)'
     },
     backBtn: { // Botó per tornar enrere amb estil de superfície
       padding: '10px 14px',
@@ -170,10 +170,10 @@ export default function LevelSelect({
       fontSize: 16,
       width: 100,
     },
-    diffBarContainer: { 
+    diffBarContainer: {
       position: 'relative',
-      display: 'flex', 
-      justifyContent: 'center', 
+      display: 'flex',
+      justifyContent: 'center',
       background: screenSettings.surfaceColor,
       borderRadius: 999,
       padding: '6px',
@@ -181,7 +181,7 @@ export default function LevelSelect({
       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
     },
     diffTab: { // Estil dels botons de dificultat
-      flexGrow: 1, 
+      flexGrow: 1,
       padding: '10px 16px',
       borderRadius: 999,
       border: 'none',
@@ -207,16 +207,16 @@ export default function LevelSelect({
       opacity: 0,
     },
     diffBar: { // Barra de botons per seleccionar dificultat
-      display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24 
+      display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24
     },
     grid: { // Graella responsiva per les targetes de nivell
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
       gap: 'clamp(12px, 2vw, 20px)',
     },
     footer: { // Peu de pàgina centrat amb botó de pràctica
-      display:'flex', 
-      justifyContent:'center', 
+      display:'flex',
+      justifyContent:'center',
       marginTop: 32,
     },
     practiceBtn: { // Botó de mode pràctica amb estil de superfície
@@ -228,7 +228,7 @@ export default function LevelSelect({
       fontSize: 16,
       cursor: 'pointer',
     },
-  };
+  }), [screenSettings]);
 
   return (
     <>
