@@ -76,12 +76,12 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
   };
 
   // Estils dinàmics utilitzant 'screenSettings'
-  const styles: Record<string, React.CSSProperties> = {
+  const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: { // Omple tota la pantalla amb gradients i fons base, elements centrats
       minHeight: "100svh", width: "100vw", margin: 0,
-      background: screenSettings.backgroundColor, 
-      color: screenSettings.textColor, 
-      display: "grid", placeItems: "center", padding: 24, 
+      background: screenSettings.backgroundColor,
+      color: screenSettings.textColor,
+      display: "grid", placeItems: "center", padding: 24,
       boxSizing: "border-box",
     },
     userButton: { // Botó d'usuari a la cantonada superior dreta
@@ -103,7 +103,7 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
       paddingInline: "min(4vw, 40px)",
     },
     logoSvg: { // SVG del logo amb mida fixa i filtre per fer-lo blanc
-      width: 80,         
+      width: 80,
       height: 80,
       filter: 'brightness(0) invert(1)',
     },
@@ -194,7 +194,7 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
       fontSize: 16,
       marginBottom: 8,
     },
-  };
+  }), [screenSettings]);
   
   return (
     <main role="main" style={styles.page}>
