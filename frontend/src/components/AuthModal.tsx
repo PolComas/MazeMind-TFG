@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { PALETTE } from './palette'; 
-import { X } from 'lucide-react'; 
+import React, { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
+import { useSettings } from '../context/SettingsContext';
+import type { VisualSettings } from '../utils/settings';
+import { applyAlpha } from '../utils/color';
 
 type User = { id: string, email: string };
 
@@ -12,9 +14,110 @@ type Props = {
   onRegister: (user: User) => void;
 };
 
+const buildStyles = (visuals: VisualSettings) => {
+  const accentGradient = `linear-gradient(90deg, ${visuals.accentColor1}, ${visuals.accentColor2})`;
+  const inputBackground = applyAlpha(visuals.textColor, 0.08);
+  const overlayColor = applyAlpha(visuals.textColor, 0.75);
+  const errorBackground = applyAlpha(visuals.hardColor, 0.15);
+  const errorBorder = applyAlpha(visuals.hardColor, 0.3);
+
+  return {
+    overlay: {
+      position: 'fixed', inset: 0,
+      background: overlayColor,
+      backdropFilter: 'blur(8px)',
+      display: 'grid', placeItems: 'center',
+      zIndex: 100,
+      padding: '1rem',
+    },
+    modalContent: {
+      background: visuals.surfaceColor,
+      border: `1px solid ${visuals.borderColor}`,
+      borderRadius: '1rem',
+      padding: '2rem',
+      color: visuals.textColor,
+      width: 'min(400px, 95vw)',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+      position: 'relative',
+      display: 'flex', flexDirection: 'column',
+      gap: '1.25rem',
+    },
+    closeButton: {
+      position: 'absolute', top: '0.75rem', right: '0.75rem',
+      background: 'none', border: 'none',
+      color: visuals.subtextColor,
+      cursor: 'pointer',
+      padding: '0.25rem',
+      lineHeight: 0,
+      borderRadius: '50%',
+    },
+    title: {
+      fontSize: '1.5rem',
+      fontWeight: 700,
+      margin: 0,
+      textAlign: 'center',
+      color: visuals.textColor,
+    },
+    form: {
+      display: 'flex', flexDirection: 'column',
+      gap: '1rem',
+    },
+    label: {
+      fontSize: '0.875rem',
+      color: visuals.subtextColor,
+      marginBottom: '-0.75rem',
+      marginLeft: '0.25rem',
+      textAlign: 'left',
+    },
+    input: {
+      padding: '0.75rem 1rem',
+      borderRadius: '0.5rem',
+      border: `1px solid ${visuals.borderColor}`,
+      background: inputBackground,
+      color: visuals.textColor,
+      fontSize: '1rem',
+      outline: 'none',
+    },
+    submitButton: {
+      padding: '0.875rem',
+      borderRadius: '0.5rem',
+      border: 'none',
+      background: accentGradient,
+      color: '#fff',
+      fontSize: '1rem',
+      fontWeight: 600,
+      cursor: 'pointer',
+      marginTop: '0.5rem',
+      transition: 'opacity 0.2s ease',
+    },
+    toggleButton: {
+      background: 'none', border: 'none',
+      color: visuals.accentColor2,
+      fontSize: '0.875rem',
+      cursor: 'pointer',
+      textDecoration: 'underline',
+      marginTop: '0.75rem',
+      alignSelf: 'center',
+    },
+    errorMessage: {
+      color: visuals.hardColor,
+      background: errorBackground,
+      border: `1px solid ${errorBorder}`,
+      borderRadius: '0.5rem',
+      padding: '0.75rem 1rem',
+      fontSize: '0.875rem',
+      textAlign: 'center',
+      margin: '-0.5rem 0 0.5rem 0',
+    },
+  } as const;
+};
+
 export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
+  const { getVisualSettings } = useSettings();
+  const visualSettings = getVisualSettings('home');
+  const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
   const onCloseWithSound = () => {
     audio.playFail();
@@ -25,28 +128,28 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // Estat per canviar entre els modes Iniciar Sessió / Registrar-se
-  const [isRegistering, setIsRegistering] = useState(false); 
+  const [isRegistering, setIsRegistering] = useState(false);
   // Estat per mostrar missatges d'error
   const [error, setError] = useState<string | null>(null);
 
   // Enviament del formulari
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null); 
+    setError(null);
 
     // Validacions Bàsiques
     if (!email || !password) {
-      setError("El correu i la contrasenya són obligatoris.");
+      setError('El correu i la contrasenya són obligatoris.');
       return;
     }
 
     if (password.length < 6) {
-      setError("La contrasenya ha de tenir com a mínim 6 caràcters.");
+      setError('La contrasenya ha de tenir com a mínim 6 caràcters.');
       return;
     }
 
     // Simular la creació/obtenció d'un usuari
-    const fakeUser = { id: Date.now().toString(), email: email }; 
+    const fakeUser = { id: Date.now().toString(), email: email };
     console.log(`Simulant ${isRegistering ? 'registre' : 'inici de sessió'} per a:`, email);
 
     try {
@@ -57,8 +160,8 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
       }
     } catch (apiError) {
       // TODO al fer el backend: Gestionar errors reals de l'API aquí
-      console.error("Error de l'API (simulat):", apiError);
-      setError("Ha ocorregut un error. Torna a intentar-ho.");
+      console.error('Error de l\'API (simulat):', apiError);
+      setError('Ha ocorregut un error. Torna a intentar-ho.');
     }
   };
 
@@ -103,7 +206,7 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
             required
             aria-required="true"
             minLength={6}
-            autoComplete={isRegistering ? "new-password" : "current-password"}
+            autoComplete={isRegistering ? 'new-password' : 'current-password'}
           />
           <button type="submit" style={styles.submitButton}>
             {isRegistering ? 'Registrar-se' : 'Entrar'}
@@ -111,106 +214,16 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
         </form>
 
         {/* Botó per canviar entre Iniciar Sessió / Registrar-se */}
-        <button 
-          style={styles.toggleButton} 
+        <button
+          style={styles.toggleButton}
           onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-          type="button" 
+          type="button"
         >
-          {isRegistering 
-            ? 'Ja tens compte? Inicia sessió' 
+          {isRegistering
+            ? 'Ja tens compte? Inicia sessió'
             : 'No tens compte? Registra\'t'}
         </button>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed', inset: 0, 
-    background: 'rgba(10, 25, 47, 0.8)',
-    backdropFilter: 'blur(8px)',
-    display: 'grid', placeItems: 'center', 
-    zIndex: 100,
-    padding: '1rem',
-  },
-  modalContent: {
-    background: PALETTE.surface,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255, 255, 255, 0.1)'}`,
-    borderRadius: '1rem',
-    padding: '2rem',
-    color: PALETTE.text,
-    width: 'min(400px, 95vw)',
-    boxShadow: PALETTE.shadow,
-    position: 'relative',
-    display: 'flex', flexDirection: 'column', 
-    gap: '1.25rem',
-  },
-  closeButton: {
-    position: 'absolute', top: '0.75rem', right: '0.75rem',
-    background: 'none', border: 'none',
-    color: PALETTE.subtext,
-    cursor: 'pointer', 
-    padding: '0.25rem',
-    lineHeight: 0,
-    borderRadius: '50%',
-  },
-  title: { 
-    fontSize: '1.5rem',
-    fontWeight: 700, 
-    margin: 0, 
-    textAlign: 'center',
-    color: PALETTE.text,
-  },
-  form: { 
-    display: 'flex', flexDirection: 'column', 
-    gap: '1rem',
-  },
-  label: {
-    fontSize: '0.875rem',
-    color: PALETTE.subtext,
-    marginBottom: '-0.75rem',
-    marginLeft: '0.25rem',
-    textAlign: 'left',
-  },
-  input: {
-    padding: '0.75rem 1rem',
-    borderRadius: '0.5rem',
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255, 255, 255, 0.1)'}`,
-    background: 'rgba(10, 25, 47, 0.5)',
-    color: PALETTE.text, 
-    fontSize: '1rem',
-    outline: 'none',
-  },
-  submitButton: {
-    padding: '0.875rem',
-    borderRadius: '0.5rem',
-    border: 'none',
-    background: `linear-gradient(90deg, ${PALETTE.playBtnFrom || '#FFCA86'}, ${PALETTE.playBtnTo || '#FFA94D'})`, // Gradient del botó principal
-    color: '#fff',
-    fontSize: '1rem',
-    fontWeight: 600,
-    cursor: 'pointer', 
-    marginTop: '0.5rem',
-    transition: 'opacity 0.2s ease',
-  },
-  toggleButton: {
-    background: 'none', border: 'none', 
-    color: PALETTE.accentCyan || '#67e8f9',
-    fontSize: '0.875rem',
-    cursor: 'pointer', 
-    textDecoration: 'underline', 
-    marginTop: '0.75rem',
-    alignSelf: 'center',
-  },
-  errorMessage: {
-    color: '#f87171',
-    background: 'rgba(248, 113, 113, 0.1)',
-    border: '1px solid rgba(248, 113, 113, 0.3)',
-    borderRadius: '0.5rem',
-    padding: '0.75rem 1rem',
-    fontSize: '0.875rem',
-    textAlign: 'center',
-    margin: '-0.5rem 0 0.5rem 0',
-  },
-};

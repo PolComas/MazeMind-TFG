@@ -1,7 +1,9 @@
-import React from 'react';
-import { PALETTE } from './palette';
-import { RefreshCcw, ArrowLeft, XCircle } from 'lucide-react'; 
+import React, { useMemo } from 'react';
+import { RefreshCcw, ArrowLeft, XCircle } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
+import { useSettings } from '../context/SettingsContext';
+import type { VisualSettings } from '../utils/settings';
+import { applyAlpha } from '../utils/color';
 
 type Props = {
   onRetry: () => void;
@@ -11,26 +13,117 @@ type Props = {
   isPracticeScoreMode?: boolean;
 };
 
+const buildStyles = (visuals: VisualSettings): Record<string, React.CSSProperties> => {
+  const subtleSurface = applyAlpha(visuals.textColor, 0.08);
+  const accentGradient = `linear-gradient(90deg, ${visuals.accentColor1}, ${visuals.accentColor2})`;
+
+  return {
+    overlay: {
+      position: 'fixed', inset: 0,
+      background: applyAlpha(visuals.textColor, 0.75),
+      backdropFilter: 'blur(8px)',
+      display: 'grid', placeItems: 'center', zIndex: 50,
+    },
+    modalContent: {
+      background: visuals.surfaceColor,
+      border: `1px solid ${visuals.borderColor}`,
+      borderRadius: 16,
+      padding: 'clamp(24px, 5vw, 40px)',
+      color: visuals.textColor,
+      width: 'min(400px, 90vw)',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+      textAlign: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px',
+    },
+    iconWrapper: {
+      lineHeight: 1,
+      marginTop: '8px',
+      color: visuals.hardColor,
+    },
+    title: {
+      fontSize: 'clamp(24px, 5vw, 32px)',
+      fontWeight: 700,
+      margin: 0,
+      color: visuals.hardColor,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: visuals.subtextColor,
+      margin: '-8px 0 8px 0',
+    },
+    results: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '16px',
+      borderTop: `1px solid ${visuals.borderColor}`,
+      borderBottom: `1px solid ${visuals.borderColor}`,
+      padding: '16px 0',
+      marginTop: 4,
+    },
+    resultItem: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '4px',
+    },
+    resultLabel: {
+      fontSize: 12,
+      color: visuals.subtextColor,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+    },
+    resultValue: {
+      fontSize: 'clamp(18px, 4vw, 24px)',
+      fontWeight: 600,
+    },
+    actions: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      width: '100%',
+      marginTop: '8px',
+    },
+    retryButton: {
+      padding: '14px', borderRadius: '10px', border: 'none',
+      background: accentGradient,
+      color: '#fff', fontSize: '18px', fontWeight: 700, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    },
+    backButton: {
+      padding: '14px', borderRadius: '10px', border: `1px solid ${visuals.borderColor}`,
+      background: subtleSurface,
+      color: visuals.textColor,
+      fontSize: '18px', fontWeight: 600, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    },
+  };
+};
+
 export default function GameOverModal({ onRetry, onBack, score, bestScore, isPracticeScoreMode, }: Props) {
   const audio = useGameAudio();
+  const { getVisualSettings } = useSettings();
+  const visualSettings = getVisualSettings('levelScreen');
+  const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
   const roundedScore = typeof score === 'number' ? Math.round(score) : undefined;
   const roundedBest = typeof bestScore === 'number' ? Math.round(bestScore) : undefined;
 
   return (
     <div style={styles.overlay}>
       <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        
+
         {/* Icona de "Game Over" */}
         <div style={styles.iconWrapper}>
-          <XCircle size={64} color={PALETTE.accentRed || '#FF4D4D'} />
+          <XCircle size={64} />
         </div>
 
-        <h2 id="modalTitle" style={styles.title}> 
+        <h2 id="modalTitle" style={styles.title}>
           {isPracticeScoreMode ? "Game Over" : "Has Perdut!"}
         </h2>
 
         <p style={styles.subtitle}>T'has quedat sense vides.</p>
-        
+
         {typeof roundedScore === 'number' && typeof roundedBest === 'number' && (
           <div style={styles.results}>
             <div style={styles.resultItem}>
@@ -57,84 +150,3 @@ export default function GameOverModal({ onRetry, onBack, score, bestScore, isPra
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(10, 25, 47, 0.8)',
-    backdropFilter: 'blur(8px)',
-    display: 'grid', placeItems: 'center', zIndex: 50,
-  },
-  modalContent: {
-    background: PALETTE.surface,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    borderRadius: 16,
-    padding: 'clamp(24px, 5vw, 40px)',
-    color: PALETTE.text,
-    width: 'min(400px, 90vw)',
-    boxShadow: PALETTE.shadow,
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  iconWrapper: {
-    lineHeight: 1,
-    marginTop: '8px',
-  },
-  title: {
-    fontSize: 'clamp(24px, 5vw, 32px)',
-    fontWeight: 700,
-    margin: 0,
-    color: PALETTE.accentRed || '#FF4D4D',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: PALETTE.subtext,
-    margin: '-8px 0 8px 0',
-  },
-  results: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '16px',
-    borderTop: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    borderBottom: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    padding: '16px 0',
-    marginTop: 4,
-  },
-  resultItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  resultLabel: {
-    fontSize: 12,
-    color: PALETTE.subtext,
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-  },
-  resultValue: {
-    fontSize: 'clamp(18px, 4vw, 24px)',
-    fontWeight: 600,
-  },
-  actions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    width: '100%',
-    marginTop: '8px',
-  },
-  retryButton: {
-    padding: "14px", borderRadius: '10px', border: "none",
-    background: `linear-gradient(90deg, ${PALETTE.playBtnFrom || '#FFCA86'}, ${PALETTE.playBtnTo || '#FFA94D'})`,
-    color: "#fff", fontSize: '18px', fontWeight: 700, cursor: "pointer",
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-  },
-  backButton: {
-    padding: "14px", borderRadius: '10px', border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    background: "rgba(255,255,255,0.06)", color: PALETTE.text,
-    fontSize: '18px', fontWeight: 600, cursor: "pointer",
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-  },
-};

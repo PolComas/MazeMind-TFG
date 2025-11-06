@@ -1,8 +1,10 @@
 // src/components/CompletionModal.tsx
-import React from 'react';
-import { PALETTE } from './palette';
+import React, { useMemo } from 'react';
 import { RefreshCcw, ArrowLeft } from 'lucide-react'; // Icones pels botons
 import { useGameAudio } from '../audio/sound';
+import { useSettings } from '../context/SettingsContext';
+import type { VisualSettings } from '../utils/settings';
+import { applyAlpha } from '../utils/color';
 
 // Props que rep el modal
 type Props = {
@@ -26,9 +28,93 @@ function displayStars(count: number) {
   return '★'.repeat(count) + '☆'.repeat(3 - count);
 }
 
+const buildStyles = (visuals: VisualSettings): Record<string, React.CSSProperties> => {
+  const accentGradient = `linear-gradient(90deg, ${visuals.accentColor1}, ${visuals.accentColor2})`;
+  const translucentSurface = applyAlpha(visuals.textColor, 0.08);
+
+  return {
+    overlay: {
+      position: 'fixed', // Fixa a la pantalla
+      inset: 0, // Cobreix tot (top, right, bottom, left = 0)
+      background: applyAlpha(visuals.textColor, 0.75), // Fons fosc semitransparent
+      backdropFilter: 'blur(8px)', // Efecte vidre
+      display: 'grid',
+      placeItems: 'center',
+      zIndex: 50, // Per sobre de la resta
+    },
+    modalContent: {
+      background: visuals.surfaceColor,
+      border: `1px solid ${visuals.borderColor}`,
+      borderRadius: 16,
+      padding: 'clamp(24px, 5vw, 40px)',
+      color: visuals.textColor,
+      width: 'min(500px, 90vw)', // Amplada màxima o 90% de la finestra
+      boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+      textAlign: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px',
+    },
+    title: {
+      fontSize: 'clamp(24px, 5vw, 32px)',
+      fontWeight: 700,
+      margin: 0,
+      color: visuals.easyColor, // Un color destacat
+    },
+    results: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', // Columnes adaptables
+      gap: '16px',
+      borderTop: `1px solid ${visuals.borderColor}`,
+      borderBottom: `1px solid ${visuals.borderColor}`,
+      padding: '20px 0',
+    },
+    resultItem: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '4px',
+    },
+    resultLabel: {
+      fontSize: 14,
+      color: visuals.subtextColor,
+      textTransform: 'uppercase',
+    },
+    resultValue: {
+      fontSize: 'clamp(20px, 4vw, 26px)',
+      fontWeight: 600,
+      color: visuals.textColor,
+    },
+    starsValue: {
+      color: visuals.normalColor,
+    },
+    actions: {
+      display: 'flex',
+      flexDirection: 'column', // Botons un sota l'altre
+      gap: '12px',
+      width: '100%',
+    },
+    retryButton: { // Estil similar al botó "Jugar"
+      padding: '14px', borderRadius: '10px', border: 'none',
+      background: accentGradient,
+      color: '#fff', fontSize: '18px', fontWeight: 700, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    },
+    backButton: { // Estil similar al botó "Configuració"
+      padding: '14px', borderRadius: '10px', border: `1px solid ${visuals.borderColor}`,
+      background: translucentSurface, color: visuals.textColor,
+      fontSize: '18px', fontWeight: 600, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    },
+  };
+};
+
 export default function CompletionModal({ levelNumber, stars, time, points, onRetry, onBack }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
+  const { getVisualSettings } = useSettings();
+  const visualSettings = getVisualSettings('levelScreen');
+  const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
   return (
     // Fons semitransparent que cobreix tota la pantalla
@@ -41,7 +127,7 @@ export default function CompletionModal({ levelNumber, stars, time, points, onRe
         <div style={styles.results}>
           <div style={styles.resultItem}>
             <span style={styles.resultLabel}>Estrelles</span>
-            <span style={{ ...styles.resultValue, color: PALETTE.focus || '#F0E442' }}>{displayStars(stars)}</span>
+            <span style={{ ...styles.resultValue, ...styles.starsValue }}>{displayStars(stars)}</span>
           </div>
           <div style={styles.resultItem}>
             <span style={styles.resultLabel}>Temps</span>
@@ -66,76 +152,3 @@ export default function CompletionModal({ levelNumber, stars, time, points, onRe
     </div>
   );
 }
-
-// Estils pel modal
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed', // Fixa a la pantalla
-    inset: 0, // Cobreix tot (top, right, bottom, left = 0)
-    background: 'rgba(10, 25, 47, 0.8)', // Fons fosc semitransparent
-    backdropFilter: 'blur(8px)', // Efecte vidre
-    display: 'grid',
-    placeItems: 'center',
-    zIndex: 50, // Per sobre de la resta
-  },
-  modalContent: {
-    background: PALETTE.surface,
-    border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    borderRadius: 16,
-    padding: 'clamp(24px, 5vw, 40px)',
-    color: PALETTE.text,
-    width: 'min(500px, 90vw)', // Amplada màxima o 90% de la finestra
-    boxShadow: PALETTE.shadow,
-    textAlign: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  title: {
-    fontSize: 'clamp(24px, 5vw, 32px)',
-    fontWeight: 700,
-    margin: 0,
-    color: PALETTE.accentGreen || '#64FFDA', // Un color destacat
-  },
-  results: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', // Columnes adaptables
-    gap: '16px',
-    borderTop: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    borderBottom: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    padding: '20px 0',
-  },
-  resultItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: PALETTE.subtext,
-    textTransform: 'uppercase',
-  },
-  resultValue: {
-    fontSize: 'clamp(20px, 4vw, 26px)',
-    fontWeight: 600,
-  },
-  actions: {
-    display: 'flex',
-    flexDirection: 'column', // Botons un sota l'altre
-    gap: '12px',
-    width: '100%',
-  },
-  retryButton: { // Estil similar al botó "Jugar"
-    padding: "14px", borderRadius: '10px', border: "none",
-    background: `linear-gradient(90deg, ${PALETTE.playBtnFrom || '#FFCA86'}, ${PALETTE.playBtnTo || '#FFA94D'})`,
-    color: "#fff", fontSize: '18px', fontWeight: 700, cursor: "pointer",
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-  },
-  backButton: { // Estil similar al botó "Configuració"
-    padding: "14px", borderRadius: '10px', border: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
-    background: "rgba(255,255,255,0.06)", color: PALETTE.text,
-    fontSize: '18px', fontWeight: 600, cursor: "pointer",
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-  },
-};
