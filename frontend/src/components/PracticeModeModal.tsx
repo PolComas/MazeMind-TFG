@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, BrainCircuit, TrendingUp, Edit } from 'lucide-react';
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
+import { loadPracticeBestScore } from '../utils/practiceProgress';
 
 type Props = {
   open: boolean;
@@ -52,6 +53,14 @@ const styles: Record<string, React.CSSProperties> = {
 export default function PracticeModeModal({ open, onClose, onStartIA, onStartNormal, onStartFree }: Props) {
   const audio = useGameAudio();
 
+  const [bestScore, setBestScore] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      setBestScore(loadPracticeBestScore());
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const handleSelect = (action: () => void) => {
@@ -88,7 +97,13 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
             </div>
             <div>
               <h3 style={styles.cardTitle}>Pràctica Score</h3>
-              <p style={styles.cardText}>Juga laberints aleatoris que pugen de dificultat.</p>
+              <p style={styles.cardText}>
+                Juga laberints aleatoris que pugen de dificultat.
+                <br />
+                <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  Millor puntuació: <strong>{Math.round(bestScore)}</strong>
+                </span>
+              </p>
             </div>
           </div>
 

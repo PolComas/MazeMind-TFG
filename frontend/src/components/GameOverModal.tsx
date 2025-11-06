@@ -6,10 +6,15 @@ import { useGameAudio } from '../audio/sound';
 type Props = {
   onRetry: () => void;
   onBack: () => void;
+  score?: number;
+  bestScore?: number;
+  isPracticeScoreMode?: boolean;
 };
 
-export default function GameOverModal({ onRetry, onBack }: Props) {
+export default function GameOverModal({ onRetry, onBack, score, bestScore, isPracticeScoreMode, }: Props) {
   const audio = useGameAudio();
+  const roundedScore = typeof score === 'number' ? Math.round(score) : undefined;
+  const roundedBest = typeof bestScore === 'number' ? Math.round(bestScore) : undefined;
 
   return (
     <div style={styles.overlay}>
@@ -20,10 +25,25 @@ export default function GameOverModal({ onRetry, onBack }: Props) {
           <XCircle size={64} color={PALETTE.accentRed || '#FF4D4D'} />
         </div>
 
-        <h2 id="modalTitle" style={styles.title}>Has Perdut!</h2>
+        <h2 id="modalTitle" style={styles.title}> 
+          {isPracticeScoreMode ? "Game Over" : "Has Perdut!"}
+        </h2>
 
         <p style={styles.subtitle}>T'has quedat sense vides.</p>
         
+        {typeof roundedScore === 'number' && typeof roundedBest === 'number' && (
+          <div style={styles.results}>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Score Actual</span>
+              <span style={styles.resultValue}>{roundedScore}</span>
+            </div>
+            <div style={styles.resultItem}>
+              <span style={styles.resultLabel}>Millor score</span>
+              <span style={styles.resultValue}>{roundedBest}</span>
+            </div>
+          </div>
+        )}
+
         {/* Botons */}
         <div style={styles.actions}>
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetry}>
@@ -72,6 +92,31 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
     color: PALETTE.subtext,
     margin: '-8px 0 8px 0',
+  },
+  results: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '16px',
+    borderTop: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
+    borderBottom: `1px solid ${PALETTE.borderColor || 'rgba(255,255,255,0.1)'}`,
+    padding: '16px 0',
+    marginTop: 4,
+  },
+  resultItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  resultLabel: {
+    fontSize: 12,
+    color: PALETTE.subtext,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  resultValue: {
+    fontSize: 'clamp(18px, 4vw, 24px)',
+    fontWeight: 600,
   },
   actions: {
     display: 'flex',

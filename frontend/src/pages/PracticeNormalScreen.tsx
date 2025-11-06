@@ -6,8 +6,8 @@ import { useSettings } from "../context/SettingsContext";
 import GameOverModal from "../components/GameOverModal";
 import PracticeHUD from "../components/PracticeHUD";
 import PracticeScoreModal from "../components/PracticeScoreModal";
-import { savePracticeRun } from "../utils/practiceProgress";
 import { generateLevel, type Level } from "../maze/maze_generator";
+import { savePracticeRun, loadPracticeBestScore } from "../utils/practiceProgress";
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -99,6 +99,7 @@ export default function PracticeNormalScreen({
   // Estat local de la RUN de Score
   const [currentLevel, setCurrentLevel] = useState(1);
   const [totalScore, setTotalScore] = useState(0);
+  const [bestScore, setBestScore] = useState(() => loadPracticeBestScore());
 
   // Nivell actual (laberint)
   const [level, setLevel] = useState<Level>(() => {
@@ -115,6 +116,8 @@ export default function PracticeNormalScreen({
 
   // Punts aconseguits a l'últim laberint (per al modal)
   const [lastLevelScore, setLastLevelScore] = useState(0);
+  // Referència no-op per evitar warning de "variable no usada" (es reserva per al modal)
+  void lastLevelScore;
 
   // Tuning de puntuació segons el nivell actual
   const [scoreTuning, setScoreTuning] = useState<ScoreTuning>(() =>
@@ -135,6 +138,8 @@ export default function PracticeNormalScreen({
   ]);
 
   const [gameTime, setGameTime] = useState(0);
+  // Referència no-op per evitar warning de variable no usada
+  void gameTime;
   const [points, setPoints] = useState(() => scoreTuning.baseScore);
 
   const [lives, setLives] = useState(LIVES); // sempre amb vides al mode score
@@ -271,6 +276,7 @@ export default function PracticeNormalScreen({
 
     setTotalScore(0);
     setCurrentLevel(1);
+    setBestScore(loadPracticeBestScore());
 
     const cfg = getLevelConfig(1);
     const firstLevel = generateLevel({
@@ -405,7 +411,8 @@ export default function PracticeNormalScreen({
           audio.stopMusic();
           setPhase("failed");
           // Guardar només el maxScore de la run actual
-          savePracticeRun(totalScore);
+          const newBest = savePracticeRun(totalScore);
+          setBestScore(newBest);
         } else {
           setLives(newLives);
           setPlayerPos({ x: level.start.x, y: level.start.y });
@@ -658,6 +665,9 @@ export default function PracticeNormalScreen({
         <GameOverModal
           onRetry={handleRestartRun}
           onBack={handleBackWithSound}
+          score={Math.round(totalScore)}
+          bestScore={Math.round(bestScore)}
+          isPracticeScoreMode={true}
         />
       )}
 
