@@ -8,6 +8,7 @@ import SettingsScreen from './pages/SettingsScreen';
 import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
 import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
+import PracticeNormalScreen from './pages/PracticeNormalScreen';
 
 // Nivells desats
 import easyLevel1 from './levels/easy-level-1.json';
@@ -177,24 +178,10 @@ export default function App() {
 
   // Pràctica Normal
   if (path === fullPath('/practice/normal')) {
-    const level = generateLevel({
-      levelNumber: 1,
-      difficulty: 'normal',
-      width: 10,
-      height: 10,
-      memorizeTime: 8,
-      stars: [60, 45, 30],
-    });
     return (
-      <LevelScreen
-        key={navKey}
-        level={level}
+      <PracticeNormalScreen
+        key={navKey}  
         onBack={() => go('/levels')}
-        onRetry={() => go('/practice/normal')}
-        isTutorialMode={false}
-        onCompleteTutorial={() => {}}
-        onLevelComplete={(newProgress) => setProgress(newProgress)}
-        isPracticeMode={true}
       />
     );
   }

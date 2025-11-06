@@ -1,0 +1,607 @@
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
+import MazeCanvas from "../components/MazeCanvas";
+import { PALETTE } from "../components/palette";
+import { useGameAudio } from "../audio/sound";
+import { useSettings } from "../context/SettingsContext";
+import GameOverModal from "../components/GameOverModal";
+import PracticeHUD from "../components/PracticeHUD";
+import PracticeScoreModal from "../components/PracticeScoreModal";
+import {
+  loadPracticeProgress,
+  savePracticeCompletion,
+  type PracticeProgress,
+} from "../utils/practiceProgress";
+import { generateLevel, type Level } from "../maze/maze_generator";
+
+type Phase = "memorize" | "playing" | "completed" | "failed";
+
+const POINTS_START = 1000;
+const POINTS_LOSS_PER_SECOND = 1;
+const POINTS_LOSS_PATH_HELP = 2;
+const POINTS_LOSS_CRASH_HELP = 20;
+const POINTS_COST_REVEAL = 50;
+const REVEAL_DURATION_MS = 500;
+const LIVES = 3;
+
+type Pos = { x: number; y: number };
+
+// Tecles al footer
+const formatKey = (key: string) => {
+  if (key === " ") return "Espai";
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+};
+
+// Donada la "fase" de score, decideix la mida del laberint
+function createPracticeLevel(levelIndex: number): Level {
+  // Comença petit i augmenta fins a 25x25
+  const size = Math.min(25, 6 + levelIndex); // Nivell 1: 7x7, 2:8x8,...
+  const memorizeTime = Math.max(
+    4,
+    10 - Math.floor((levelIndex - 1) / 2)
+  ); // mica menys temps cada 2 nivells
+
+  return generateLevel({
+    levelNumber: levelIndex,
+    difficulty: "normal",
+    width: size,
+    height: size,
+    memorizeTime,
+    stars: [60, 45, 30],
+  });
+}
+
+export default function PracticeNormalScreen({
+  onBack,
+}: {
+  onBack: () => void;
+}) {
+  const audio = useGameAudio();
+  const { getVisualSettings, settings } = useSettings();
+  const screenSettings = getVisualSettings("levelScreen");
+  const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
+
+  // Progrés global del mode score
+  const [practice, setPractice] = useState<PracticeProgress>(() =>
+    loadPracticeProgress()
+  );
+
+  // Nivell actual (laberint)
+  const [level, setLevel] = useState<Level>(() =>
+    createPracticeLevel(loadPracticeProgress().currentLevel)
+  );
+
+  const memorizeDuration = level.memorizeTime;
+
+  const [phase, setPhase] = useState<Phase>("memorize");
+  const [remaining, setRemaining] = useState<number>(memorizeDuration);
+  const total = useRef(memorizeDuration);
+  const [playerPos, setPlayerPos] = useState<Pos>({
+    x: level.start.x,
+    y: level.start.y,
+  });
+  const [playerPath, setPlayerPath] = useState<Pos[]>([
+    { x: level.start.x, y: level.start.y },
+  ]);
+
+  const [gameTime, setGameTime] = useState(0);
+  const [points, setPoints] = useState(POINTS_START);
+
+  const [lives, setLives] = useState(LIVES); // sempre amb vides al mode score
+
+  const [revealCharges, setRevealCharges] = useState(3);
+  const [isPathHelpActive, setIsPathHelpActive] = useState(false);
+  const [isCrashHelpActive, setIsCrashHelpActive] = useState(false);
+
+  const [showReveal, setShowReveal] = useState(false);
+  const [crashedAt, setCrashedAt] = useState<Pos | null>(null);
+
+  const [showScoreModal, setShowScoreModal] = useState(false);
+
+  const progressPct = useMemo(() => {
+    const done = total.current - remaining;
+    return Math.min(100, Math.max(0, (done / total.current) * 100));
+  }, [remaining]);
+
+  // Helpers per resetejar TOT quan canviem de laberint
+  const resetForLevel = useCallback(
+    (lvl: Level) => {
+      setPhase("memorize");
+      setRemaining(lvl.memorizeTime);
+      total.current = lvl.memorizeTime;
+      setPlayerPos({ x: lvl.start.x, y: lvl.start.y });
+      setPlayerPath([{ x: lvl.start.x, y: lvl.start.y }]);
+      setGameTime(0);
+      setPoints(POINTS_START);
+      setLives(LIVES);
+      setRevealCharges(3);
+      setIsPathHelpActive(false);
+      setIsCrashHelpActive(false);
+      setCrashedAt(null);
+      setShowReveal(false);
+    },
+    []
+  );
+
+  // Compte enrere de memorització
+  useEffect(() => {
+    if (phase !== "memorize") return;
+    const tickMs = 1000;
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          clearInterval(id);
+          audio.playStart();
+          setPhase("playing");
+          setPlayerPos({ x: level.start.x, y: level.start.y });
+          return 0;
+        }
+        if (r <= 4) audio.playTickFinal();
+        else audio.playTick();
+        return r - 1;
+      });
+    }, tickMs);
+    return () => clearInterval(id);
+  }, [phase, level.start.x, level.start.y, audio]);
+
+  const pathHelpRef = useRef(isPathHelpActive);
+  useEffect(() => {
+    pathHelpRef.current = isPathHelpActive;
+  }, [isPathHelpActive]);
+
+  const crashHelpRef = useRef(isCrashHelpActive);
+  useEffect(() => {
+    crashHelpRef.current = isCrashHelpActive;
+  }, [isCrashHelpActive]);
+
+  // Música
+  useEffect(() => {
+    if (phase === "playing") {
+      audio.startMusic();
+      return () => audio.stopMusic();
+    }
+    audio.stopMusic();
+  }, [phase, audio]);
+
+  // Temporitzador & pèrdua de punts
+  useEffect(() => {
+    if (phase !== "playing") return;
+
+    const gameTick = setInterval(() => {
+      setGameTime((t) => t + 1);
+      setPoints((p) => {
+        let loss = POINTS_LOSS_PER_SECOND;
+        if (pathHelpRef.current) loss += POINTS_LOSS_PATH_HELP;
+        return Math.max(0, p - loss);
+      });
+    }, 1000);
+
+    return () => clearInterval(gameTick);
+  }, [phase]);
+
+  // Ajudes
+  const onRevealHelp = useCallback(() => {
+    if (phase !== "playing" || revealCharges <= 0 || showReveal) return;
+    audio.playReveal();
+    setRevealCharges((c) => c - 1);
+    setPoints((p) => Math.max(0, p - POINTS_COST_REVEAL));
+    setShowReveal(true);
+    setTimeout(() => setShowReveal(false), REVEAL_DURATION_MS);
+  }, [phase, revealCharges, showReveal, audio]);
+
+  const onTogglePathHelp = useCallback(() => {
+    if (phase !== "playing") return;
+    setIsPathHelpActive((active) => {
+      active ? audio.playToggleOff() : audio.playToggleOn();
+      return !active;
+    });
+  }, [phase, audio]);
+
+  const onToggleCrashHelp = useCallback(() => {
+    if (phase !== "playing") return;
+    setIsCrashHelpActive((active) => {
+      active ? audio.playToggleOff() : audio.playToggleOn();
+      return !active;
+    });
+  }, [phase, audio]);
+
+  const handleBackWithSound = useCallback(() => {
+    audio.playFail();
+    audio.stopMusic();
+    onBack();
+  }, [audio, onBack]);
+
+  const handleRetrySameMaze = useCallback(() => {
+    audio.playFail();
+    audio.stopMusic();
+    resetForLevel(level);
+  }, [audio, resetForLevel, level]);
+
+  const handleNextLevel = useCallback(() => {
+    audio.playBtnSound();
+    audio.stopMusic();
+    // El currentLevel ja s'ha incrementat a savePracticeCompletion
+    const newLevel = createPracticeLevel(practice.currentLevel);
+    setLevel(newLevel);
+    resetForLevel(newLevel);
+    setShowScoreModal(false);
+  }, [audio, practice.currentLevel, resetForLevel]);
+
+  // Quan completes un laberint, sumem punts i mostrem modal de score
+  useEffect(() => {
+    if (phase !== "completed") return;
+    const newProgress = savePracticeCompletion(points);
+    setPractice(newProgress);
+    setShowScoreModal(true);
+  }, [phase, points]);
+
+  // Moviment + teclat
+  useEffect(() => {
+    if (phase !== "playing") return;
+
+    const { game: gameSettings } = settings;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          (target as any).isContentEditable)
+      )
+        return;
+
+      if (showReveal) return;
+      setCrashedAt(null);
+
+      const key = e.key.toLowerCase();
+
+      // Ajudes
+      if (
+        e.key === gameSettings.keyHelpReveal ||
+        key === (gameSettings.keyHelpReveal || "").toLowerCase()
+      ) {
+        e.preventDefault();
+        onRevealHelp();
+        return;
+      }
+      if (key === (gameSettings.keyHelpPath || "").toLowerCase()) {
+        e.preventDefault();
+        onTogglePathHelp();
+        return;
+      }
+      if (key === (gameSettings.keyHelpCrash || "").toLowerCase()) {
+        e.preventDefault();
+        onToggleCrashHelp();
+        return;
+      }
+
+      // Moviment
+      const { x, y } = playerPos;
+      let newX = x,
+        newY = y;
+      let didCrash = false;
+
+      if (e.key === "ArrowUp" || key === (gameSettings.keyMoveUp || "").toLowerCase()) {
+        e.preventDefault();
+        if (level.maze[y][x].walls.top) didCrash = true;
+        else newY -= 1;
+      } else if (
+        e.key === "ArrowDown" ||
+        key === (gameSettings.keyMoveDown || "").toLowerCase()
+      ) {
+        e.preventDefault();
+        if (level.maze[y][x].walls.bottom) didCrash = true;
+        else newY += 1;
+      } else if (
+        e.key === "ArrowLeft" ||
+        key === (gameSettings.keyMoveLeft || "").toLowerCase()
+      ) {
+        e.preventDefault();
+        if (level.maze[y][x].walls.left) didCrash = true;
+        else newX -= 1;
+      } else if (
+        e.key === "ArrowRight" ||
+        key === (gameSettings.keyMoveRight || "").toLowerCase()
+      ) {
+        e.preventDefault();
+        if (level.maze[y][x].walls.right) didCrash = true;
+        else newX += 1;
+      } else {
+        return;
+      }
+
+      if (didCrash) {
+        audio.playCrash();
+        const newLives = lives - 1;
+        if (newLives <= 0) {
+          setLives(0);
+          audio.stopMusic();
+          setPhase("failed");
+        } else {
+          setLives(newLives);
+          setPlayerPos({ x: level.start.x, y: level.start.y });
+          setPlayerPath([{ x: level.start.x, y: level.start.y }]);
+        }
+        return;
+      }
+
+      if (
+        newX >= 0 &&
+        newX < level.width &&
+        newY >= 0 &&
+        newY < level.height
+      ) {
+        setPlayerPos({ x: newX, y: newY });
+        setPlayerPath((prev) => [...prev, { x: newX, y: newY }]);
+      }
+
+      if (newX === level.exit.x && newY === level.exit.y) {
+        audio.playWin();
+        audio.stopMusic();
+        setPhase("completed");
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [
+    phase,
+    settings,
+    level,
+    playerPos,
+    lives,
+    showReveal,
+    audio,
+    onRevealHelp,
+    onTogglePathHelp,
+    onToggleCrashHelp,
+  ]);
+
+  const mazeSettings = useMemo(
+    () => ({
+      path_color: screenSettings.mazePathColor || "#EEF2FF",
+      wall_color: screenSettings.mazeWallColor || "#3B82F6",
+      wall_thickness: screenSettings.mazeWallThickness || 3,
+      exit_color:
+        screenSettings.mazeExitColor ||
+        screenSettings.normalColor ||
+        "#F59E0B",
+      player_color: screenSettings.mazePlayerColor || "#111",
+      player_path_color:
+        screenSettings.playerPathColor || "rgba(0, 0, 0, 0.4)",
+      crash_help_color: screenSettings.crashHelpColor || "#E11D48",
+    }),
+    [screenSettings]
+  );
+
+  const styles: Record<string, React.CSSProperties> = {
+    page: {
+      minHeight: "100svh",
+      width: "100%",
+      margin: 0,
+      background: screenSettings.backgroundColor,
+      color: screenSettings.textColor,
+      boxSizing: "border-box",
+      padding: "clamp(16px, 3vw, 24px)",
+      display: "flex",
+      flexDirection: "column",
+      gap: "clamp(12px, 2vw, 16px)",
+      alignItems: "center",
+    },
+    headerRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 16,
+      flexShrink: 0,
+      width: "100%",
+      maxWidth: "980px",
+    },
+    title: {
+      margin: 0,
+      fontSize: "clamp(22px, 4vw, 28px)",
+      textAlign: "center",
+    },
+    ghostBtn: {
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: `1px solid ${screenSettings.borderColor}`,
+      background: screenSettings.surfaceColor,
+      color: screenSettings.textColor,
+      cursor: "pointer",
+      fontSize: 16,
+      whiteSpace: "nowrap",
+    },
+    mainArea: {
+      flexGrow: 1,
+      display: "flex",
+      flexDirection: "column",
+      gap: "clamp(12px, 2vw, 16px)",
+      minHeight: 0,
+      width: "100%",
+      maxWidth: "980px",
+    },
+    memorizePanel: {
+      background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
+      borderRadius: 16,
+      padding: "16px clamp(16px, 3vw, 24px) 20px",
+      boxShadow: PALETTE.shadow,
+      textAlign: "center",
+      flexShrink: 0,
+    },
+    memorizeHeading: {
+      margin: 0,
+      fontSize: "clamp(16px, 2vw, 18px)",
+      opacity: 0.95,
+    },
+    memorizeCounter: {
+      fontSize: "clamp(40px, 6vw, 56px)",
+      fontWeight: 800,
+      marginTop: 6,
+    },
+    progressTrack: {
+      marginTop: 10,
+      height: 10,
+      borderRadius: 999,
+      background: "rgba(255,255,255,.35)",
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      background: screenSettings.surfaceColor,
+      borderRadius: 999,
+    },
+    boardWrap: {
+      flexGrow: 1,
+      display: "grid",
+      placeItems: "center",
+      minHeight: 0,
+    },
+    boardInner: {
+      width: "100%",
+      height: "100%",
+      aspectRatio: "1 / 1",
+      maxWidth: "calc(100vh - 300px)",
+      maxHeight: "100%",
+      background: screenSettings.mazePathColor,
+      borderRadius: 16,
+      boxShadow:
+        "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
+      overflow: "hidden",
+      position: "relative",
+    },
+    footer: {
+      flexShrink: 0,
+      width: "100%",
+      maxWidth: "980px",
+      textAlign: "center",
+    },
+    tip: {
+      display: "inline-block",
+      background: screenSettings.surfaceColor,
+      border: `1px solid ${screenSettings.borderColor}`,
+      padding: "10px 16px",
+      borderRadius: 10,
+      color: screenSettings.subtextColor,
+      fontSize: 14,
+    },
+  };
+
+  return (
+    <div style={styles.page}>
+      {/* HEADER */}
+      <header style={styles.headerRow}>
+        <button
+          type="button"
+          onClick={handleBackWithSound}
+          onMouseEnter={() => audio.playHover()}
+          style={styles.ghostBtn}
+        >
+          <span aria-hidden="true">←</span> Tornar
+        </button>
+        <h1 style={styles.title}>Mode Score (Nivell {practice.currentLevel})</h1>
+        <div style={{ width: 100 }} />
+      </header>
+
+      <main style={styles.mainArea}>
+        {/* Memorització o HUD */}
+        {phase === "memorize" ? (
+          <section
+            aria-labelledby="memorizeTitle"
+            style={styles.memorizePanel}
+          >
+            <h2 id="memorizeTitle" style={styles.memorizeHeading}>
+              <span aria-hidden="true">👁️</span> Memoritza el Laberint!
+            </h2>
+            <div
+              role="status"
+              aria-live="polite"
+              style={styles.memorizeCounter}
+            >
+              {remaining}
+            </div>
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progressPct)}
+              style={styles.progressTrack}
+            >
+              <div
+                style={{ ...styles.progressFill, width: `${progressPct}%` }}
+              />
+            </div>
+          </section>
+        ) : (
+          <PracticeHUD
+            totalScore={practice.totalScore}
+            revealCharges={revealCharges}
+            isPathHelpActive={isPathHelpActive}
+            isCrashHelpActive={isCrashHelpActive}
+            onRevealHelp={onRevealHelp}
+            onTogglePathHelp={onTogglePathHelp}
+            onToggleCrashHelp={onToggleCrashHelp}
+            lives={lives}
+          />
+        )}
+
+        {/* TAULER */}
+        <section aria-label="Tauler del laberint" style={styles.boardWrap}>
+          <div style={styles.boardInner}>
+            <MazeCanvas
+              level={level}
+              phase={phase}
+              playerPos={playerPos}
+              showReveal={showReveal}
+              settings={mazeSettings}
+              showPlayerPath={isPathHelpActive}
+              crashPosition={crashedAt}
+              forcePathHistory={playerPath}
+            />
+          </div>
+        </section>
+      </main>
+
+      {/* FOOTER */}
+      <footer style={styles.footer}>
+        {phase === "playing" ? (
+          <p style={styles.tip}>
+            Utilitza les <kbd>Fletxes</kbd> o
+            <kbd> {formatKey(keyMoveUp)}</kbd>
+            <kbd>{formatKey(keyMoveLeft)}</kbd>
+            <kbd>{formatKey(keyMoveDown)}</kbd>
+            <kbd>{formatKey(keyMoveRight)} </kbd>
+            per moure’t.
+          </p>
+        ) : phase === "memorize" ? (
+          <p style={styles.tip}>
+            Memoritza el camí des de l&apos;inici (cercle) fins al final
+            (quadrat).
+          </p>
+        ) : null}
+      </footer>
+
+      {/* MODALS */}
+      {phase === "failed" && (
+        <GameOverModal
+          onRetry={handleRetrySameMaze}
+          onBack={handleBackWithSound}
+        />
+      )}
+
+      {phase === "completed" && showScoreModal && (
+        <PracticeScoreModal
+          levelNumber={practice.currentLevel - 1} // el que acabem de superar
+          pointsGained={points}
+          totalScore={practice.totalScore}
+          onNextLevel={handleNextLevel}
+          onBack={handleBackWithSound}
+        />
+      )}
+    </div>
+  );
+}
