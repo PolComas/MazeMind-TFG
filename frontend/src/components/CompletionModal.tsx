@@ -36,7 +36,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
     overlay: {
       position: 'fixed', // Fixa a la pantalla
       inset: 0, // Cobreix tot (top, right, bottom, left = 0)
-      background: applyAlpha(visuals.textColor, 0.75), // Fons fosc semitransparent
+      background: applyAlpha(visuals.surfaceColor, 0.75), // Fons fosc semitransparent
       backdropFilter: 'blur(8px)', // Efecte vidre
       display: 'grid',
       placeItems: 'center',

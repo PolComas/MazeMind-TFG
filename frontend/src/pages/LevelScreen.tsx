@@ -417,7 +417,7 @@ export default function LevelScreen({
     crash_help_color: screenSettings.crashHelpColor || '#E11D48',
   }), [screenSettings]);
 
-  const styles: Record<string, React.CSSProperties> = {
+  const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
       minHeight: "100svh",
       width: "100%",
@@ -523,7 +523,7 @@ export default function LevelScreen({
       color: screenSettings.subtextColor,
       fontSize: 14,
     },
-  };
+  }), [screenSettings]);
 
   const title = useMemo(() => {
     if (isPracticeMode) {

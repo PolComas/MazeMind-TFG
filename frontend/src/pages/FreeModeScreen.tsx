@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSettings } from '../context/SettingsContext';
 
 export type CustomLevelConfig = {
@@ -50,7 +50,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
     onStartGame(config);
   };
 
-  const styles: Record<string, React.CSSProperties> = {
+  const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
       background: screenSettings.backgroundColor, color: screenSettings.textColor,
       minHeight: '100svh', width: '100vw',
@@ -91,7 +91,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
         color: screenSettings.textColor, fontSize: 18,
         fontWeight: 800, cursor: 'pointer', marginTop: '16px',
     }
-  };
+  }), [screenSettings]);
 
   return (
     <main style={styles.page}>
