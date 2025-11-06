@@ -300,7 +300,10 @@ export default function LevelScreen({
         onTogglePathHelp();
         return;
       }
-      if (key === (gameSettings.keyHelpCrash || '').toLowerCase()) {
+
+      // Ajuda de xoc: només si la tecla està definida i el nivell no és "hard"
+      const crashKey = (gameSettings.keyHelpCrash || '').toLowerCase();
+      if (crashKey && key === crashKey && level.difficulty !== 'hard') {
         e.preventDefault();
         onToggleCrashHelp();
         return;

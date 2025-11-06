@@ -187,15 +187,17 @@ export default function GameHUD({
           <kbd>{formatKey(gameSettings.keyHelpPath)}</kbd>
         </button>
 
-        <button
-          style={{...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {})}}
-          onClick={onToggleCrashHelp}
-          title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
-        >
-          <Skull size={18} />
-          <span>Ajuda Xoc</span>
-          <kbd>{formatKey(gameSettings.keyHelpCrash)}</kbd>
-        </button>
+        {difficulty !== 'hard' && (
+          <button
+            style={{...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {})}}
+            onClick={onToggleCrashHelp}
+            title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
+          >
+            <Skull size={18} />
+            <span>Ajuda Xoc</span>
+            <kbd>{formatKey(gameSettings.keyHelpCrash)}</kbd>
+          </button>
+        )}
       </div>
     </div>
   );

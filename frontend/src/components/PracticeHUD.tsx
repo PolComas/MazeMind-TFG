@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Footprints, Skull } from "lucide-react";
+import { Eye, Footprints } from "lucide-react";
 import { useSettings } from '../context/SettingsContext';
 
 // Helper per formatar la tecla
@@ -12,7 +12,6 @@ const formatKey = (key: string) => {
 // Props que el component rebrà
 type Props = {
   totalScore: number;
-  //currentLevel: number;
   revealCharges: number;
   isPathHelpActive: boolean;
   isCrashHelpActive: boolean;
@@ -20,20 +19,15 @@ type Props = {
   onTogglePathHelp: () => void;
   onToggleCrashHelp: () => void;
   lives: number;
-  //difficulty: 'easy' | 'normal' | 'hard';
 };
 
 export default function PracticeHUD({
   totalScore,
-  //currentLevel,
   revealCharges,
   isPathHelpActive,
-  isCrashHelpActive,
   onRevealHelp,
   onTogglePathHelp,
-  onToggleCrashHelp,
   lives,
-  //difficulty
 }: Props) {
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
@@ -128,7 +122,7 @@ export default function PracticeHUD({
       {/* CARD 1: PUNTUACIÓ TOTAL */}
       <div style={styles.card}>
         <span style={styles.label}>🏆 Puntuació Total</span>
-        <span style={styles.valueLarge}>{totalScore}</span>
+        <span style={styles.valueLarge}>{Math.round(totalScore)}</span>
       </div>
 
       {/* CARD 2: VIDES */}
@@ -161,16 +155,6 @@ export default function PracticeHUD({
           <Footprints size={18} />
           <span>Camí</span>
           <kbd>{formatKey(gameSettings.keyHelpPath)}</kbd>
-        </button>
-
-        <button
-          style={{...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {})}}
-          onClick={onToggleCrashHelp}
-          title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
-        >
-          <Skull size={18} />
-          <span>Ajuda Xoc</span>
-          <kbd>{formatKey(gameSettings.keyHelpCrash)}</kbd>
         </button>
       </div>
     </div>

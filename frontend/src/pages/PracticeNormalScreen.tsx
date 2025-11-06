@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback, } from "react";
 import MazeCanvas from "../components/MazeCanvas";
 import { PALETTE } from "../components/palette";
 import { useGameAudio } from "../audio/sound";
@@ -12,22 +6,76 @@ import { useSettings } from "../context/SettingsContext";
 import GameOverModal from "../components/GameOverModal";
 import PracticeHUD from "../components/PracticeHUD";
 import PracticeScoreModal from "../components/PracticeScoreModal";
-import {
-  loadPracticeProgress,
-  savePracticeCompletion,
-  type PracticeProgress,
-} from "../utils/practiceProgress";
+import { savePracticeRun } from "../utils/practiceProgress";
 import { generateLevel, type Level } from "../maze/maze_generator";
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
-const POINTS_START = 1000;
-const POINTS_LOSS_PER_SECOND = 1;
-const POINTS_LOSS_PATH_HELP = 2;
-const POINTS_LOSS_CRASH_HELP = 20;
-const POINTS_COST_REVEAL = 50;
 const REVEAL_DURATION_MS = 500;
 const LIVES = 3;
+
+type LevelConfig = {
+  width: number;
+  height: number;
+  memorizeTime: number;
+};
+
+type ScoreTuning = {
+  baseScore: number;
+  timeLossPerSecond: number;
+  pathHelpLossPerSecond: number;
+  revealCost: number;
+};
+
+// Taula de mides per rangs de nivells (clamp a 20x20)
+const SIZE_TABLE: Array<{ w: number; h: number }> = [
+  { w: 3, h: 3 },  // 1
+  { w: 3, h: 4 },  // 2
+  { w: 4, h: 4 },  // 3
+  { w: 4, h: 5 },  // 4
+  { w: 5, h: 5 },  // 5
+  { w: 5, h: 6 },  // 6
+  { w: 6, h: 6 },  // 7
+  { w: 6, h: 7 },  // 8
+  { w: 7, h: 7 },  // 9
+  { w: 7, h: 8 },  // 10
+  { w: 8, h: 8 },  // 11
+  { w: 8, h: 9 },  // 12
+  { w: 9, h: 9 },  // 13
+  { w: 10, h: 10 }, // 14
+  { w: 12, h: 12 }, // 15
+  { w: 15, h: 15 }, // 16
+  { w: 18, h: 18 }, // 17
+  { w: 20, h: 20 }, // 18+ → clamp
+];
+
+function getLevelConfig(levelIndex: number): LevelConfig {
+  const index = Math.min(levelIndex - 1, SIZE_TABLE.length - 1);
+  const { w, h } = SIZE_TABLE[index];
+
+  const cells = w * h;
+  // Temps de memorització proporcional a les cel·les, amb límit
+  const memorizeTime = Math.min(
+    18,
+    Math.max(5, Math.round(cells / 6))
+  );
+
+  return { width: w, height: h, memorizeTime };
+}
+
+// Paràmetres de puntuació per "tier" (cada 3 nivells puja una mica)
+function getScoreTuning(levelIndex: number): ScoreTuning {
+  const rawTier = Math.floor((levelIndex - 1) / 3); // 0 per nivells 1–3, 1 per 4–6...
+  const tier = Math.min(rawTier, 6); // clamp perquè no es descontroli
+
+  const baseScore = 400 + tier * 200;             // 400, 600, 800, ...
+  const timeLossPerSecond = 0.4 + tier * 0.15;    // 0.4, 0.55, 0.7, ...
+  const pathHelpLossPerSecond = 1 + tier * 0.5;   // 1, 1.5, 2, ...
+  const revealCost = 25 + tier * 10;              // 25, 35, 45, ...
+
+  return { baseScore, timeLossPerSecond, pathHelpLossPerSecond, revealCost };
+}
+
 
 type Pos = { x: number; y: number };
 
@@ -37,25 +85,6 @@ const formatKey = (key: string) => {
   if (key.length === 1) return key.toUpperCase();
   return key;
 };
-
-// Donada la "fase" de score, decideix la mida del laberint
-function createPracticeLevel(levelIndex: number): Level {
-  // Comença petit i augmenta fins a 25x25
-  const size = Math.min(25, 6 + levelIndex); // Nivell 1: 7x7, 2:8x8,...
-  const memorizeTime = Math.max(
-    4,
-    10 - Math.floor((levelIndex - 1) / 2)
-  ); // mica menys temps cada 2 nivells
-
-  return generateLevel({
-    levelNumber: levelIndex,
-    difficulty: "normal",
-    width: size,
-    height: size,
-    memorizeTime,
-    stars: [60, 45, 30],
-  });
-}
 
 export default function PracticeNormalScreen({
   onBack,
@@ -67,14 +96,29 @@ export default function PracticeNormalScreen({
   const screenSettings = getVisualSettings("levelScreen");
   const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
 
-  // Progrés global del mode score
-  const [practice, setPractice] = useState<PracticeProgress>(() =>
-    loadPracticeProgress()
-  );
+  // Estat local de la RUN de Score
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [totalScore, setTotalScore] = useState(0);
 
   // Nivell actual (laberint)
-  const [level, setLevel] = useState<Level>(() =>
-    createPracticeLevel(loadPracticeProgress().currentLevel)
+  const [level, setLevel] = useState<Level>(() => {
+    const cfg = getLevelConfig(1);
+    return generateLevel({
+        levelNumber: 1,
+        difficulty: "normal",
+        width: cfg.width,
+        height: cfg.height,
+        memorizeTime: cfg.memorizeTime,
+        stars: [60, 45, 30],
+    });
+  });
+
+  // Punts aconseguits a l'últim laberint (per al modal)
+  const [lastLevelScore, setLastLevelScore] = useState(0);
+
+  // Tuning de puntuació segons el nivell actual
+  const [scoreTuning, setScoreTuning] = useState<ScoreTuning>(() =>
+    getScoreTuning(1)
   );
 
   const memorizeDuration = level.memorizeTime;
@@ -91,7 +135,7 @@ export default function PracticeNormalScreen({
   ]);
 
   const [gameTime, setGameTime] = useState(0);
-  const [points, setPoints] = useState(POINTS_START);
+  const [points, setPoints] = useState(() => scoreTuning.baseScore);
 
   const [lives, setLives] = useState(LIVES); // sempre amb vides al mode score
 
@@ -111,14 +155,14 @@ export default function PracticeNormalScreen({
 
   // Helpers per resetejar TOT quan canviem de laberint
   const resetForLevel = useCallback(
-    (lvl: Level) => {
+    (lvl: Level, tuning: ScoreTuning) => {
       setPhase("memorize");
       setRemaining(lvl.memorizeTime);
       total.current = lvl.memorizeTime;
       setPlayerPos({ x: lvl.start.x, y: lvl.start.y });
       setPlayerPath([{ x: lvl.start.x, y: lvl.start.y }]);
       setGameTime(0);
-      setPoints(POINTS_START);
+      setPoints(tuning.baseScore);
       setLives(LIVES);
       setRevealCharges(3);
       setIsPathHelpActive(false);
@@ -174,26 +218,28 @@ export default function PracticeNormalScreen({
     if (phase !== "playing") return;
 
     const gameTick = setInterval(() => {
-      setGameTime((t) => t + 1);
-      setPoints((p) => {
-        let loss = POINTS_LOSS_PER_SECOND;
-        if (pathHelpRef.current) loss += POINTS_LOSS_PATH_HELP;
+        setGameTime((t) => t + 1);
+        setPoints((p) => {
+        let loss = scoreTuning.timeLossPerSecond;
+        if (pathHelpRef.current) loss += scoreTuning.pathHelpLossPerSecond;
         return Math.max(0, p - loss);
-      });
+        });
     }, 1000);
 
     return () => clearInterval(gameTick);
-  }, [phase]);
+  }, [phase, scoreTuning]);
+
 
   // Ajudes
   const onRevealHelp = useCallback(() => {
     if (phase !== "playing" || revealCharges <= 0 || showReveal) return;
     audio.playReveal();
     setRevealCharges((c) => c - 1);
-    setPoints((p) => Math.max(0, p - POINTS_COST_REVEAL));
+    setPoints((p) => Math.max(0, p - scoreTuning.revealCost));
     setShowReveal(true);
     setTimeout(() => setShowReveal(false), REVEAL_DURATION_MS);
-  }, [phase, revealCharges, showReveal, audio]);
+  }, [phase, revealCharges, showReveal, audio, scoreTuning]);
+
 
   const onTogglePathHelp = useCallback(() => {
     if (phase !== "playing") return;
@@ -217,29 +263,69 @@ export default function PracticeNormalScreen({
     onBack();
   }, [audio, onBack]);
 
-  const handleRetrySameMaze = useCallback(() => {
+
+  // Reiniciar la run completa (tornar a nivell 1, score 0)
+  const handleRestartRun = useCallback(() => {
     audio.playFail();
     audio.stopMusic();
-    resetForLevel(level);
-  }, [audio, resetForLevel, level]);
+
+    setTotalScore(0);
+    setCurrentLevel(1);
+
+    const cfg = getLevelConfig(1);
+    const firstLevel = generateLevel({
+        levelNumber: 1,
+        difficulty: "normal",
+        width: cfg.width,
+        height: cfg.height,
+        memorizeTime: cfg.memorizeTime,
+        stars: [60, 45, 30],
+    });
+    const firstTuning = getScoreTuning(1);
+
+    setLevel(firstLevel);
+    setScoreTuning(firstTuning);
+    resetForLevel(firstLevel, firstTuning);
+  }, [audio, resetForLevel]);
+
 
   const handleNextLevel = useCallback(() => {
     audio.playBtnSound();
     audio.stopMusic();
-    // El currentLevel ja s'ha incrementat a savePracticeCompletion
-    const newLevel = createPracticeLevel(practice.currentLevel);
-    setLevel(newLevel);
-    resetForLevel(newLevel);
+
+    setCurrentLevel((prevLevel) => {
+        const nextLevel = prevLevel + 1;
+
+        const cfg = getLevelConfig(nextLevel);
+        const newLevel = generateLevel({
+        levelNumber: nextLevel,
+        difficulty: "normal",
+        width: cfg.width,
+        height: cfg.height,
+        memorizeTime: cfg.memorizeTime,
+        stars: [60, 45, 30],
+        });
+        const newTuning = getScoreTuning(nextLevel);
+
+        setLevel(newLevel);
+        setScoreTuning(newTuning);
+        resetForLevel(newLevel, newTuning);
+
+        return nextLevel;
+    });
+
     setShowScoreModal(false);
-  }, [audio, practice.currentLevel, resetForLevel]);
+  }, [audio, resetForLevel]);
+
 
   // Quan completes un laberint, sumem punts i mostrem modal de score
   useEffect(() => {
     if (phase !== "completed") return;
-    const newProgress = savePracticeCompletion(points);
-    setPractice(newProgress);
+    setLastLevelScore(points);
+    setTotalScore((prev) => prev + points);
     setShowScoreModal(true);
   }, [phase, points]);
+
 
   // Moviment + teclat
   useEffect(() => {
@@ -273,11 +359,6 @@ export default function PracticeNormalScreen({
       if (key === (gameSettings.keyHelpPath || "").toLowerCase()) {
         e.preventDefault();
         onTogglePathHelp();
-        return;
-      }
-      if (key === (gameSettings.keyHelpCrash || "").toLowerCase()) {
-        e.preventDefault();
-        onToggleCrashHelp();
         return;
       }
 
@@ -323,6 +404,8 @@ export default function PracticeNormalScreen({
           setLives(0);
           audio.stopMusic();
           setPhase("failed");
+          // Guardar només el maxScore de la run actual
+          savePracticeRun(totalScore);
         } else {
           setLives(newLives);
           setPlayerPos({ x: level.start.x, y: level.start.y });
@@ -350,18 +433,8 @@ export default function PracticeNormalScreen({
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [
-    phase,
-    settings,
-    level,
-    playerPos,
-    lives,
-    showReveal,
-    audio,
-    onRevealHelp,
-    onTogglePathHelp,
-    onToggleCrashHelp,
-  ]);
+  }, [ phase, settings, level, playerPos, lives, showReveal, audio,
+    onRevealHelp, onTogglePathHelp, onToggleCrashHelp, totalScore, ]);
 
   const mazeSettings = useMemo(
     () => ({
@@ -379,7 +452,7 @@ export default function PracticeNormalScreen({
     }),
     [screenSettings]
   );
-
+ 
   const styles: Record<string, React.CSSProperties> = {
     page: {
       minHeight: "100svh",
@@ -392,7 +465,7 @@ export default function PracticeNormalScreen({
       display: "flex",
       flexDirection: "column",
       gap: "clamp(12px, 2vw, 16px)",
-      alignItems: "center",
+      alignItems: "center", 
     },
     headerRow: {
       display: "flex",
@@ -400,14 +473,10 @@ export default function PracticeNormalScreen({
       alignItems: "center",
       gap: 16,
       flexShrink: 0,
-      width: "100%",
-      maxWidth: "980px",
+      width: "100%", 
+      maxWidth: "980px", 
     },
-    title: {
-      margin: 0,
-      fontSize: "clamp(22px, 4vw, 28px)",
-      textAlign: "center",
-    },
+    title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
     ghostBtn: {
       padding: "10px 14px",
       borderRadius: 12,
@@ -425,7 +494,7 @@ export default function PracticeNormalScreen({
       gap: "clamp(12px, 2vw, 16px)",
       minHeight: 0,
       width: "100%",
-      maxWidth: "980px",
+      maxWidth: "980px", 
     },
     memorizePanel: {
       background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
@@ -464,29 +533,28 @@ export default function PracticeNormalScreen({
       minHeight: 0,
     },
     boardInner: {
-      width: "100%",
-      height: "100%",
-      aspectRatio: "1 / 1",
-      maxWidth: "calc(100vh - 300px)",
-      maxHeight: "100%",
+      width: '100%',
+      height: '100%',
+      aspectRatio: '1 / 1',
+      maxWidth: 'calc(100vh - 300px)',
+      maxHeight: '100%',
       background: screenSettings.mazePathColor,
       borderRadius: 16,
-      boxShadow:
-        "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
+      boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
       overflow: "hidden",
-      position: "relative",
+      position: 'relative', 
     },
-    footer: {
+    footer: { 
       flexShrink: 0,
       width: "100%",
       maxWidth: "980px",
       textAlign: "center",
     },
-    tip: {
-      display: "inline-block",
+    tip: { 
+      display: 'inline-block',
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
-      padding: "10px 16px",
+      padding: '10px 16px',
       borderRadius: 10,
       color: screenSettings.subtextColor,
       fontSize: 14,
@@ -505,7 +573,7 @@ export default function PracticeNormalScreen({
         >
           <span aria-hidden="true">←</span> Tornar
         </button>
-        <h1 style={styles.title}>Mode Score (Nivell {practice.currentLevel})</h1>
+        <h1 style={styles.title}>Mode Score - Nivell {currentLevel}</h1>
         <div style={{ width: 100 }} />
       </header>
 
@@ -538,7 +606,7 @@ export default function PracticeNormalScreen({
           </section>
         ) : (
           <PracticeHUD
-            totalScore={practice.totalScore}
+            totalScore={totalScore}
             revealCharges={revealCharges}
             isPathHelpActive={isPathHelpActive}
             isCrashHelpActive={isCrashHelpActive}
@@ -588,16 +656,16 @@ export default function PracticeNormalScreen({
       {/* MODALS */}
       {phase === "failed" && (
         <GameOverModal
-          onRetry={handleRetrySameMaze}
+          onRetry={handleRestartRun}
           onBack={handleBackWithSound}
         />
       )}
 
       {phase === "completed" && showScoreModal && (
         <PracticeScoreModal
-          levelNumber={practice.currentLevel - 1} // el que acabem de superar
+          levelNumber={currentLevel - 1}
           pointsGained={points}
-          totalScore={practice.totalScore}
+          totalScore={totalScore}
           onNextLevel={handleNextLevel}
           onBack={handleBackWithSound}
         />

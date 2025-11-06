@@ -1,61 +1,55 @@
-// Tipus per al progrés del mode Score
-export type PracticeProgress = {
-  totalScore: number;
-  currentLevel: number;
+// Gestionar l'storage del millor score de pràctica
+export type PracticeStats = {
+  maxScore: number;
 };
 
-const STORAGE_KEY = 'mazeMindPracticeProgress';
+const STORAGE_KEY = 'mazeMindPracticeStats';
 
-// Valor inicial per si no hi ha res guardat
-const INITIAL_PROGRESS: PracticeProgress = {
-  totalScore: 0,
-  currentLevel: 1,
+const INITIAL_STATS: PracticeStats = {
+  maxScore: 0,
 };
 
-// Carregar el progrés des de localStorage
-export function loadPracticeProgress(): PracticeProgress {
+// Carregar el millor score de pràctica
+export function loadPracticeStats(): PracticeStats {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       return {
-        totalScore: parsed.totalScore || 0,
-        currentLevel: parsed.currentLevel || 1,
+        maxScore: typeof parsed.maxScore === 'number' ? parsed.maxScore : 0,
       };
     }
   } catch (e) {
-    console.error("Error al carregar progrés de pràctica:", e);
+    console.error("Error al carregar maxScore de pràctica:", e);
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  return { ...INITIAL_PROGRESS };
+  return { ...INITIAL_STATS };
 }
 
-// Guardar el progrés DESPRÉS de completar un nivell
-export function savePracticeCompletion(pointsGained: number): PracticeProgress {
-  
-  const currentProgress = loadPracticeProgress();
+// Guardar el millor score DESPRÉS d'una run
+export function savePracticeRun(finalScore: number): PracticeStats {
+  const current = loadPracticeStats();
 
-  const newProgress: PracticeProgress = {
-    totalScore: currentProgress.totalScore + pointsGained,
-    currentLevel: currentProgress.currentLevel + 1,
+  const newStats: PracticeStats = {
+    maxScore: Math.max(current.maxScore, finalScore),
   };
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newStats));
   } catch (e) {
-    console.error("Error al guardar progrés de pràctica:", e);
+    console.error("Error al guardar maxScore de pràctica:", e);
   }
 
-  return newProgress;
+  return newStats;
 }
 
-// Funció per reiniciar el progrés (per si es vol afegir un botó)
-export function resetPracticeProgress(): PracticeProgress {
+// Reiniciar el millor score de pràctica
+export function resetPracticeStats(): PracticeStats {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_PROGRESS));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STATS));
   } catch (e) {
-    console.error("Error al reiniciar progrés de pràctica:", e);
+    console.error("Error al reiniciar maxScore de pràctica:", e);
   }
-  return { ...INITIAL_PROGRESS };
+  return { ...INITIAL_STATS };
 }

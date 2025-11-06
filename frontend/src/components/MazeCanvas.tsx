@@ -88,14 +88,24 @@ export default function MazeCanvas({
       canvas.height = size
 
       const ctx = canvas.getContext('2d')!
-      const cell = size / level.width
+      
+      // 💡 Nova lògica: escalar segons la dimensió més gran i centrar el laberint
+      const maxDim = Math.max(level.width, level.height)
+      const cell = size / maxDim
+
+      const mazePixelWidth = level.width * cell
+      const mazePixelHeight = level.height * cell
+      const offsetX = (size - mazePixelWidth) / 2
+      const offsetY = (size - mazePixelHeight) / 2
 
       // Fons
       ctx.fillStyle = s.path_color
       ctx.fillRect(0, 0, size, size)
 
       // Sortida
-      const ex = level.exit.x * cell, ey = level.exit.y * cell  
+      const ex = offsetX + level.exit.x * cell
+      const ey = offsetY + level.exit.y * cell
+
       const sz = cell * 0.7, pad = (cell - sz) / 2  
       ctx.fillStyle = s.exit_color
       ctx.roundRect?.(ex + pad, ey + pad, sz, sz, cell * 0.15) ?? ctx.fillRect(ex + pad, ey + pad, sz, sz)
@@ -108,9 +118,15 @@ export default function MazeCanvas({
         ctx.globalAlpha = 0.4 
         ctx.beginPath()
         const start = currentPath[0]
-        ctx.moveTo(start.x * cell + cell / 2, start.y * cell + cell / 2)
+        ctx.moveTo(
+          offsetX + start.x * cell + cell / 2,
+          offsetY + start.y * cell + cell / 2
+        )
         for (const pos of currentPath.slice(1)) {
-          ctx.lineTo(pos.x * cell + cell / 2, pos.y * cell + cell / 2)
+          ctx.lineTo(
+            offsetX + pos.x * cell + cell / 2,
+            offsetY + pos.y * cell + cell / 2
+          )
         }
         ctx.stroke()
         ctx.globalAlpha = 1.0
@@ -125,8 +141,8 @@ export default function MazeCanvas({
         for (let y = 0; y < level.height; y++) {
           for (let x = 0; x < level.width; x++) {
             const c = level.maze[y][x]  
-            const px = x * cell 
-            const py = y * cell  
+            const px = offsetX + x * cell 
+            const py = offsetY + y * cell
             ctx.beginPath()
             if (c.walls.top) { ctx.moveTo(px, py); ctx.lineTo(px + cell, py) }
             if (c.walls.right) { ctx.moveTo(px + cell, py); ctx.lineTo(px + cell, py + cell) }
@@ -151,8 +167,8 @@ export default function MazeCanvas({
           for (let nx = x - 1; nx <= x + 1; nx++) {
             if (nx < 0 || ny < 0 || nx >= level.width || ny >= level.height) continue
             const cellObj = level.maze[ny][nx]
-            const px = nx * cell
-            const py = ny * cell
+            const px = offsetX + nx * cell
+            const py = offsetY + ny * cell
             ctx.beginPath()
             // Dibuixar les parets presents a la cel·la veïna
             if (cellObj.walls.top) { ctx.moveTo(px, py); ctx.lineTo(px + cell, py) }
@@ -166,8 +182,8 @@ export default function MazeCanvas({
 
       // Jugador
       if ((phase === 'playing' || phase === 'memorize') && playerPos) {
-        const px = playerPos.x * cell + cell / 2  
-        const py = playerPos.y * cell + cell / 2
+        const px = offsetX + playerPos.x * cell + cell / 2  
+        const py = offsetY + playerPos.y * cell + cell / 2
         const radius = cell * 0.3
         ctx.fillStyle = s.player_color
         ctx.beginPath()

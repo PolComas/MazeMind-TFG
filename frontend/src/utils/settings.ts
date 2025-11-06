@@ -149,7 +149,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazeExitColor: '#F0B429',
     mazeWallThickness: 3,
     // Colors d'ajuda
-    playerPathColor: 'rgba(255, 255, 255, 0.4)',
+    playerPathColor: '#22D3EE',
     crashHelpColor: '#E11D48',
   },
   // Tema Clar
@@ -192,7 +192,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     normalColor: '#FFFF00',
     hardColor: '#FF3131',
     // Laberint
-    mazePathColor: '#000000',
+    mazePathColor: '#383838ff',
     mazeWallColor: '#FFFFFF',
     mazePlayerColor: '#2563eb',
     mazeExitColor: '#2563eb',

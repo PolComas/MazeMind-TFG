@@ -1,5 +1,3 @@
-// Fitxer: src/components/PracticeScoreModal.tsx
-
 import React from 'react';
 import { PALETTE } from './palette';
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
@@ -25,23 +23,23 @@ export default function PracticeScoreModal({
   return (
     <div style={styles.overlay}>
       <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        
+        {/* Nivell Superat */}
         <div style={{ color: PALETTE.accentGreen, marginBottom: '-16px' }}>
           <CheckCircle size={56} />
         </div>
         <h2 id="modalTitle" style={styles.title}>
-          Nivell {levelNumber} Superat!
+          Nivell {levelNumber + 1} Superat!
         </h2>
 
         {/* Resultats */}
         <div style={styles.results}>
           <div style={styles.resultItem}>
             <span style={styles.resultLabel}>Punts Aconseguits</span>
-            <span style={styles.resultValue}>+{pointsGained}</span>
+            <span style={styles.resultValue}>+{Math.round(pointsGained)}</span>
           </div>
           <div style={styles.resultItem}>
             <span style={styles.resultLabel}>Puntuació Total</span>
-            <span style={styles.resultValue}>{totalScore}</span>
+            <span style={styles.resultValue}>{Math.round(totalScore)}</span>
           </div>
         </div>
 
@@ -59,7 +57,6 @@ export default function PracticeScoreModal({
   );
 }
 
-// Estils (basats en GameOverModal)
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed', inset: 0,
