@@ -416,6 +416,13 @@ export default function PracticeNormalScreen({
           // Guardar només el maxScore de la run actual
           const newBest = savePracticeRun(totalScore);
           setBestScore(newBest);
+          if (!user) {
+            try {
+              localStorage.setItem('mazeMindLocalProgressPending', '1');
+            } catch (storageError) {
+              console.warn('No s\'ha pogut marcar el progrés local pendent', storageError);
+            }
+          }
           if (user) {
             pushPracticeBest(user.id, newBest).catch((error) => {
               console.error('Error sincronitzant el millor score de pràctica:', error);

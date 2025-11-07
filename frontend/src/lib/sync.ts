@@ -4,16 +4,18 @@ import { loadPracticeBestScore } from '../utils/practiceProgress';
 
 type Difficulty = 'easy' | 'normal' | 'hard';
 
-type ServerProgress = {
+export type CloudSnapshot = {
   progress: GameProgress;
   practiceBest: number;
 };
 
 const PROGRESS_STORAGE_KEY = 'mazeMindProgress';
 const PRACTICE_BEST_STORAGE_KEY = 'mazeMindPracticeBestScore';
+const LOCAL_PROGRESS_PENDING_KEY = 'mazeMindLocalProgressPending';
 
 const CAMPAIGN_MIN = 1;
 const CAMPAIGN_MAX = 15;
+
 const isCampaignKey = (key: string) => {
   const parts = key.split('-');
   if (parts.length !== 2) return false;
@@ -21,7 +23,32 @@ const isCampaignKey = (key: string) => {
   return Number.isFinite(num) && num >= CAMPAIGN_MIN && num <= CAMPAIGN_MAX;
 };
 
-export async function fetchServerProgress(userId: string): Promise<ServerProgress> {
+const pickBestTime = (local: number | null, remote: number | null) => {
+  if (local === null) return remote;
+  if (remote === null) return local;
+  return Math.min(local, remote);
+};
+
+const pickBestPoints = (local: number | null, remote: number | null) => {
+  if (local === null) return remote;
+  if (remote === null) return local;
+  return Math.max(local, remote);
+};
+
+const clearGuestStorage = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    window.localStorage.removeItem(PROGRESS_STORAGE_KEY);
+    window.localStorage.removeItem(PRACTICE_BEST_STORAGE_KEY);
+    window.localStorage.removeItem(LOCAL_PROGRESS_PENDING_KEY);
+  } catch (error) {
+    console.warn('No s\'ha pogut netejar el progrés local', error);
+  }
+};
+
+export async function getCloudSnapshot(userId: string): Promise<CloudSnapshot> {
   if (!userId) {
     throw new Error('No s\'ha proporcionat cap usuari per obtenir el progrés.');
   }
@@ -81,47 +108,65 @@ export async function fetchServerProgress(userId: string): Promise<ServerProgres
   };
 }
 
-export function mergeProgress(local: GameProgress, server: GameProgress): GameProgress {
+export function computeSmartMerge(local: GameProgress, cloud: GameProgress): GameProgress {
   const mergedLevels: GameProgress['levels'] = {};
-  const levelIds = new Set([...Object.keys(local.levels), ...Object.keys(server.levels)]);
+  const levelIds = new Set([...Object.keys(local.levels), ...Object.keys(cloud.levels)]);
 
   levelIds.forEach((levelId) => {
     if (!isCampaignKey(levelId)) return;
     const localLevel = local.levels[levelId];
-    const serverLevel = server.levels[levelId];
+    const cloudLevel = cloud.levels[levelId];
 
-    if (!localLevel && !serverLevel) {
+    if (!localLevel && !cloudLevel) {
       return;
     }
 
     mergedLevels[levelId] = {
-      stars: Math.max(localLevel?.stars ?? 0, serverLevel?.stars ?? 0),
-      bestTime: pickBestTime(localLevel?.bestTime ?? null, serverLevel?.bestTime ?? null),
-      bestPoints: pickBestPoints(localLevel?.bestPoints ?? null, serverLevel?.bestPoints ?? null),
+      stars: Math.max(localLevel?.stars ?? 0, cloudLevel?.stars ?? 0),
+      bestTime: pickBestTime(localLevel?.bestTime ?? null, cloudLevel?.bestTime ?? null),
+      bestPoints: pickBestPoints(localLevel?.bestPoints ?? null, cloudLevel?.bestPoints ?? null),
     };
   });
 
   return {
     levels: mergedLevels,
     highestUnlocked: {
-      easy: Math.max(local.highestUnlocked.easy, server.highestUnlocked.easy),
-      normal: Math.max(local.highestUnlocked.normal, server.highestUnlocked.normal),
-      hard: Math.max(local.highestUnlocked.hard, server.highestUnlocked.hard),
+      easy: Math.max(local.highestUnlocked.easy, cloud.highestUnlocked.easy),
+      normal: Math.max(local.highestUnlocked.normal, cloud.highestUnlocked.normal),
+      hard: Math.max(local.highestUnlocked.hard, cloud.highestUnlocked.hard),
     },
   };
 }
 
-const pickBestTime = (local: number | null, remote: number | null) => {
-  if (local === null) return remote;
-  if (remote === null) return local;
-  return Math.min(local, remote);
-};
+export async function applyCloudOnly(userId: string): Promise<CloudSnapshot> {
+  const cloudSnapshot = await getCloudSnapshot(userId);
+  clearGuestStorage();
+  return cloudSnapshot;
+}
 
-const pickBestPoints = (local: number | null, remote: number | null) => {
-  if (local === null) return remote;
-  if (remote === null) return local;
-  return Math.max(local, remote);
-};
+export async function applyLocalOnly(userId: string): Promise<void> {
+  const localProgress = loadProgress();
+  await pushProgress(userId, localProgress);
+
+  const localPracticeBest = loadPracticeBestScore();
+  if (localPracticeBest > 0) {
+    await pushPracticeBest(userId, localPracticeBest);
+  }
+}
+
+export async function applySmartMerge(userId: string): Promise<void> {
+  const localProgress = loadProgress();
+  const localPracticeBest = loadPracticeBestScore();
+  const cloudSnapshot = await getCloudSnapshot(userId);
+
+  const mergedProgress = computeSmartMerge(localProgress, cloudSnapshot.progress);
+  await pushProgress(userId, mergedProgress);
+
+  const mergedPracticeBest = Math.max(localPracticeBest, cloudSnapshot.practiceBest ?? 0);
+  if (mergedPracticeBest > (cloudSnapshot.practiceBest ?? 0)) {
+    await pushPracticeBest(userId, mergedPracticeBest);
+  }
+}
 
 export async function pushProgress(userId: string, progress: GameProgress): Promise<void> {
   if (!userId) {
@@ -178,34 +223,3 @@ export async function pushPracticeBest(userId: string, localBest: number): Promi
     throw error;
   }
 }
-
-export async function syncOnLogin(userId: string): Promise<GameProgress> {
-  const localProgress = loadProgress();
-  const localPracticeBest = loadPracticeBestScore();
-
-  const server = await fetchServerProgress(userId);
-  const mergedProgress = mergeProgress(localProgress, server.progress);
-
-  await pushProgress(userId, mergedProgress);
-
-  const mergedPracticeBest = Math.max(localPracticeBest, server.practiceBest ?? 0);
-  if (mergedPracticeBest > (server.practiceBest ?? 0)) {
-    await pushPracticeBest(userId, mergedPracticeBest);
-  }
-
-  persistLocalData(mergedProgress, mergedPracticeBest);
-  return mergedProgress;
-}
-
-const persistLocalData = (progress: GameProgress, practiceBest: number) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
-    window.localStorage.setItem(PRACTICE_BEST_STORAGE_KEY, JSON.stringify(practiceBest));
-  } catch (error) {
-    console.error('No s\'ha pogut guardar el progrés unificat localment', error);
-  }
-};

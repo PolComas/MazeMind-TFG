@@ -63,19 +63,28 @@ export function loadProgress(): GameProgress {
 }
 
 // Guardar el progrés d'un nivell completat
+export type SaveLevelCompletionOptions = {
+  baseProgress?: GameProgress;
+  persist?: boolean;
+};
+
 export function saveLevelCompletion(
   difficulty: 'easy' | 'normal' | 'hard',
   levelNumber: number,
   stars: number,
   time: number,
-  points: number
+  points: number,
+  options?: SaveLevelCompletionOptions
 ): GameProgress {
-  
-  const currentProgress = loadProgress();
+  const sourceProgress = options?.baseProgress ?? loadProgress();
+  const nextProgress: GameProgress = {
+    levels: { ...sourceProgress.levels },
+    highestUnlocked: { ...sourceProgress.highestUnlocked },
+  };
   const levelId = `${difficulty}-${levelNumber}`;
 
   // Obtenir les dades anteriors d'aquest nivell, si existeixen
-  const previousBest = currentProgress.levels[levelId];
+  const previousBest = nextProgress.levels[levelId];
 
   const prevBestTime: number | null = previousBest?.bestTime ?? null;
   const prevBestPoints: number | null = previousBest?.bestPoints ?? null;
@@ -87,7 +96,7 @@ export function saveLevelCompletion(
   const newBestStars = Math.max(prevStars, stars);
 
   // Guardar les noves dades del nivell
-  currentProgress.levels[levelId] = {
+  nextProgress.levels[levelId] = {
     stars: newBestStars,
     bestTime: newBestTime,
     bestPoints: newBestPoints,
@@ -95,18 +104,22 @@ export function saveLevelCompletion(
 
   // Desbloquejar el següent nivell
   const nextLevelNumber = levelNumber + 1;
-  if (nextLevelNumber <= 15 && nextLevelNumber > currentProgress.highestUnlocked[difficulty]) {
-    currentProgress.highestUnlocked[difficulty] = nextLevelNumber;
+  if (nextLevelNumber <= 15 && nextLevelNumber > nextProgress.highestUnlocked[difficulty]) {
+    nextProgress.highestUnlocked[difficulty] = nextLevelNumber;
   }
 
   // Guardar tot a localStorage
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentProgress));
-  } catch (e) {
-    console.error("Error al guardar progrés:", e);
+  const shouldPersist = options?.persist ?? true;
+  if (shouldPersist) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProgress));
+      localStorage.setItem('mazeMindLocalProgressPending', '1');
+    } catch (e) {
+      console.error("Error al guardar progrés:", e);
+    }
   }
 
-  return currentProgress;
+  return nextProgress;
 }
 
 // Obtenir les estadístiques d'un nivell específic

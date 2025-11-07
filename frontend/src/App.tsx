@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import HomeScreen from './components/HomeScreen';
 import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
@@ -9,9 +9,11 @@ import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
 import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 import PracticeNormalScreen from './pages/PracticeNormalScreen';
-import { useUser, type AuthUser } from './context/UserContext';
-import { syncOnLogin } from './lib/sync';
+import { useUser } from './context/UserContext';
+import MergeProgressModal from './components/MergeProgressModal';
+import { applyCloudOnly, applyLocalOnly, applySmartMerge, getCloudSnapshot, type CloudSnapshot } from './lib/sync';
 import { supabase } from './lib/supabase';
+import { loadPracticeBestScore } from './utils/practiceProgress';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
@@ -69,6 +71,101 @@ type Route =
   | { type: 'home' }
   | { type: 'unknown'; path: string };
 
+const CAMPAIGN_MIN_LEVEL = 1;
+const CAMPAIGN_MAX_LEVEL = 15;
+const isCampaignLevelKey = (key: string) => {
+  const [difficulty, rawLevel] = key.split('-');
+  if (!difficulty || !rawLevel) return false;
+  const parsed = Number(rawLevel);
+  return Number.isFinite(parsed) && parsed >= CAMPAIGN_MIN_LEVEL && parsed <= CAMPAIGN_MAX_LEVEL;
+};
+
+const filterCampaignProgress = (progress: GameProgress): GameProgress => ({
+  levels: Object.fromEntries(
+    Object.entries(progress.levels).filter(([key]) => isCampaignLevelKey(key))
+  ),
+  highestUnlocked: { ...progress.highestUnlocked },
+});
+
+const hasMeaningfulLocalProgress = (progress: GameProgress, practiceBest: number) => {
+  if (practiceBest > 0) {
+    return true;
+  }
+  if (
+    progress.highestUnlocked.easy > 1 ||
+    progress.highestUnlocked.normal > 1 ||
+    progress.highestUnlocked.hard > 1
+  ) {
+    return true;
+  }
+  return Object.keys(progress.levels).some((key) => isCampaignLevelKey(key));
+};
+
+const progressDiffers = (local: GameProgress, cloud: GameProgress) => {
+  const levelIds = new Set([...Object.keys(local.levels), ...Object.keys(cloud.levels)]);
+  for (const levelId of levelIds) {
+    if (!isCampaignLevelKey(levelId)) continue;
+    const localLevel = local.levels[levelId];
+    const cloudLevel = cloud.levels[levelId];
+
+    if ((localLevel?.stars ?? 0) !== (cloudLevel?.stars ?? 0)) {
+      return true;
+    }
+    if ((localLevel?.bestTime ?? null) !== (cloudLevel?.bestTime ?? null)) {
+      return true;
+    }
+    if ((localLevel?.bestPoints ?? null) !== (cloudLevel?.bestPoints ?? null)) {
+      return true;
+    }
+  }
+
+  return (
+    local.highestUnlocked.easy !== cloud.highestUnlocked.easy ||
+    local.highestUnlocked.normal !== cloud.highestUnlocked.normal ||
+    local.highestUnlocked.hard !== cloud.highestUnlocked.hard
+  );
+};
+
+const shouldPromptMerge = (
+  localProgress: GameProgress,
+  localPracticeBest: number,
+  cloudSnapshot: CloudSnapshot
+) => {
+  if (!hasMeaningfulLocalProgress(localProgress, localPracticeBest)) {
+    return false;
+  }
+
+  if (progressDiffers(localProgress, cloudSnapshot.progress)) {
+    return true;
+  }
+
+  return localPracticeBest > (cloudSnapshot.practiceBest ?? 0);
+};
+
+const LOCAL_PROGRESS_PENDING_KEY = 'mazeMindLocalProgressPending';
+
+const hasPendingGuestProgress = () => {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+  const flag = window.localStorage.getItem(LOCAL_PROGRESS_PENDING_KEY);
+  return flag === null || flag === '1';
+};
+
+const markGuestProgressAsHandled = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.setItem(LOCAL_PROGRESS_PENDING_KEY, '0');
+};
+
+type MergeContext = {
+  userId: string;
+  cloud: CloudSnapshot;
+  localProgress: GameProgress;
+  localPracticeBest: number;
+};
+
 export default function App() {
   const { user } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -78,8 +175,10 @@ export default function App() {
 
   // L'estat del progrés
   const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
-  const lastSyncedUserId = useRef<string | null>(null);
-  const syncingUserId = useRef<string | null>(null);
+  const previousUserIdRef = useRef<string | null>(null);
+  const [mergeContext, setMergeContext] = useState<MergeContext | null>(null);
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  const [isMergeBusy, setIsMergeBusy] = useState(false);
 
   // --- Lògica de Navegació ---
   const [path, setPath] = useState<string>(() => getBrowserPath());
@@ -148,35 +247,51 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!user?.id) {
-      lastSyncedUserId.current = null;
+    const currentUserId = user?.id ?? null;
+    if (previousUserIdRef.current === currentUserId) {
+      return;
+    }
+    previousUserIdRef.current = currentUserId;
+
+    if (!currentUserId) {
+      setMergeContext(null);
+      setMergeError(null);
       setProgress(loadProgress());
       return;
     }
 
-    if (lastSyncedUserId.current === user.id || syncingUserId.current === user.id) {
-      return;
-    }
+    const localProgress = loadProgress();
+    const localPracticeBest = loadPracticeBestScore();
+    const pendingGuestProgress = hasPendingGuestProgress();
+    setMergeError(null);
 
-    syncingUserId.current = user.id;
-    const runSync = async () => {
+    const hydrate = async () => {
       try {
-        const mergedProgress = await syncOnLogin(user.id);
-        setProgress(mergedProgress);
-        lastSyncedUserId.current = user.id;
+        const cloudSnapshot = await getCloudSnapshot(currentUserId);
+        if (!pendingGuestProgress) {
+          markGuestProgressAsHandled();
+          setProgress(cloudSnapshot.progress);
+          return;
+        }
+
+        if (shouldPromptMerge(localProgress, localPracticeBest, cloudSnapshot)) {
+          setMergeContext({
+            userId: currentUserId,
+            cloud: cloudSnapshot,
+            localProgress,
+            localPracticeBest,
+          });
+        } else {
+          markGuestProgressAsHandled();
+          setProgress(cloudSnapshot.progress);
+        }
       } catch (error) {
-        console.error('Error sincronitzant el progrés a l\'inici de sessió:', error);
-      } finally {
-        syncingUserId.current = null;
+        console.error('Error obtenint el progrés del núvol:', error);
       }
     };
 
-    void runSync();
-  }, [user, setProgress]);
-
-  const handleAuthSuccess = (_user: AuthUser) => {
-    setShowAuthModal(false);
-  };
+    void hydrate();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -184,11 +299,99 @@ export default function App() {
     } catch (error) {
       console.error('Error en tancar sessió:', error);
     } finally {
+      if (typeof window !== 'undefined') {
+        const keysToClear = [
+          'mazeMindProgress',
+          'mazeMindPracticeBestScore',
+          'mazeMindPracticeStats',
+          LOCAL_PROGRESS_PENDING_KEY,
+        ];
+        keysToClear.forEach((key) => {
+          try {
+            window.localStorage.removeItem(key);
+          } catch (storageError) {
+            console.warn(`No s'ha pogut eliminar la clau ${key} de localStorage`, storageError);
+          }
+        });
+      }
+      setProgress(loadProgress());
+      setMergeContext(null);
+      setMergeError(null);
+      setIsMergeBusy(false);
       setShowAuthModal(false);
     }
   };
 
   const handleLogoutRequest = () => {
+    void handleLogout();
+  };
+
+  const handleChooseCloudOnly = async () => {
+    const context = mergeContext;
+    if (!context || isMergeBusy) {
+      return;
+    }
+    setIsMergeBusy(true);
+    setMergeError(null);
+    try {
+      const snapshot = await applyCloudOnly(context.userId);
+      setProgress(snapshot.progress);
+      markGuestProgressAsHandled();
+      setMergeContext(null);
+    } catch (error) {
+      console.error('Error aplicant només el progrés del núvol:', error);
+      setMergeError('No s\'ha pogut carregar el progrés del núvol. Torna-ho a intentar.');
+    } finally {
+      setIsMergeBusy(false);
+    }
+  };
+
+  const handleChooseLocalOnly = async () => {
+    const context = mergeContext;
+    if (!context || isMergeBusy) {
+      return;
+    }
+    setIsMergeBusy(true);
+    setMergeError(null);
+    try {
+      await applyLocalOnly(context.userId);
+      setProgress(filterCampaignProgress(context.localProgress));
+      markGuestProgressAsHandled();
+      setMergeContext(null);
+    } catch (error) {
+      console.error('Error pujant el progrés local:', error);
+      setMergeError('No s\'ha pogut pujar el progrés local. Revisa la connexió i torna-ho a provar.');
+    } finally {
+      setIsMergeBusy(false);
+    }
+  };
+
+  const handleChooseSmartMerge = async () => {
+    const context = mergeContext;
+    if (!context || isMergeBusy) {
+      return;
+    }
+    setIsMergeBusy(true);
+    setMergeError(null);
+    try {
+      await applySmartMerge(context.userId);
+      const snapshot = await getCloudSnapshot(context.userId);
+      setProgress(snapshot.progress);
+      markGuestProgressAsHandled();
+      setMergeContext(null);
+    } catch (error) {
+      console.error('Error aplicant la fusió intel·ligent:', error);
+      setMergeError('No s\'ha pogut completar la fusió. Torna-ho a intentar.');
+    } finally {
+      setIsMergeBusy(false);
+    }
+  };
+
+  const handleMergeCancel = () => {
+    if (isMergeBusy) {
+      return;
+    }
+    setMergeContext(null);
     void handleLogout();
   };
 
@@ -268,24 +471,26 @@ export default function App() {
       {showAuthModal && (
         <AuthModal
           onClose={() => setShowAuthModal(false)}
-          onLogin={handleAuthSuccess}
-          onRegister={handleAuthSuccess}
         />
       )}
     </>
   );
 
+  let screen: ReactElement;
+
   switch (route.type) {
     case 'settings':
-      return <SettingsScreen onBack={() => go('/')} />;
+      screen = <SettingsScreen onBack={() => go('/')} />;
+      break;
 
     case 'practice-free':
-      return (
+      screen = (
         <FreeModeScreen
           onBack={() => go('/levels')}
           onStartGame={handleStartCustomGame}
         />
       );
+      break;
 
     case 'custom': {
       const level = generateLevel({
@@ -304,7 +509,7 @@ export default function App() {
         d: route.difficulty,
       });
 
-      return (
+      screen = (
         <LevelScreen
           key={navKey}
           level={level}
@@ -314,17 +519,20 @@ export default function App() {
           onCompleteTutorial={() => {}}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
+          progress={progress}
         />
       );
+      break;
     }
 
     case 'practice-normal':
-      return (
+      screen = (
         <PracticeNormalScreen
           key={navKey}
           onBack={() => go('/levels')}
         />
       );
+      break;
 
     case 'practice-ia': {
       const level = generateLevel({
@@ -335,7 +543,7 @@ export default function App() {
         memorizeTime: 12,
         stars: [60, 45, 30],
       });
-      return (
+      screen = (
         <LevelScreen
           key={navKey}
           level={level}
@@ -345,12 +553,14 @@ export default function App() {
           onCompleteTutorial={() => {}}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
+          progress={progress}
         />
       );
+      break;
     }
 
     case 'levels':
-      return (
+      screen = (
         <LevelSelect
           progress={progress}
           onPlayLevel={(n, diff) => go(`/level/${diff}/${n}`)}
@@ -363,6 +573,7 @@ export default function App() {
           onStartPracticeFree={() => go('/practice/free')}
         />
       );
+      break;
 
     case 'level': {
       const { difficulty, number } = route;
@@ -377,7 +588,7 @@ export default function App() {
         stars: [60, 45, 30],
       });
 
-      return (
+      screen = (
         <LevelScreen
           key={navKey}
           level={level}
@@ -387,15 +598,55 @@ export default function App() {
           onCompleteTutorial={() => setIsTutorialMode(false)}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={false}
+          progress={progress}
         />
       );
+      break;
     }
 
     case 'home':
-      return renderHome();
+      screen = renderHome();
+      break;
 
     case 'unknown':
     default:
-      return renderHome();
+      screen = renderHome();
+      break;
   }
+
+  return (
+    <>
+      {screen}
+      {mergeContext && (
+        <MergeProgressModal
+          cloudProgress={mergeContext.cloud.progress}
+          localProgress={mergeContext.localProgress}
+          cloudPracticeBest={mergeContext.cloud.practiceBest}
+          localPracticeBest={mergeContext.localPracticeBest}
+          onChooseCloudOnly={handleChooseCloudOnly}
+          onChooseLocalOnly={handleChooseLocalOnly}
+          onChooseSmartMerge={handleChooseSmartMerge}
+          onCancel={handleMergeCancel}
+        />
+      )}
+      {mergeError && mergeContext && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '1.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(220,38,38,0.9)',
+            color: '#fff',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '999px',
+            zIndex: 120,
+            fontWeight: 600,
+          }}
+        >
+          {mergeError}
+        </div>
+      )}
+    </>
+  );
 }

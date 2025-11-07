@@ -48,6 +48,7 @@ export default function LevelScreen({
   onCompleteTutorial,
   onLevelComplete,
   isPracticeMode,
+  progress,
 }: {
   level: Level;
   onBack: () => void;
@@ -56,6 +57,7 @@ export default function LevelScreen({
   onCompleteTutorial: () => void;
   onLevelComplete: (newProgress: GameProgress) => void;
   isPracticeMode: boolean;
+  progress: GameProgress;
 }) {  
   const audio = useGameAudio();
   const { user } = useUser();
@@ -98,6 +100,10 @@ export default function LevelScreen({
 
   const currentStars = useMemo(() => getStars(points), [points]);
   const prevStarsRef = useRef(getStars(POINTS_START));
+  const latestProgressRef = useRef(progress);
+  useEffect(() => {
+    latestProgressRef.current = progress;
+  }, [progress]);
 
   // Guardar el progrés quan es completa el nivell
   useEffect(() => {
@@ -107,7 +113,8 @@ export default function LevelScreen({
         level.number,
         currentStars,
         gameTime,
-        points
+        points,
+        { baseProgress: latestProgressRef.current, persist: !user }
       );
       onLevelComplete(newProgress);
       if (user) {

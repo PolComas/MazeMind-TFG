@@ -5,14 +5,11 @@ import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { supabase } from '../lib/supabase';
-import { useUser, type AuthUser } from '../context/UserContext';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { useUser } from '../context/UserContext';
 
 // Props per al modal
 type Props = {
   onClose: () => void;
-  onLogin: (user: AuthUser) => void;
-  onRegister: (user: AuthUser) => void;
 };
 
 const buildStyles = (visuals: VisualSettings) => {
@@ -21,6 +18,8 @@ const buildStyles = (visuals: VisualSettings) => {
   const overlayColor = applyAlpha(visuals.textColor, 0.75);
   const errorBackground = applyAlpha(visuals.hardColor, 0.15);
   const errorBorder = applyAlpha(visuals.hardColor, 0.3);
+  const successBackground = applyAlpha(visuals.accentColor1, 0.18);
+  const successBorder = applyAlpha(visuals.accentColor1, 0.35);
 
   return {
     overlay: {
@@ -110,10 +109,25 @@ const buildStyles = (visuals: VisualSettings) => {
       textAlign: 'center',
       margin: '-0.5rem 0 0.5rem 0',
     },
+    successMessage: {
+      color: visuals.accentColor1,
+      background: successBackground,
+      border: `1px solid ${successBorder}`,
+      borderRadius: '0.5rem',
+      padding: '0.75rem 1rem',
+      fontSize: '0.9rem',
+      textAlign: 'center',
+      margin: '0 0 0.75rem 0',
+    },
+    successActions: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+    },
   } as const;
 };
 
-export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
+export default function AuthModal({ onClose }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
   const { getVisualSettings } = useSettings();
@@ -123,6 +137,8 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
 
   const onCloseWithSound = () => {
     audio.playFail();
+    setError(null);
+    setSuccessMessage(null);
     onClose();
   };
 
@@ -134,22 +150,30 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   // Estat per mostrar missatges d'error
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
+      setSuccessMessage(null);
       onClose();
     }
   }, [user, onClose]);
 
-  const buildAuthUser = (payload: SupabaseUser): AuthUser => ({
-    id: payload.id,
-    email: payload.email ?? email,
-  });
+  const getEmailRedirectUrl = () => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+    const base = import.meta.env.BASE_URL ?? '/';
+    const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+    const relativePath = `${normalizedBase}auth/callback`.replace(/\/{2,}/g, '/');
+    return `${window.location.origin}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
+  };
 
   // Enviament del formulari
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
 
     // Validacions Bàsiques
     if (!email || !password) {
@@ -162,10 +186,19 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
       return;
     }
 
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (isRegistering) {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        const redirectTo = getEmailRedirectUrl();
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+        });
         if (signUpError) {
           throw signUpError;
         }
@@ -182,21 +215,16 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
             throw profileError;
           }
 
-          onRegister(profilePayload);
-          onClose();
-        } else {
-          setError('Revisa el teu correu per completar el registre.');
-        }
-      } else {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) {
-          throw signInError;
         }
 
-        if (data.user) {
-          const authUser = buildAuthUser(data.user);
-          onLogin(authUser);
-          onClose();
+        if (!data.session) {
+          setSuccessMessage('Hem enviat un correu de verificació. Revisa la safata d\'entrada per completar el registre.');
+          return;
+        }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          throw signInError;
         }
       }
     } catch (apiError) {
@@ -220,59 +248,79 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
           {isRegistering ? 'Crear Compte' : 'Iniciar Sessió'}
         </h2>
 
-        {/* Mostra missatges d'error si n'hi ha */}
-        {error && <p style={styles.errorMessage}>{error}</p>}
+        {successMessage ? (
+          <div style={styles.successActions}>
+            <p style={styles.successMessage}>{successMessage}</p>
+            <button
+              style={styles.submitButton}
+              type="button"
+              onClick={onCloseWithSound}
+            >
+              Entesos
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Mostra missatges d'error si n'hi ha */}
+            {error && <p style={styles.errorMessage}>{error}</p>}
 
-        {/* Formulari */}
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label htmlFor="email-input" style={styles.label}>Correu electrònic</label>
-          <input
-            id="email-input"
-            type="email"
-            placeholder="el.teu@correu.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            required
-            aria-required="true"
-            autoComplete="email"
-          />
-          <label htmlFor="password-input" style={styles.label}>Contrasenya</label>
-          <input
-            id="password-input"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-            required
-            aria-required="true"
-            minLength={6}
-            autoComplete={isRegistering ? 'new-password' : 'current-password'}
-          />
-          <button
-            type="submit"
-            style={{ ...styles.submitButton, opacity: isSubmitting ? 0.7 : 1 }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting
-              ? 'Enviant...'
-              : isRegistering
-                ? 'Registrar-se'
-                : 'Entrar'}
-          </button>
-        </form>
+            {/* Formulari */}
+            <form onSubmit={handleSubmit} style={styles.form}>
+              <label htmlFor="email-input" style={styles.label}>Correu electrònic</label>
+              <input
+                id="email-input"
+                type="email"
+                placeholder="el.teu@correu.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={styles.input}
+                required
+                aria-required="true"
+                autoComplete="email"
+              />
+              <label htmlFor="password-input" style={styles.label}>Contrasenya</label>
+              <input
+                id="password-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={styles.input}
+                required
+                aria-required="true"
+                minLength={6}
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
+              />
+              <button
+                type="submit"
+                style={{ ...styles.submitButton, opacity: isSubmitting ? 0.7 : 1 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? 'Enviant...'
+                  : isRegistering
+                    ? 'Registrar-se'
+                    : 'Entrar'}
+              </button>
+            </form>
 
-        {/* Botó per canviar entre Iniciar Sessió / Registrar-se */}
-        <button
-          style={styles.toggleButton}
-          onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-          type="button"
-        >
-          {isRegistering
-            ? 'Ja tens compte? Inicia sessió'
-            : 'No tens compte? Registra\'t'}
-        </button>
+            {/* Botó per canviar entre Iniciar Sessió / Registrar-se */}
+            <button
+              style={styles.toggleButton}
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError(null);
+                setSuccessMessage(null);
+              }}
+              type="button"
+              disabled={isSubmitting}
+            >
+              {isRegistering
+                ? 'Ja tens compte? Inicia sessió'
+                : 'No tens compte? Registra\'t'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
