@@ -13,6 +13,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.80.0",
     "howler": "^2.2.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
