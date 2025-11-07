@@ -8,6 +8,8 @@ import PracticeHUD from "../components/PracticeHUD";
 import PracticeScoreModal from "../components/PracticeScoreModal";
 import { generateLevel, type Level } from "../maze/maze_generator";
 import { savePracticeRun, loadPracticeBestScore } from "../utils/practiceProgress";
+import { useUser } from "../context/UserContext";
+import { pushPracticeBest } from "../lib/sync";
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -93,6 +95,7 @@ export default function PracticeNormalScreen({
 }) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { user } = useUser();
   const screenSettings = getVisualSettings("levelScreen");
   const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
 
@@ -413,6 +416,11 @@ export default function PracticeNormalScreen({
           // Guardar només el maxScore de la run actual
           const newBest = savePracticeRun(totalScore);
           setBestScore(newBest);
+          if (user) {
+            pushPracticeBest(user.id, newBest).catch((error) => {
+              console.error('Error sincronitzant el millor score de pràctica:', error);
+            });
+          }
         } else {
           setLives(newLives);
           setPlayerPos({ x: level.start.x, y: level.start.y });
@@ -441,7 +449,7 @@ export default function PracticeNormalScreen({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [ phase, settings, level, playerPos, lives, showReveal, audio,
-    onRevealHelp, onTogglePathHelp, onToggleCrashHelp, totalScore, ]);
+    onRevealHelp, onTogglePathHelp, onToggleCrashHelp, totalScore, user ]);
 
   const mazeSettings = useMemo(
     () => ({

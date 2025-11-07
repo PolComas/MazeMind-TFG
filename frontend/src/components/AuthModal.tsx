@@ -1,17 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
-
-type User = { id: string, email: string };
+import { supabase } from '../lib/supabase';
+import { useUser, type AuthUser } from '../context/UserContext';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 // Props per al modal
 type Props = {
   onClose: () => void;
-  onLogin: (user: User) => void;
-  onRegister: (user: User) => void;
+  onLogin: (user: AuthUser) => void;
+  onRegister: (user: AuthUser) => void;
 };
 
 const buildStyles = (visuals: VisualSettings) => {
@@ -118,6 +119,7 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   const { getVisualSettings } = useSettings();
   const visualSettings = getVisualSettings('home');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+  const { user } = useUser();
 
   const onCloseWithSound = () => {
     audio.playFail();
@@ -131,9 +133,21 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
   const [isRegistering, setIsRegistering] = useState(false);
   // Estat per mostrar missatges d'error
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      onClose();
+    }
+  }, [user, onClose]);
+
+  const buildAuthUser = (payload: SupabaseUser): AuthUser => ({
+    id: payload.id,
+    email: payload.email ?? email,
+  });
 
   // Enviament del formulari
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -148,20 +162,48 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
       return;
     }
 
-    // Simular la creació/obtenció d'un usuari
-    const fakeUser = { id: Date.now().toString(), email: email };
-    console.log(`Simulant ${isRegistering ? 'registre' : 'inici de sessió'} per a:`, email);
-
+    setIsSubmitting(true);
     try {
       if (isRegistering) {
-        onRegister(fakeUser);
+        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          throw signUpError;
+        }
+
+        if (data.user) {
+          const profilePayload = {
+            id: data.user.id,
+            email: data.user.email ?? email,
+          };
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert(profilePayload, { onConflict: 'id' });
+          if (profileError) {
+            throw profileError;
+          }
+
+          onRegister(profilePayload);
+          onClose();
+        } else {
+          setError('Revisa el teu correu per completar el registre.');
+        }
       } else {
-        onLogin(fakeUser);
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          throw signInError;
+        }
+
+        if (data.user) {
+          const authUser = buildAuthUser(data.user);
+          onLogin(authUser);
+          onClose();
+        }
       }
     } catch (apiError) {
-      // TODO al fer el backend: Gestionar errors reals de l'API aquí
-      console.error('Error de l\'API (simulat):', apiError);
-      setError('Ha ocorregut un error. Torna a intentar-ho.');
+      console.error('Error en autenticació Supabase:', apiError);
+      setError(apiError instanceof Error ? apiError.message : 'Ha ocorregut un error. Torna a intentar-ho.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -208,8 +250,16 @@ export default function AuthModal({ onClose, onLogin, onRegister }: Props) {
             minLength={6}
             autoComplete={isRegistering ? 'new-password' : 'current-password'}
           />
-          <button type="submit" style={styles.submitButton}>
-            {isRegistering ? 'Registrar-se' : 'Entrar'}
+          <button
+            type="submit"
+            style={{ ...styles.submitButton, opacity: isSubmitting ? 0.7 : 1 }}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? 'Enviant...'
+              : isRegistering
+                ? 'Registrar-se'
+                : 'Entrar'}
           </button>
         </form>
 

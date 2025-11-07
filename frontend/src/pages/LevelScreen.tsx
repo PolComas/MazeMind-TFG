@@ -10,6 +10,8 @@ import PracticeCompletionModal from '../components/PracticeCompletionModal';
 import { saveLevelCompletion, type GameProgress} from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
+import { useUser } from '../context/UserContext';
+import { pushProgress } from '../lib/sync';
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -56,6 +58,7 @@ export default function LevelScreen({
   isPracticeMode: boolean;
 }) {  
   const audio = useGameAudio();
+  const { user } = useUser();
 
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
@@ -107,9 +110,14 @@ export default function LevelScreen({
         points
       );
       onLevelComplete(newProgress);
+      if (user) {
+        pushProgress(user.id, newProgress).catch((error) => {
+          console.error('Error enviant progrés a Supabase:', error);
+        });
+      }
     }
   }, [phase, isTutorialMode, level.difficulty, level.number, currentStars,
-    gameTime, points, onLevelComplete, isPracticeMode]);
+    gameTime, points, onLevelComplete, isPracticeMode, user]);
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import HomeScreen from './components/HomeScreen';
 import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
@@ -9,6 +9,9 @@ import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
 import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 import PracticeNormalScreen from './pages/PracticeNormalScreen';
+import { useUser, type AuthUser } from './context/UserContext';
+import { syncOnLogin } from './lib/sync';
+import { supabase } from './lib/supabase';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
@@ -52,11 +55,6 @@ const savedLevels: Record<string, Level> = {
   'easy-1': easyLevel1 as Level,
 };
 
-type User = {
-  id: string;
-  email: string;
-};
-
 const base = import.meta.env.BASE_URL || '/';
 const normalizedBase = normalizeBasePath(base);
 
@@ -72,7 +70,7 @@ type Route =
   | { type: 'unknown'; path: string };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Estat per al mode tutorial
@@ -80,6 +78,8 @@ export default function App() {
 
   // L'estat del progrés
   const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
+  const lastSyncedUserId = useRef<string | null>(null);
+  const syncingUserId = useRef<string | null>(null);
 
   // --- Lògica de Navegació ---
   const [path, setPath] = useState<string>(() => getBrowserPath());
@@ -148,37 +148,48 @@ export default function App() {
   };
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('mazeMindUser');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-        console.log("Sessió recuperada:", JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Error al parsejar l'usuari guardat:", e);
-        localStorage.removeItem('mazeMindUser'); 
-      }
+    if (!user?.id) {
+      lastSyncedUserId.current = null;
+      setProgress(loadProgress());
+      return;
     }
-  }, []);
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('mazeMindUser', JSON.stringify(userData)); 
-    setShowAuthModal(false); 
-    console.log("Usuari connectat:", userData);
-  };
+    if (lastSyncedUserId.current === user.id || syncingUserId.current === user.id) {
+      return;
+    }
 
-  const handleRegister = (userData: User) => {
-    // De moment, fem el mateix que al login
-    setUser(userData);
-    localStorage.setItem('mazeMindUser', JSON.stringify(userData));
+    syncingUserId.current = user.id;
+    const runSync = async () => {
+      try {
+        const mergedProgress = await syncOnLogin(user.id);
+        setProgress(mergedProgress);
+        lastSyncedUserId.current = user.id;
+      } catch (error) {
+        console.error('Error sincronitzant el progrés a l\'inici de sessió:', error);
+      } finally {
+        syncingUserId.current = null;
+      }
+    };
+
+    void runSync();
+  }, [user, setProgress]);
+
+  const handleAuthSuccess = (_user: AuthUser) => {
     setShowAuthModal(false);
-    console.log("Usuari registrat i connectat:", userData);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('mazeMindUser'); 
-    console.log("Usuari desconnectat");
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error en tancar sessió:', error);
+    } finally {
+      setShowAuthModal(false);
+    }
+  };
+
+  const handleLogoutRequest = () => {
+    void handleLogout();
   };
 
   const route = useMemo<Route>(() => {
@@ -251,14 +262,14 @@ export default function App() {
         user={user}
         onNavigate={() => go('/levels')}
         onUserClick={() => setShowAuthModal(true)}
-        onLogout={handleLogout}
+        onLogout={handleLogoutRequest}
         onSettingsClick={() => go('/settings')}
       />
       {showAuthModal && (
         <AuthModal
           onClose={() => setShowAuthModal(false)}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
+          onLogin={handleAuthSuccess}
+          onRegister={handleAuthSuccess}
         />
       )}
     </>
