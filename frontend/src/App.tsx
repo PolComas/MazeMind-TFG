@@ -398,32 +398,34 @@ export default function App() {
   };
 
   const route = useMemo<Route>(() => {
-    if (relativePath === '/settings') {
+    const [pathOnlyRaw, search = ''] = relativePath.split('?');
+    const pathOnly = pathOnlyRaw || '/';
+
+    if (pathOnly === '/settings') {
       return { type: 'settings' };
     }
 
-    if (relativePath === '/practice/free') {
+    if (pathOnly === '/practice/free') {
       return { type: 'practice-free' };
     }
 
-    if (relativePath === '/practice/normal') {
+    if (pathOnly === '/practice/normal') {
       return { type: 'practice-normal' };
     }
 
-    if (relativePath === '/practice/ia') {
+    if (pathOnly === '/practice/ia') {
       return { type: 'practice-ia' };
     }
 
-    if (relativePath === '/levels') {
+    if (pathOnly === '/levels') {
       return { type: 'levels' };
     }
 
-    if (relativePath === '/auth/reset') {
+    if (pathOnly === '/auth/reset') {
       return { type: 'auth-reset' };
     }
 
-    if (relativePath.startsWith('/level/custom')) {
-      const [, search = ''] = relativePath.split('?');
+    if (pathOnly.startsWith('/level/custom')) {
       const params = new URLSearchParams(search);
 
       const width = parsePositiveIntParam(params.get('w'), 7);
@@ -435,13 +437,13 @@ export default function App() {
       return { type: 'custom', width, height, time, difficulty };
     }
 
-    const levelMatch = relativePath.match(/^\/level\/(easy|normal|hard)\/(\d+)$/);
+    const levelMatch = pathOnly.match(/^\/level\/(easy|normal|hard)\/(\d+)$/);
     if (levelMatch) {
       const [, difficulty, number] = levelMatch;
       return { type: 'level', difficulty: difficulty as Diff, number: Number(number) };
     }
 
-    if (relativePath === '/' || relativePath === '') {
+    if (pathOnly === '/' || pathOnly === '') {
       return { type: 'home' };
     }
 

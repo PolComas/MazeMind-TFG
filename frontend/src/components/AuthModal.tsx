@@ -194,7 +194,7 @@ export default function AuthModal({ onClose }: Props) {
         redirectTo,
       });
       if (error) throw error;
-      setSuccessMessage('T’hem enviat un correu per restablir la contrasenya.');
+      setSuccessMessage('Si el correu existeix al sistema, t’hem enviat un enllaç per restablir la contrasenya.');
     } catch (_e) {
       setError('No s’ha pogut enviar el correu de restabliment. Torna-ho a provar.');
     } finally {

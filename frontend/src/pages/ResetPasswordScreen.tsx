@@ -48,21 +48,27 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
 
     setBusy(true);
     try {
-      // 2) Actualitza la contrasenya
-      const { error } = await supabase.auth.updateUser({ password: p1 });
-      if (error) throw error;
+      // Actualitzar la contrasenya a Supabase
+      const { error: updateError } = await supabase.auth.updateUser({ password: p1 });
+     
+      // Gestionar errors
+      if (updateError) {
+        setError('No s’ha pogut actualitzar la contrasenya. Torna-ho a provar.');
+        return;
+      }
 
-      // 3) Missatge d’èxit
       setOk('Contrasenya actualitzada correctament.');
+      setFinished(true);
 
-      // 4) IMPORTANT: tancar sessió en AQUESTA pestanya per no “forçar” la sessió a la resta de pestanyes
-      //    Fem un petit retard perquè el missatge d’èxit es vegi i no hi hagi condició de cursa de token refresh
+      // Tancar sessió en aquesta pestanya per no forçar la sessió a la resta de pestanyes
       setTimeout(async () => {
         try {
-          await supabase.auth.signOut(); // Tanca la sessió d’aquesta pestanya
-        } catch {}
-        setFinished(true); // Desactiva el formulari i mostra botons de sortida
-      }, 200);
+            const signOutRes = await supabase.auth.signOut();
+            console.debug('[ResetPassword] signOut result', signOutRes);
+        } catch (e) {
+            console.debug('[ResetPassword] signOut error', e);
+        }
+      }, 500);
     } catch (_e) {
       setError('No s’ha pogut actualitzar la contrasenya. Torna-ho a provar.');
     } finally {
@@ -100,7 +106,6 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
         ) : (
           <>
             <button type="button" style={styles.btn} onClick={goHome}>Tornar a l’inici</button>
-            <a href="/" style={{ textAlign: 'center', textDecoration: 'underline' }}>O inicia sessió</a>
           </>
         )}
       </form>

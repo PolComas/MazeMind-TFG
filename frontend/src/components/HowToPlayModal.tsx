@@ -1,25 +1,7 @@
 import React, { useMemo } from 'react';
-import {
-  X,
-  Target,
-  Trophy,
-  Gamepad2,
-  Star,
-  Zap,
-  Eye,
-  Footprints,
-  Skull,
-  Dumbbell,
-  Layers,
-  Edit,
-  GraduationCap,
-  Info,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  TrendingUp,
-} from 'lucide-react';
+import { X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull,
+  Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft,
+  ArrowRight, TrendingUp,} from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';

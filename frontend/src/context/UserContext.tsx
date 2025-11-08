@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,7 @@ export type AuthUser = {
 type UserContextValue = {
   user: AuthUser | null;
   setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  isRecoverySession: boolean;
 };
 
 const USER_STORAGE_KEY = 'mazeMindUser';
@@ -41,10 +42,46 @@ const toAuthUser = (sessionUser: SupabaseUser | null): AuthUser | null => {
   };
 };
 
+const readRecoveryFlagFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const search = window.location.search ?? '';
+  if (search) {
+    const qs = new URLSearchParams(search);
+    if (qs.get('type') === 'recovery') {
+      return true;
+    }
+  }
+
+  const hash = window.location.hash ?? '';
+  if (!hash) {
+    return false;
+  }
+  const normalizedHash = hash.startsWith('#') ? hash.slice(1) : hash;
+  const hashParams = new URLSearchParams(normalizedHash);
+  return hashParams.get('type') === 'recovery';
+};
+
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => parseStoredUser());
+  const initialAuthState = useMemo(() => {
+    const isRecovery = readRecoveryFlagFromUrl();
+    return {
+      isRecovery,
+      user: isRecovery ? null : parseStoredUser(),
+    };
+  }, []);
+
+  const [isRecoverySession, setIsRecoverySession] = useState(initialAuthState.isRecovery);
+  const [user, setUser] = useState<AuthUser | null>(initialAuthState.user);
+  const recoverySessionRef = useRef(isRecoverySession);
+
+  useEffect(() => {
+    recoverySessionRef.current = isRecoverySession;
+  }, [isRecoverySession]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -82,11 +119,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
           console.error('Error getting Supabase session', error);
           return;
         }
-        const sessionUser = data.session?.user ?? null;
-        const nextUser = toAuthUser(sessionUser);
-        if (isMounted) {
-          setUser(nextUser);
+        if (!isMounted) {
+          return;
         }
+
+        const sessionUser = data.session?.user ?? null;
+
+        if (!sessionUser) {
+          if (recoverySessionRef.current) {
+            setIsRecoverySession(false);
+          }
+          setUser(null);
+          return;
+        }
+
+        if (recoverySessionRef.current) {
+          setUser(null);
+          return;
+        }
+
+        const nextUser = toAuthUser(sessionUser);
+        setUser(nextUser);
         if (sessionUser) {
           await ensureProfile(sessionUser);
         }
@@ -99,8 +152,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const sessionUser = session?.user ?? null;
+
+      if (_event === 'PASSWORD_RECOVERY') {
+        setIsRecoverySession(true);
+        setUser(null);
+        return;
+      }
+
+      if (_event === 'SIGNED_OUT') {
+        setIsRecoverySession(false);
+        setUser(null);
+        return;
+      }
+
+      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+        setIsRecoverySession(false);
+      }
+
+      if (recoverySessionRef.current) {
+        setUser(null);
+        return;
+      }
+
       setUser(toAuthUser(sessionUser));
-      if (sessionUser) {
+      if (sessionUser && _event === 'SIGNED_IN') {
         await ensureProfile(sessionUser);
       }
     });
@@ -111,7 +186,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value = useMemo<UserContextValue>(() => ({ user, setUser }), [user]);
+  const value = useMemo<UserContextValue>(
+    () => ({ user, setUser, isRecoverySession }),
+    [user, isRecoverySession]
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
