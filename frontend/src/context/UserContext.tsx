@@ -58,6 +58,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Upsert del perfil quan JA hi ha sessió
+  const ensureProfile = async (u: SupabaseUser) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({ id: u.id, email: u.email ?? '' }, { onConflict: 'id' });
+      if (error) {
+        console.error('Error upserting profile:', error);
+      }
+    } catch (err) {
+      console.error('Unexpected error upserting profile:', err);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -68,19 +82,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
           console.error('Error getting Supabase session', error);
           return;
         }
-
-        const nextUser = toAuthUser(data.session?.user ?? null);
+        const sessionUser = data.session?.user ?? null;
+        const nextUser = toAuthUser(sessionUser);
         if (isMounted) {
           setUser(nextUser);
+        }
+        if (sessionUser) {
+          await ensureProfile(sessionUser);
         }
       } catch (err) {
         console.error('Unexpected Supabase session error', err);
       }
     };
 
-    bootstrapSession();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(toAuthUser(session?.user ?? null));
+    void bootstrapSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const sessionUser = session?.user ?? null;
+      setUser(toAuthUser(sessionUser));
+      if (sessionUser) {
+        await ensureProfile(sessionUser);
+      }
     });
 
     return () => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } 
 import HomeScreen from './components/HomeScreen';
 import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import { generateLevel, type Level } from './maze/maze_generator';
 import AuthModal from './components/AuthModal'; 
 import SettingsScreen from './pages/SettingsScreen';
@@ -69,7 +70,8 @@ type Route =
   | { type: 'level'; difficulty: Diff; number: number }
   | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'> }
   | { type: 'home' }
-  | { type: 'unknown'; path: string };
+  | { type: 'unknown'; path: string }
+  | { type: 'auth-reset' };
 
 const CAMPAIGN_MIN_LEVEL = 1;
 const CAMPAIGN_MAX_LEVEL = 15;
@@ -416,6 +418,10 @@ export default function App() {
       return { type: 'levels' };
     }
 
+    if (relativePath === '/auth/reset') {
+      return { type: 'auth-reset' };
+    }
+
     if (relativePath.startsWith('/level/custom')) {
       const [, search = ''] = relativePath.split('?');
       const params = new URLSearchParams(search);
@@ -481,6 +487,10 @@ export default function App() {
   switch (route.type) {
     case 'settings':
       screen = <SettingsScreen onBack={() => go('/')} />;
+      break;
+
+    case 'auth-reset':
+      screen = <ResetPasswordScreen onDone={() => go('/')} />;
       break;
 
     case 'practice-free':

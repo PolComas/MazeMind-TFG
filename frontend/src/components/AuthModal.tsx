@@ -145,6 +145,9 @@ export default function AuthModal({ onClose }: Props) {
   // Estats per als camps del formulari
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isResetSending, setIsResetSending] = useState(false);
+
   // Estat per canviar entre els modes Iniciar Sessió / Registrar-se
   const [isRegistering, setIsRegistering] = useState(false);
   // Estat per mostrar missatges d'error
@@ -169,6 +172,36 @@ export default function AuthModal({ onClose }: Props) {
     return `${window.location.origin}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
   };
 
+  const getResetRedirectUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const base = import.meta.env.BASE_URL ?? '/';
+    const normalized = base.endsWith('/') ? base : `${base}/`;
+    const relative = `${normalized}auth/reset`.replace(/\/{2,}/g, '/');
+    return `${window.location.origin}${relative.startsWith('/') ? '' : '/'}${relative}`;
+  };
+
+  const handleResetPassword = async () => {
+    setError(null);
+    setSuccessMessage(null);
+    if (!email) {
+      setError('Introdueix el correu per enviar l’enllaç de restabliment.');
+      return;
+    }
+    setIsResetSending(true);
+    try {
+      const redirectTo = getResetRedirectUrl();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+      if (error) throw error;
+      setSuccessMessage('T’hem enviat un correu per restablir la contrasenya.');
+    } catch (_e) {
+      setError('No s’ha pogut enviar el correu de restabliment. Torna-ho a provar.');
+    } finally {
+      setIsResetSending(false);
+    }
+  };
+
   // Enviament del formulari
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -186,6 +219,11 @@ export default function AuthModal({ onClose }: Props) {
       return;
     }
 
+    if (isRegistering && password !== confirmPassword) {
+      setError('Les contrasenyes no coincideixen.');
+      return;
+    }
+
     if (isSubmitting) {
       return;
     }
@@ -199,24 +237,27 @@ export default function AuthModal({ onClose }: Props) {
           password,
           options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
         });
+
+        // Gestió d'errors específics
         if (signUpError) {
-          throw signUpError;
-        }
-
-        if (data.user) {
-          const profilePayload = {
-            id: data.user.id,
-            email: data.user.email ?? email,
-          };
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert(profilePayload, { onConflict: 'id' });
-          if (profileError) {
-            throw profileError;
+          const msg = signUpError.message?.toLowerCase() ?? '';
+          if (msg.includes('registered') || msg.includes('already')) {
+            setError('Aquest correu ja està registrat. Inicia sessió o recupera la contrasenya.');
+          } else if (msg.includes('rate') || msg.includes('too many')) {
+            setError('Has fet massa intents. Espera uns minuts i torna-ho a provar.');
+          } else {
+            setError('No s’ha pogut completar el registre. Torna-ho a provar.');
           }
-
+          return;
         }
 
+        // Cas fantasma de Supabase: usuari ja existeix -> identities buides
+        if (data?.user && Array.isArray((data.user as any).identities) && (data.user as any).identities.length === 0) {
+          setError('Aquest correu ja està registrat. Inicia sessió o recupera la contrasenya.');
+          return;
+        }
+
+        // Demanar verificació per correu
         if (!data.session) {
           setSuccessMessage('Hem enviat un correu de verificació. Revisa la safata d\'entrada per completar el registre.');
           return;
@@ -291,6 +332,24 @@ export default function AuthModal({ onClose }: Props) {
                 minLength={6}
                 autoComplete={isRegistering ? 'new-password' : 'current-password'}
               />
+              {isRegistering && (
+                <>
+                  <label htmlFor="password2-input" style={styles.label}>Repeteix la contrasenya</label>
+                  <input
+                    id="password2-input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={styles.input}
+                    required
+                    aria-required="true"
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </>
+              )}
+
               <button
                 type="submit"
                 style={{ ...styles.submitButton, opacity: isSubmitting ? 0.7 : 1 }}
@@ -302,6 +361,17 @@ export default function AuthModal({ onClose }: Props) {
                     ? 'Registrar-se'
                     : 'Entrar'}
               </button>
+
+              {!isRegistering && (
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  style={styles.toggleButton}
+                  disabled={isSubmitting || isResetSending}
+                >
+                  {isResetSending ? 'Enviant...' : 'He oblidat la contrasenya'}
+                </button>
+              )}
             </form>
 
             {/* Botó per canviar entre Iniciar Sessió / Registrar-se */}
