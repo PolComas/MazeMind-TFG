@@ -10,5 +10,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        var base = '/MazeMind-TFG';
+        var l = window.location;
+        var params = new URLSearchParams(l.search);
+        var p = params.get('p');
+        if (!p) return;
+        var target = base.replace(/\/$/, '') + (p.startsWith('/') ? p : '/' + p);
+        window.history.replaceState({}, '', target);
+      })();
+    </script>
   </body>
 </html>
