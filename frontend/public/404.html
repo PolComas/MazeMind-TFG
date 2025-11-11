@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+    <meta name="robots" content="noindex" />
+    <script>
+      var base = '/MazeMind-TFG';
+
+      (function () {
+        var l = window.location;
+        if (l.pathname === base || l.pathname === base + '/') return;
+        var original = l.pathname.replace(base, '') + l.search + l.hash;
+        var search = '?p=' + encodeURIComponent(original);
+        l.replace(base.replace(/\/$/, '') + '/' + search);
+      })();
+    </script>
+  </head>
+  <body>Redirecting…</body>
+</html>
