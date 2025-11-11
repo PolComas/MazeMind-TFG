@@ -236,7 +236,7 @@ function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
-function deepMerge<T extends Record<string, any>>(target: T, source: Record<string, any>): T {
+export function deepMerge<T extends Record<string, any>>(target: T, source: Record<string, any>): T {
   const output = deepClone(target);
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach(key => {
