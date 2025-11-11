@@ -46,10 +46,14 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
     ];
   }, [progress]);
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   // Gestionar clic a botó usuari
-  const handleUserInteraction = () => {
+  const handleUserInteraction = async () => {
     if (user) {
-      onLogout(); 
+      if (isLoggingOut) return;
+      setIsLoggingOut(true);
+      try { await onLogout(); } finally { setIsLoggingOut(false); }
     } else {
       onUserClick();
     }
@@ -202,6 +206,8 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
       <button 
         style={styles.userButton} 
         onClick={handleUserInteractionWithSound} 
+        disabled={isLoggingOut}
+        aria-busy={isLoggingOut ? 'true' : 'false'}
         onMouseEnter={() => audio.playHover()}
         aria-label={user ? `Compte de ${user.email}. Tancar sessió.` : "Iniciar sessió o registrar-se"}
       >

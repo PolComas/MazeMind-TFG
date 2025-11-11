@@ -11,6 +11,7 @@ export type AuthUser = {
 type UserContextValue = {
   user: AuthUser | null;
   setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  logout: () => Promise<void>;
   isRecoverySession: boolean;
 };
 
@@ -78,6 +79,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isRecoverySession, setIsRecoverySession] = useState(initialAuthState.isRecovery);
   const [user, setUser] = useState<AuthUser | null>(initialAuthState.user);
   const recoverySessionRef = useRef(isRecoverySession);
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (e) {
+      console.warn('signOut failed, continuing with local cleanup', e);
+    } finally {
+      setUser(null);
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('mazeMindUser');
+        }
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     recoverySessionRef.current = isRecoverySession;
@@ -187,7 +203,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<UserContextValue>(
-    () => ({ user, setUser, isRecoverySession }),
+    () => ({ user, setUser, logout, isRecoverySession }),
     [user, isRecoverySession]
   );
 

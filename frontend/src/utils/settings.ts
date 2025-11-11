@@ -109,8 +109,8 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     backgroundColor: ORIGINAL_PALETTE.bg,
     textColor: ORIGINAL_PALETTE.text,
     subtextColor: ORIGINAL_PALETTE.subtext,
-    surfaceColor: 'rgba(30, 41, 59, 0.94)',
-    borderColor: 'rgba(255,255,255,0.14)',
+    surfaceColor: ORIGINAL_PALETTE.surface,
+    borderColor: ORIGINAL_PALETTE.borderColor,
     accentColor1: ORIGINAL_PALETTE.playBtnFrom,
     accentColor2: ORIGINAL_PALETTE.playBtnTo,
     // Dificultats

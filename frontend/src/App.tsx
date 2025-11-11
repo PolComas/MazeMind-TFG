@@ -13,7 +13,6 @@ import PracticeNormalScreen from './pages/PracticeNormalScreen';
 import { useUser } from './context/UserContext';
 import MergeProgressModal from './components/MergeProgressModal';
 import { applyCloudOnly, applyLocalOnly, applySmartMerge, getCloudSnapshot, type CloudSnapshot } from './lib/sync';
-import { supabase } from './lib/supabase';
 import { loadPracticeBestScore } from './utils/practiceProgress';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
@@ -169,7 +168,7 @@ type MergeContext = {
 };
 
 export default function App() {
-  const { user } = useUser();
+  const { user, logout } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Estat per al mode tutorial
@@ -297,7 +296,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await logout();
     } catch (error) {
       console.error('Error en tancar sessió:', error);
     } finally {
@@ -306,7 +305,8 @@ export default function App() {
           'mazeMindProgress',
           'mazeMindPracticeBestScore',
           'mazeMindPracticeStats',
-          LOCAL_PROGRESS_PENDING_KEY,
+          'mazeMindLocalProgressPending',
+          // LOCAL_PROGRESS_PENDING_KEY,
         ];
         keysToClear.forEach((key) => {
           try {
