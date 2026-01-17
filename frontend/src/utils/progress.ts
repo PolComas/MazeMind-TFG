@@ -113,7 +113,6 @@ export function saveLevelCompletion(
   if (shouldPersist) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProgress));
-      localStorage.setItem('mazeMindLocalProgressPending', '1');
     } catch (e) {
       console.error("Error al guardar progrés:", e);
     }
