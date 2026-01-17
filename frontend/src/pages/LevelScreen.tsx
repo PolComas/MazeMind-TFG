@@ -72,6 +72,7 @@ export default function LevelScreen({
   const [phase, setPhase] = useState<Phase>("memorize");
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
   const total = useRef(memorizeDuration);
+  const memorizeTimerRef = useRef<number | null>(null);
   const [playerPos, setPlayerPos] = useState({ x: level.start.x, y: level.start.y });
 
   const [playerPath, setPlayerPath] = useState<Pos[]>([{ x: level.start.x, y: level.start.y }]);
@@ -147,17 +148,24 @@ export default function LevelScreen({
     return Math.min(100, Math.max(0, (done / total.current) * 100));
   }, [remaining]);
 
+  const startPlaying = useCallback(() => {
+    audio.playStart();
+    setPhase("playing");
+    setPlayerPos({ x: level.start.x, y: level.start.y });
+  }, [audio, level.start.x, level.start.y]);
+
   // Compte enrere (Memorize)
   useEffect(() => {
     if (phase !== "memorize" || isTutorialMode) return;
     const tickMs = 1000;
-    const id = setInterval(() => {
+    memorizeTimerRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          clearInterval(id);
-          audio.playStart();
-          setPhase("playing");
-          setPlayerPos({ x: level.start.x, y: level.start.y });
+          if (memorizeTimerRef.current) {
+            clearInterval(memorizeTimerRef.current);
+            memorizeTimerRef.current = null;
+          }
+          startPlaying();
           return 0;
         }
         // So de compte enrere
@@ -170,8 +178,40 @@ export default function LevelScreen({
         return r - 1;
       });
     }, tickMs);
-    return () => clearInterval(id);
-  }, [phase, level.start.x, level.start.y, audio, isTutorialMode]);
+    return () => {
+      if (memorizeTimerRef.current) {
+        clearInterval(memorizeTimerRef.current);
+        memorizeTimerRef.current = null;
+      }
+    };
+  }, [phase, audio, isTutorialMode, startPlaying]);
+
+  // Saltar memorització amb tecla
+  useEffect(() => {
+    if (phase !== "memorize" || isTutorialMode) return;
+    const { game: gameSettings } = settings;
+    const skipKey = (gameSettings.keySkipMemorize || "").toLowerCase();
+    if (!skipKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || (target as any).isContentEditable)) return;
+
+      const key = e.key.toLowerCase();
+      if (e.key === gameSettings.keySkipMemorize || key === skipKey) {
+        e.preventDefault();
+        if (memorizeTimerRef.current) {
+          clearInterval(memorizeTimerRef.current);
+          memorizeTimerRef.current = null;
+        }
+        setRemaining(0);
+        startPlaying();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [phase, isTutorialMode, settings, startPlaying]);
 
   // Refs per les ajudes
   const pathHelpRef = useRef(isPathHelpActive);
@@ -505,6 +545,11 @@ export default function LevelScreen({
       background: screenSettings.surfaceColor,
       borderRadius: 999,
     },
+    memorizeHint: {
+      margin: "8px 0 0 0",
+      fontSize: "0.85rem",
+      opacity: 0.9,
+    },
     boardWrap: {
       flexGrow: 1,
       display: "grid",
@@ -578,6 +623,11 @@ export default function LevelScreen({
             <div role="progressbar" aria-valuenow={Math.round(progressPct)} style={styles.progressTrack}>
               <div style={{ ...styles.progressFill, width: `${progressPct}%` }} />
             </div>
+            {!isTutorialMode && (
+              <p style={styles.memorizeHint}>
+                Prem <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> per saltar.
+              </p>
+            )}
           </section>
         ) : (
           // Mostrar el HUD quan la fase no sigui memorize

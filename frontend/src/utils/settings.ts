@@ -49,6 +49,8 @@ export type GameSettings = {
   keyHelpReveal: string;
   keyHelpPath: string;
   keyHelpCrash: string;
+  // Tecla per saltar memorització
+  keySkipMemorize: string;
 };
 
 // Tipus complet per a tota la configuració guardada
@@ -100,6 +102,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     keyHelpReveal: 'h',
     keyHelpPath: 'j',
     keyHelpCrash: 'k',
+    keySkipMemorize: ' ',
   },
 };
 

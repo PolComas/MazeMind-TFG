@@ -26,7 +26,7 @@ const ToggleInput = ({ label, checked, onChange }: any) => (
 // Tecles a comprovar que no es repeteixin
 const keybindingActions: (keyof GameSettings)[] = [
   'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
-  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash'
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize'
 ];
 
 export default function GameSettingsComponent({ settings, onChange }: Props) {
@@ -120,6 +120,12 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
           value={settings.keyHelpCrash}
           onChange={(value: string) => onChange('keyHelpCrash', value)}
           isError={duplicateActions.has('keyHelpCrash')}
+        />
+        <KeybindingInput
+          label="Saltar memorització"
+          value={settings.keySkipMemorize}
+          onChange={(value: string) => onChange('keySkipMemorize', value)}
+          isError={duplicateActions.has('keySkipMemorize')}
         />
       </div>
 

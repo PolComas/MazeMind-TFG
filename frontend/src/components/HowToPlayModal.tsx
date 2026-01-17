@@ -170,7 +170,10 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
                 <div style={styles.stepNumber}>1</div>
                 <div style={{ flex: 1 }}>
                   <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}> Fase de Memorització</h4>
-                  <p style={styles.cardText}>Veuràs el laberint complet durant uns segons. Memoritza el camí des de l'inici (cercle) fins a la sortida (quadrat).</p>
+                  <p style={styles.cardText}>
+                    Veuràs el laberint complet durant uns segons. Memoritza el camí des de l'inici (cercle) fins a la sortida (quadrat).
+                    Pots saltar aquesta fase amb <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keySkipMemorize)}</kbd>.
+                  </p>
                 </div>
               </div>
             </div>
@@ -220,6 +223,10 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowRight size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveRight)}</kbd>
                   <span>Dreta</span>
+                </div>
+                <div style={styles.controlItem}>
+                  <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keySkipMemorize)}</kbd>
+                  <span>Saltar memorització</span>
                 </div>
               </div>
             </div>

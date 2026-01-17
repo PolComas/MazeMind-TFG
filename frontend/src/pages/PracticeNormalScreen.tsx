@@ -132,6 +132,7 @@ export default function PracticeNormalScreen({
   const [phase, setPhase] = useState<Phase>("memorize");
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
   const total = useRef(memorizeDuration);
+  const memorizeTimerRef = useRef<number | null>(null);
   const [playerPos, setPlayerPos] = useState<Pos>({
     x: level.start.x,
     y: level.start.y,
@@ -161,6 +162,12 @@ export default function PracticeNormalScreen({
     return Math.min(100, Math.max(0, (done / total.current) * 100));
   }, [remaining]);
 
+  const startPlaying = useCallback(() => {
+    audio.playStart();
+    setPhase("playing");
+    setPlayerPos({ x: level.start.x, y: level.start.y });
+  }, [audio, level.start.x, level.start.y]);
+
   // Helpers per resetejar TOT quan canviem de laberint
   const resetForLevel = useCallback(
     (lvl: Level, tuning: ScoreTuning) => {
@@ -185,13 +192,14 @@ export default function PracticeNormalScreen({
   useEffect(() => {
     if (phase !== "memorize") return;
     const tickMs = 1000;
-    const id = setInterval(() => {
+    memorizeTimerRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          clearInterval(id);
-          audio.playStart();
-          setPhase("playing");
-          setPlayerPos({ x: level.start.x, y: level.start.y });
+          if (memorizeTimerRef.current) {
+            clearInterval(memorizeTimerRef.current);
+            memorizeTimerRef.current = null;
+          }
+          startPlaying();
           return 0;
         }
         if (r <= 4) audio.playTickFinal();
@@ -199,8 +207,45 @@ export default function PracticeNormalScreen({
         return r - 1;
       });
     }, tickMs);
-    return () => clearInterval(id);
-  }, [phase, level.start.x, level.start.y, audio]);
+    return () => {
+      if (memorizeTimerRef.current) {
+        clearInterval(memorizeTimerRef.current);
+        memorizeTimerRef.current = null;
+      }
+    };
+  }, [phase, audio, startPlaying]);
+
+  // Saltar memorització amb tecla
+  useEffect(() => {
+    if (phase !== "memorize") return;
+    const { game: gameSettings } = settings;
+    const skipKey = (gameSettings.keySkipMemorize || "").toLowerCase();
+    if (!skipKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          (target as any).isContentEditable)
+      )
+        return;
+
+      const key = e.key.toLowerCase();
+      if (e.key === gameSettings.keySkipMemorize || key === skipKey) {
+        e.preventDefault();
+        if (memorizeTimerRef.current) {
+          clearInterval(memorizeTimerRef.current);
+          memorizeTimerRef.current = null;
+        }
+        setRemaining(0);
+        startPlaying();
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [phase, settings, startPlaying]);
 
   const pathHelpRef = useRef(isPathHelpActive);
   useEffect(() => {
@@ -548,6 +593,11 @@ export default function PracticeNormalScreen({
       background: screenSettings.surfaceColor,
       borderRadius: 999,
     },
+    memorizeHint: {
+      margin: "8px 0 0 0",
+      fontSize: "0.85rem",
+      opacity: 0.9,
+    },
     boardWrap: {
       flexGrow: 1,
       display: "grid",
@@ -625,6 +675,9 @@ export default function PracticeNormalScreen({
                 style={{ ...styles.progressFill, width: `${progressPct}%` }}
               />
             </div>
+            <p style={styles.memorizeHint}>
+              Prem <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> per saltar.
+            </p>
           </section>
         ) : (
           <PracticeHUD
