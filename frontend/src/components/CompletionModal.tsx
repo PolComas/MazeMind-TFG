@@ -1,6 +1,6 @@
 // src/components/CompletionModal.tsx
 import React, { useEffect, useMemo } from 'react';
-import { RefreshCcw, ArrowLeft } from 'lucide-react'; // Icones pels botons
+import { RefreshCcw, ArrowLeft, ArrowRight } from 'lucide-react'; // Icones pels botons
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
@@ -12,6 +12,7 @@ type Props = {
   stars: number;
   time: number; // Temps en segons
   points: number;
+  onNextLevel?: () => void; // Funció per jugar el següent nivell
   onRetry: () => void; // Funció per tornar a jugar
   onBack: () => void; // Funció per tornar al menú
 };
@@ -94,10 +95,16 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
       gap: '12px',
       width: '100%',
     },
-    retryButton: { // Estil similar al botó "Jugar"
+    nextButton: {
       padding: '14px', borderRadius: '10px', border: 'none',
       background: accentGradient,
       color: '#fff', fontSize: '18px', fontWeight: 700, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    },
+    retryButton: { // Estil similar al botó "Jugar"
+      padding: '14px', borderRadius: '10px', border: `1px solid ${visuals.borderColor}`,
+      background: translucentSurface,
+      color: visuals.textColor, fontSize: '18px', fontWeight: 600, cursor: 'pointer',
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
     },
     backButton: { // Estil similar al botó "Configuració"
@@ -109,7 +116,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
-export default function CompletionModal({ levelNumber, stars, time, points, onRetry, onBack }: Props) {
+export default function CompletionModal({ levelNumber, stars, time, points, onNextLevel, onRetry, onBack }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
@@ -157,6 +164,11 @@ export default function CompletionModal({ levelNumber, stars, time, points, onRe
 
         {/* Botons */}
         <div style={styles.actions}>
+          {onNextLevel && (
+            <button onMouseEnter={() => audio.playHover()} style={styles.nextButton} onClick={onNextLevel}>
+              Següent Nivell <ArrowRight size={18} />
+            </button>
+          )}
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetry}>
             <RefreshCcw size={18} /> Tornar a Jugar
           </button>

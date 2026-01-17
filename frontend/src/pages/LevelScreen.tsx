@@ -47,6 +47,7 @@ export default function LevelScreen({
   isTutorialMode,
   onCompleteTutorial,
   onLevelComplete,
+  onNextLevel,
   isPracticeMode,
   progress,
 }: {
@@ -56,6 +57,7 @@ export default function LevelScreen({
   isTutorialMode: boolean;
   onCompleteTutorial: () => void;
   onLevelComplete: (newProgress: GameProgress) => void;
+  onNextLevel?: () => void;
   isPracticeMode: boolean;
   progress: GameProgress;
 }) {  
@@ -688,6 +690,7 @@ export default function LevelScreen({
           stars={currentStars} 
           time={gameTime}
           points={points}
+          onNextLevel={onNextLevel}
           onRetry={onRetryWithSound} 
           onBack={onBackWithSound}
         />

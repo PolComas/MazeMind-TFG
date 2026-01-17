@@ -573,10 +573,11 @@ export default function App() {
 
       screen = (
         <LevelScreen
-          key={navKey}
+          key={`${difficulty}-${number}-${navKey}`}
           level={level}
           onBack={() => go('/levels')}
           onRetry={() => go(`/level/${difficulty}/${number}`)}
+          onNextLevel={number < 15 ? () => go(`/level/${difficulty}/${number + 1}`) : undefined}
           isTutorialMode={isTutorialMode}
           onCompleteTutorial={() => setIsTutorialMode(false)}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
