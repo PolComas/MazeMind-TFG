@@ -51,6 +51,10 @@ export type GameSettings = {
   keyHelpCrash: string;
   // Tecla per tancar modals
   keyCloseModal: string;
+  // Dreceres globals
+  keyOpenLevels: string;
+  keyOpenSettings: string;
+  keyOpenHome: string;
   // Tecla per saltar memorització
   keySkipMemorize: string;
 };
@@ -105,6 +109,9 @@ const DEFAULT_SETTINGS: AppSettings = {
     keyHelpPath: 'j',
     keyHelpCrash: 'k',
     keyCloseModal: 'escape',
+    keyOpenLevels: 'l',
+    keyOpenSettings: 'o',
+    keyOpenHome: 'm',
     keySkipMemorize: ' ',
   },
 };

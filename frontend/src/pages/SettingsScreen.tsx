@@ -25,7 +25,8 @@ type AccordionSection = keyof ScreenSettings | 'game';
 // Tecles a comprovar que no es repeteixin
 const keybindingActions: (keyof GameSettings)[] = [
   'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
-  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal'
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal',
+  'keyOpenLevels', 'keyOpenSettings', 'keyOpenHome'
 ];
 
 export default function SettingsScreen({ onBack }: Props) {

@@ -26,7 +26,8 @@ const ToggleInput = ({ label, checked, onChange }: any) => (
 // Tecles a comprovar que no es repeteixin
 const keybindingActions: (keyof GameSettings)[] = [
   'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
-  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal'
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal',
+  'keyOpenLevels', 'keyOpenSettings', 'keyOpenHome'
 ];
 
 export default function GameSettingsComponent({ settings, onChange }: Props) {
@@ -132,6 +133,28 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
           value={settings.keyCloseModal}
           onChange={(value: string) => onChange('keyCloseModal', value)}
           isError={duplicateActions.has('keyCloseModal')}
+        />
+      </div>
+
+      <h4 style={styles.title}>Dreceres Globals</h4>
+      <div style={styles.keyGrid}>
+        <KeybindingInput
+          label="Obrir nivells"
+          value={settings.keyOpenLevels}
+          onChange={(value: string) => onChange('keyOpenLevels', value)}
+          isError={duplicateActions.has('keyOpenLevels')}
+        />
+        <KeybindingInput
+          label="Obrir configuració"
+          value={settings.keyOpenSettings}
+          onChange={(value: string) => onChange('keyOpenSettings', value)}
+          isError={duplicateActions.has('keyOpenSettings')}
+        />
+        <KeybindingInput
+          label="Tornar a inici"
+          value={settings.keyOpenHome}
+          onChange={(value: string) => onChange('keyOpenHome', value)}
+          isError={duplicateActions.has('keyOpenHome')}
         />
       </div>
 

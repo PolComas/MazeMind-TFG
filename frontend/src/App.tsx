@@ -12,6 +12,7 @@ import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 import PracticeNormalScreen from './pages/PracticeNormalScreen';
 //import MazeGeneratorScreen from './pages/MazeGeneratorScreen';
 import { useUser } from './context/UserContext';
+import { useSettings } from './context/SettingsContext';
 import MergeProgressModal from './components/MergeProgressModal';
 import { applyCloudOnly, applyLocalOnly, applySmartMerge, getCloudSnapshot, type CloudSnapshot } from './lib/sync';
 import { loadPracticeBestScore } from './utils/practiceProgress';
@@ -263,6 +264,7 @@ type MergeContext = {
 
 export default function App() {
   const { user, logout } = useUser();
+  const { settings } = useSettings();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Estat per al mode tutorial
@@ -334,6 +336,7 @@ export default function App() {
       return targetPath;
     });
   }, [toAbsolutePath]);
+
 
   // Funció per iniciar el tutorial
   const startTutorial = () => {
@@ -547,6 +550,60 @@ export default function App() {
 
     return { type: 'unknown', path: relativePath };
   }, [relativePath]);
+
+
+  useEffect(() => {
+    const isGameplayRoute =
+      route.type === 'level' ||
+      route.type === 'practice-normal' ||
+      route.type === 'practice-ia' ||
+      route.type === 'custom';
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (isGameplayRoute) return;
+      if (showAuthModal || mergeContext) return;
+      if (e.defaultPrevented) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+          (target as any).isContentEditable)
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      const openLevels = (settings.game.keyOpenLevels || '').toLowerCase();
+      const openSettings = (settings.game.keyOpenSettings || '').toLowerCase();
+      const openHome = (settings.game.keyOpenHome || '').toLowerCase();
+
+      if (openLevels && (e.key === settings.game.keyOpenLevels || key === openLevels)) {
+        e.preventDefault();
+        go('/levels');
+        return;
+      }
+      if (openSettings && (e.key === settings.game.keyOpenSettings || key === openSettings)) {
+        e.preventDefault();
+        go('/settings');
+        return;
+      }
+      if (openHome && (e.key === settings.game.keyOpenHome || key === openHome)) {
+        e.preventDefault();
+        go('/');
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [
+    settings.game.keyOpenLevels,
+    settings.game.keyOpenSettings,
+    settings.game.keyOpenHome,
+    go,
+    showAuthModal,
+    mergeContext,
+    route.type,
+  ]);
 
   useEffect(() => {
     if (route.type === 'unknown') {
