@@ -1,14 +1,22 @@
 {
-  "id": "easy-level-1",
-  "number": 1,
+  "id": "easy-level-2",
+  "number": 2,
   "difficulty": "easy",
   "maze": [
     [
       {
         "walls": {
           "top": true,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
           "right": false,
-          "bottom": true,
+          "bottom": false,
           "left": true
         }
       },
@@ -23,7 +31,7 @@
       {
         "walls": {
           "top": true,
-          "right": true,
+          "right": false,
           "bottom": false,
           "left": false
         }
@@ -31,6 +39,40 @@
       {
         "walls": {
           "top": true,
+          "right": true,
+          "bottom": true,
+          "left": false
+        }
+      }
+    ],
+    [
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": false,
+          "bottom": true,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": true,
+          "bottom": false,
+          "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": false,
           "right": false,
           "bottom": true,
           "left": true
@@ -48,10 +90,26 @@
     [
       {
         "walls": {
-          "top": true,
-          "right": false,
+          "top": false,
+          "right": true,
           "bottom": false,
           "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": true,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": false,
+          "bottom": true,
+          "left": false
         }
       },
       {
@@ -65,9 +123,35 @@
       {
         "walls": {
           "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      }
+    ],
+    [
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
           "right": false,
           "bottom": true,
-          "left": true
+          "left": false
         }
       },
       {
@@ -98,56 +182,6 @@
       },
       {
         "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": false,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": true,
-          "bottom": false,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": false,
-          "right": true,
-          "bottom": false,
-          "left": true
-        }
-      }
-    ],
-    [
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": false,
-          "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
-        }
-      },
-      {
-        "walls": {
           "top": false,
           "right": true,
           "bottom": true,
@@ -156,44 +190,10 @@
       },
       {
         "walls": {
-          "top": false,
-          "right": true,
-          "bottom": true,
-          "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": false,
-          "right": true,
-          "bottom": false,
-          "left": true
-        }
-      }
-    ],
-    [
-      {
-        "walls": {
-          "top": false,
-          "right": false,
-          "bottom": true,
-          "left": true
-        }
-      },
-      {
-        "walls": {
           "top": true,
           "right": false,
           "bottom": true,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
+          "left": true
         }
       },
       {

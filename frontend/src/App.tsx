@@ -10,6 +10,7 @@ import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
 import FreeModeScreen, { type CustomLevelConfig } from './pages/FreeModeScreen';
 import PracticeNormalScreen from './pages/PracticeNormalScreen';
+//import MazeGeneratorScreen from './pages/MazeGeneratorScreen';
 import { useUser } from './context/UserContext';
 import MergeProgressModal from './components/MergeProgressModal';
 import { applyCloudOnly, applyLocalOnly, applySmartMerge, getCloudSnapshot, type CloudSnapshot } from './lib/sync';
@@ -51,10 +52,102 @@ const getBrowserPath = () => {
 };
 
 // Nivells desats
+import tutorial from './levels/easy-level-0.json';
 import easyLevel1 from './levels/easy-level-1.json';
+import easyLevel2 from './levels/easy-level-2.json';
+import easyLevel3 from './levels/easy-level-3.json';
+import easyLevel4 from './levels/easy-level-4.json';
+import easyLevel5 from './levels/easy-level-5.json';
+import easyLevel6 from './levels/easy-level-6.json';
+import easyLevel7 from './levels/easy-level-7.json';
+import easyLevel8 from './levels/easy-level-8.json';
+import easyLevel9 from './levels/easy-level-9.json';
+import easyLevel10 from './levels/easy-level-10.json';
+import easyLevel11 from './levels/easy-level-11.json';
+import easyLevel12 from './levels/easy-level-12.json';
+import easyLevel13 from './levels/easy-level-13.json';
+import easyLevel14 from './levels/easy-level-14.json';
+import easyLevel15 from './levels/easy-level-15.json';
+
+import normalLevel1 from './levels/normal-level-1.json';
+import normalLevel2 from './levels/normal-level-2.json';
+import normalLevel3 from './levels/normal-level-3.json';
+import normalLevel4 from './levels/normal-level-4.json';
+import normalLevel5 from './levels/normal-level-5.json';
+import normalLevel6 from './levels/normal-level-6.json';
+import normalLevel7 from './levels/normal-level-7.json';
+import normalLevel8 from './levels/normal-level-8.json';
+import normalLevel9 from './levels/normal-level-9.json';
+import normalLevel10 from './levels/normal-level-10.json';
+import normalLevel11 from './levels/normal-level-11.json';
+import normalLevel12 from './levels/normal-level-12.json';
+import normalLevel13 from './levels/normal-level-13.json';
+import normalLevel14 from './levels/normal-level-14.json';
+import normalLevel15 from './levels/normal-level-15.json';
+
+import hardLevel1 from './levels/hard-level-1.json';
+import hardLevel2 from './levels/hard-level-2.json';
+import hardLevel3 from './levels/hard-level-3.json';
+import hardLevel4 from './levels/hard-level-4.json';
+import hardLevel5 from './levels/hard-level-5.json';
+import hardLevel6 from './levels/hard-level-6.json';
+import hardLevel7 from './levels/hard-level-7.json';
+import hardLevel8 from './levels/hard-level-8.json';
+import hardLevel9 from './levels/hard-level-9.json';
+import hardLevel10 from './levels/hard-level-10.json';
+import hardLevel11 from './levels/hard-level-11.json';
+import hardLevel12 from './levels/hard-level-12.json';
+import hardLevel13 from './levels/hard-level-13.json';
+import hardLevel14 from './levels/hard-level-14.json';
+import hardLevel15 from './levels/hard-level-15.json';
 
 const savedLevels: Record<string, Level> = {
+  'easy-0': tutorial as Level,
   'easy-1': easyLevel1 as Level,
+  'easy-2': easyLevel2 as Level,
+  'easy-3': easyLevel3 as Level,
+  'easy-4': easyLevel4 as Level,
+  'easy-5': easyLevel5 as Level,
+  'easy-6': easyLevel6 as Level,
+  'easy-7': easyLevel7 as Level,
+  'easy-8': easyLevel8 as Level,
+  'easy-9': easyLevel9 as Level,
+  'easy-10': easyLevel10 as Level,
+  'easy-11': easyLevel11 as Level,
+  'easy-12': easyLevel12 as Level,
+  'easy-13': easyLevel13 as Level,
+  'easy-14': easyLevel14 as Level,
+  'easy-15': easyLevel15 as Level,
+  'normal-1': normalLevel1 as Level,
+  'normal-2': normalLevel2 as Level,
+  'normal-3': normalLevel3 as Level,
+  'normal-4': normalLevel4 as Level,
+  'normal-5': normalLevel5 as Level,
+  'normal-6': normalLevel6 as Level,
+  'normal-7': normalLevel7 as Level,
+  'normal-8': normalLevel8 as Level,
+  'normal-9': normalLevel9 as Level,
+  'normal-10': normalLevel10 as Level,
+  'normal-11': normalLevel11 as Level,
+  'normal-12': normalLevel12 as Level,
+  'normal-13': normalLevel13 as Level,
+  'normal-14': normalLevel14 as Level,
+  'normal-15': normalLevel15 as Level,
+  'hard-1': hardLevel1 as Level,
+  'hard-2': hardLevel2 as Level,
+  'hard-3': hardLevel3 as Level,
+  'hard-4': hardLevel4 as Level,
+  'hard-5': hardLevel5 as Level,
+  'hard-6': hardLevel6 as Level,
+  'hard-7': hardLevel7 as Level,
+  'hard-8': hardLevel8 as Level,
+  'hard-9': hardLevel9 as Level,
+  'hard-10': hardLevel10 as Level,
+  'hard-11': hardLevel11 as Level,
+  'hard-12': hardLevel12 as Level,
+  'hard-13': hardLevel13 as Level,
+  'hard-14': hardLevel14 as Level,
+  'hard-15': hardLevel15 as Level,
 };
 
 const base = import.meta.env.BASE_URL || '/';
@@ -65,6 +158,7 @@ type Route =
   | { type: 'practice-free' }
   | { type: 'practice-normal' }
   | { type: 'practice-ia' }
+  | { type: 'maze-lab' }
   | { type: 'levels' }
   | { type: 'level'; difficulty: Diff; number: number }
   | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'> }
@@ -244,7 +338,7 @@ export default function App() {
   // Funció per iniciar el tutorial
   const startTutorial = () => {
     setIsTutorialMode(true);
-    go('/level/easy/1', { preserveTutorial: true });
+    go('/level/easy/0', { preserveTutorial: true });
   };
 
   useEffect(() => {
@@ -417,6 +511,10 @@ export default function App() {
       return { type: 'practice-ia' };
     }
 
+    if (pathOnly === '/dev/maze-lab') {
+      return { type: 'maze-lab' };
+    }
+
     if (pathOnly === '/levels') {
       return { type: 'levels' };
     }
@@ -583,6 +681,7 @@ export default function App() {
           onStartPracticeIA={() => go('/practice/ia')}
           onStartPracticeNormal={() => go('/practice/normal')}
           onStartPracticeFree={() => go('/practice/free')}
+//          onOpenGenerator={() => go('/dev/maze-lab')}
         />
       );
       break;
@@ -619,6 +718,10 @@ export default function App() {
     case 'home':
       screen = renderHome();
       break;
+
+    // case 'maze-lab':
+    //   screen = <MazeGeneratorScreen onBack={() => go('/levels')} />;
+    //   break;
 
     case 'unknown':
     default:

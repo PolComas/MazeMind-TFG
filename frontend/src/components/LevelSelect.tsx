@@ -8,10 +8,6 @@ import { useSettings } from '../context/SettingsContext';
 import HowToPlayModal from './HowToPlayModal';
 import PracticeModeModal from './PracticeModeModal';
 
-// TEMPORAL: Funcions per generar i descarregar nivells de prova
-//import { downloadJSON } from '../maze/save_maze';
-//import { generateLevel, type LevelParams } from '../maze/maze_generator';
-
 type Diff = 'easy' | 'normal' | 'hard';
 
 const DIFF_LABEL: Record<Diff, string> = {
@@ -27,28 +23,6 @@ const difficultyIcons: Record<Diff, React.ReactNode> = {
   hard: <Flame size={16} />,
 };
 
-// Funció TEMPORAL per generar i descarregar nivells de prova
-// const handleGenerateAndDownload = (diff: 'easy' | 'normal' | 'hard', num: number) => {
-//   const params: LevelParams = {
-//     levelNumber: num,
-//     difficulty: diff,
-//     width: 7,
-//     height: 7,
-//     memorizeTime: 10,
-//     stars: [60, 45, 30],
-//   };
-
-//   const levelData = generateLevel(params);
-  
-//   const cleanMaze = levelData.maze.map(row => 
-//     row.map(cell => ({ walls: cell.walls }))
-//   );
-  
-//   const dataToSave = { ...levelData, maze: cleanMaze };
-  
-//   downloadJSON(dataToSave, `${diff}-level-${num}.json`);
-// };
-
 export default function LevelSelect({
   onPlayLevel: originalOnPlayLevel,
   onBack: originalOnBack,
@@ -59,6 +33,7 @@ export default function LevelSelect({
   onStartPracticeIA,
   onStartPracticeNormal,
   onStartPracticeFree,
+  //onOpenGenerator,
 }: {
   onPlayLevel: (levelNumber: number, difficulty: Diff) => void;
   onBack: () => void;
@@ -69,6 +44,7 @@ export default function LevelSelect({
   onStartPracticeIA: () => void;
   onStartPracticeNormal: () => void;
   onStartPracticeFree: () => void;
+  //onOpenGenerator: () => void;
 }) {
   const audio = useGameAudio();
 
@@ -300,12 +276,21 @@ export default function LevelSelect({
               <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> Com Jugar
             </button>
 
-            {/* EINA TEMPORAL DE DESENVOLUPAMENT */}
-            {/*<div style={{ background: 'red', padding: 10, borderRadius: 8, marginTop: 20 }}>
-              <button onClick={() => handleGenerateAndDownload('easy', 1)}>
-                Generar i Descarregar
-              </button>
-            </div>*/}
+            <div style={{ width: 12 }} />
+
+            {/* Eina temporal de desenvolupament
+            <button
+              style={{
+                ...styles.practiceBtn,
+                background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                color: '#0B1021',
+                border: 'none',
+              }}
+              onMouseEnter={() => audio.playHover()}
+              onClick={onOpenGenerator}
+            >
+              Generador de Laberints
+            </button> */}
           </footer>
         </div>
       </main>

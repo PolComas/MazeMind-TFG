@@ -1,15 +1,39 @@
 {
-  "id": "easy-level-1",
-  "number": 1,
+  "id": "easy-level-4",
+  "number": 4,
   "difficulty": "easy",
   "maze": [
     [
       {
         "walls": {
           "top": true,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
           "right": false,
           "bottom": true,
-          "left": true
+          "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": false,
+          "left": false
         }
       },
       {
@@ -27,12 +51,96 @@
           "bottom": false,
           "left": false
         }
+      }
+    ],
+    [
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
       },
       {
         "walls": {
           "top": true,
           "right": false,
           "bottom": true,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": true,
+          "left": false
+        }
+      }
+    ],
+    [
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": false,
           "left": true
         }
       },
@@ -48,18 +156,10 @@
     [
       {
         "walls": {
-          "top": true,
-          "right": false,
+          "top": false,
+          "right": true,
           "bottom": false,
           "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": true,
-          "bottom": true,
-          "left": false
         }
       },
       {
@@ -68,82 +168,6 @@
           "right": false,
           "bottom": true,
           "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": false,
-          "right": true,
-          "bottom": false,
-          "left": false
-        }
-      }
-    ],
-    [
-      {
-        "walls": {
-          "top": false,
-          "right": false,
-          "bottom": true,
-          "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": false,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": true,
-          "bottom": false,
-          "left": false
-        }
-      },
-      {
-        "walls": {
-          "top": false,
-          "right": true,
-          "bottom": false,
-          "left": true
-        }
-      }
-    ],
-    [
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": false,
-          "left": true
-        }
-      },
-      {
-        "walls": {
-          "top": true,
-          "right": false,
-          "bottom": true,
-          "left": false
         }
       },
       {
@@ -157,9 +181,17 @@
       {
         "walls": {
           "top": false,
-          "right": true,
+          "right": false,
           "bottom": true,
           "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": true,
+          "left": false
         }
       },
       {
@@ -199,6 +231,56 @@
       {
         "walls": {
           "top": true,
+          "right": true,
+          "bottom": false,
+          "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": false,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": false,
+          "left": false
+        }
+      }
+    ],
+    [
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": true,
+          "left": true
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": true,
+          "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": true,
+          "right": false,
+          "bottom": true,
+          "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": false,
           "right": false,
           "bottom": true,
           "left": false
@@ -210,13 +292,21 @@
           "right": true,
           "bottom": true,
           "left": false
+        }
+      },
+      {
+        "walls": {
+          "top": false,
+          "right": true,
+          "bottom": true,
+          "left": true
         }
       }
     ]
   ],
-  "width": 5,
-  "height": 5,
-  "memorizeTime": 10,
+  "width": 6,
+  "height": 6,
+  "memorizeTime": 12,
   "starThresholds": [
     60,
     45,
@@ -227,7 +317,7 @@
     "y": 0
   },
   "exit": {
-    "x": 4,
-    "y": 4
+    "x": 5,
+    "y": 5
   }
 }
