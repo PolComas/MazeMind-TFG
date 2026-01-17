@@ -26,7 +26,7 @@ const ToggleInput = ({ label, checked, onChange }: any) => (
 // Tecles a comprovar que no es repeteixin
 const keybindingActions: (keyof GameSettings)[] = [
   'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
-  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize'
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal'
 ];
 
 export default function GameSettingsComponent({ settings, onChange }: Props) {
@@ -126,6 +126,12 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
           value={settings.keySkipMemorize}
           onChange={(value: string) => onChange('keySkipMemorize', value)}
           isError={duplicateActions.has('keySkipMemorize')}
+        />
+        <KeybindingInput
+          label="Tancar modals"
+          value={settings.keyCloseModal}
+          onChange={(value: string) => onChange('keyCloseModal', value)}
+          isError={duplicateActions.has('keyCloseModal')}
         />
       </div>
 

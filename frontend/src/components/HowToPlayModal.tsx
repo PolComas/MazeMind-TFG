@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull,
   Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft,
   ArrowRight, TrendingUp,} from 'lucide-react';
@@ -140,6 +140,23 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
   const gameSettings = settings.game;
   const visualSettings = getVisualSettings('levelSelect');
   const { styles, colors } = useMemo(() => createStyles(visualSettings), [visualSettings]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, settings.game.keyCloseModal, onClose]);
 
   if (!open) return null;
 

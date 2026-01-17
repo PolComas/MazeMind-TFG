@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { RefreshCcw, ArrowLeft, Bot, CheckCircle, XCircle } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
@@ -108,11 +108,27 @@ export default function PracticeCompletionModal({
   onBackToSettings
 }: Props) {
   const audio = useGameAudio();
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
   const isCompleted = status === 'completed';
+
+  useEffect(() => {
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onBackToSettings();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [settings.game.keyCloseModal, onBackToSettings]);
 
   return (
     <div style={styles.overlay}>

@@ -130,7 +130,7 @@ const buildStyles = (visuals: VisualSettings) => {
 export default function AuthModal({ onClose }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const visualSettings = getVisualSettings('home');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
   const { user } = useUser();
@@ -141,6 +141,34 @@ export default function AuthModal({ onClose }: Props) {
     setSuccessMessage(null);
     onClose();
   };
+
+  useEffect(() => {
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      const isEscape = key === 'escape';
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+          (target as any).isContentEditable)
+      ) {
+        if (!isEscape && closeKey !== 'escape') {
+          return;
+        }
+      }
+
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onCloseWithSound();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [settings.game.keyCloseModal, onCloseWithSound]);
 
   // Estats per als camps del formulari
   const [email, setEmail] = useState('');

@@ -1,5 +1,5 @@
 // src/components/CompletionModal.tsx
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { RefreshCcw, ArrowLeft } from 'lucide-react'; // Icones pels botons
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
@@ -112,9 +112,25 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 export default function CompletionModal({ levelNumber, stars, time, points, onRetry, onBack }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+
+  useEffect(() => {
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onBack();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [settings.game.keyCloseModal, onBack]);
 
   return (
     // Fons semitransparent que cobreix tota la pantalla

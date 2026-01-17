@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import type { GameProgress } from '../utils/progress';
+import { useSettings } from '../context/SettingsContext';
 
 type Props = {
   cloudProgress: GameProgress;
@@ -93,10 +94,27 @@ export default function MergeProgressModal({
   onChooseSmartMerge,
   onCancel,
 }: Props) {
+  const { settings } = useSettings();
   const summary = useMemo(
     () => computeDiffSummary(localProgress, cloudProgress),
     [cloudProgress, localProgress]
   );
+
+  useEffect(() => {
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [settings.game.keyCloseModal, onCancel]);
 
   return (
     <div style={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="merge-progress-title">

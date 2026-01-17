@@ -49,6 +49,8 @@ export type GameSettings = {
   keyHelpReveal: string;
   keyHelpPath: string;
   keyHelpCrash: string;
+  // Tecla per tancar modals
+  keyCloseModal: string;
   // Tecla per saltar memorització
   keySkipMemorize: string;
 };
@@ -102,6 +104,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     keyHelpReveal: 'h',
     keyHelpPath: 'j',
     keyHelpCrash: 'k',
+    keyCloseModal: 'escape',
     keySkipMemorize: ' ',
   },
 };

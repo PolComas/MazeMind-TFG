@@ -11,6 +11,7 @@ type Props = {
 // Helper per formatar tecles
 const formatKey = (key: string) => {
   if (key === ' ') return 'Espai';
+  if (key.toLowerCase() === 'escape') return 'Esc';
   if (key.length === 1) return key.toUpperCase();
   return key;
 };

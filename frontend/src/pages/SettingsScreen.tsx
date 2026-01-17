@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { PALETTE } from '../components/palette'; 
 import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
@@ -25,7 +25,7 @@ type AccordionSection = keyof ScreenSettings | 'game';
 // Tecles a comprovar que no es repeteixin
 const keybindingActions: (keyof GameSettings)[] = [
   'keyMoveUp', 'keyMoveDown', 'keyMoveLeft', 'keyMoveRight',
-  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize'
+  'keyHelpReveal', 'keyHelpPath', 'keyHelpCrash', 'keySkipMemorize', 'keyCloseModal'
 ];
 
 export default function SettingsScreen({ onBack }: Props) {
@@ -55,6 +55,23 @@ export default function SettingsScreen({ onBack }: Props) {
       return false;
     }
   }, [initialSettings, currentSettings]);
+
+  useEffect(() => {
+    if (!showUnsavedModal) return;
+    const closeKey = (currentSettings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === currentSettings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        setShowUnsavedModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showUnsavedModal, currentSettings.game.keyCloseModal]);
 
   const onBackWithSound = () => {
     if (isDirty) {

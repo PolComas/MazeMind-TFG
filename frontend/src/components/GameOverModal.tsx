@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { RefreshCcw, ArrowLeft, XCircle } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
@@ -103,11 +103,27 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 
 export default function GameOverModal({ onRetry, onBack, score, bestScore, isPracticeScoreMode, }: Props) {
   const audio = useGameAudio();
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
   const roundedScore = typeof score === 'number' ? Math.round(score) : undefined;
   const roundedBest = typeof bestScore === 'number' ? Math.round(bestScore) : undefined;
+
+  useEffect(() => {
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onBack();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [settings.game.keyCloseModal, onBack]);
 
   return (
     <div style={styles.overlay}>

@@ -60,7 +60,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 
 export default function PracticeModeModal({ open, onClose, onStartIA, onStartNormal, onStartFree }: Props) {
   const audio = useGameAudio();
-  const { getVisualSettings } = useSettings();
+  const { getVisualSettings, settings } = useSettings();
   const visualSettings = getVisualSettings('levelSelect');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -71,6 +71,23 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
       setBestScore(loadPracticeBestScore());
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
+    if (!closeKey) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (e.key === settings.game.keyCloseModal || key === closeKey) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, settings.game.keyCloseModal, onClose]);
 
   if (!open) return null;
 
