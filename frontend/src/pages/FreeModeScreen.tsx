@@ -6,6 +6,7 @@ export type CustomLevelConfig = {
   height: number;
   time: number;
   difficulty: 'normal' | 'hard';
+  seed?: string;
 };
 
 type Props = {
@@ -26,6 +27,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
   const [height, setHeight] = useState('7');
   const [time, setTime] = useState('10');
   const [difficulty, setDifficulty] = useState<'normal' | 'hard'>('normal');
+  const [seed, setSeed] = useState('');
 
   const handleStart = () => {
     const parsedWidth = parseInt(width, 10);
@@ -44,6 +46,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
       height: clamp(parsedHeight, 5, 25),
       time: clamp(parsedTime, 3, 60),
       difficulty: difficulty,
+      seed: seed.trim() || undefined,
     };
 
     // Passem la configuració neta al pare (App.tsx)
@@ -69,27 +72,27 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
       color: screenSettings.textColor, cursor: 'pointer', fontSize: 16,
     },
     form: {
-        display: 'flex', flexDirection: 'column', gap: '16px',
-        background: screenSettings.surfaceColor,
-        padding: '24px', borderRadius: '16px',
-        border: `1px solid ${screenSettings.borderColor}`,
+      display: 'flex', flexDirection: 'column', gap: '16px',
+      background: screenSettings.surfaceColor,
+      padding: '24px', borderRadius: '16px',
+      border: `1px solid ${screenSettings.borderColor}`,
     },
     label: { fontSize: 14, color: screenSettings.subtextColor, marginBottom: 4 },
     input: {
-        background: 'rgba(0,0,0,0.2)', border: `1px solid ${screenSettings.borderColor}`,
-        color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
-        fontSize: 16, width: '100%', boxSizing: 'border-box',
+      background: 'rgba(0,0,0,0.2)', border: `1px solid ${screenSettings.borderColor}`,
+      color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
+      fontSize: 16, width: '100%', boxSizing: 'border-box',
     },
     select: {
-        background: 'rgba(0,0,0,0.2)', border: `1px solid ${screenSettings.borderColor}`,
-        color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
-        fontSize: 16, width: '100%', boxSizing: 'border-box',
+      background: 'rgba(0,0,0,0.2)', border: `1px solid ${screenSettings.borderColor}`,
+      color: screenSettings.textColor, padding: '12px', borderRadius: '8px',
+      fontSize: 16, width: '100%', boxSizing: 'border-box',
     },
     playBtn: {
-        padding: '16px', borderRadius: 12, border: 'none',
-        background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
-        color: screenSettings.textColor, fontSize: 18,
-        fontWeight: 800, cursor: 'pointer', marginTop: '16px',
+      padding: '16px', borderRadius: 12, border: 'none',
+      background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
+      color: screenSettings.textColor, fontSize: 18,
+      fontWeight: 800, cursor: 'pointer', marginTop: '16px',
     }
   }), [screenSettings]);
 
@@ -101,7 +104,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
             <span aria-hidden="true">←</span> Tornar
           </button>
           <h1 style={styles.title}>Mode Lliure</h1>
-          <div style={{ width: 100 }} /> 
+          <div style={{ width: 100 }} />
         </header>
 
         {/* Formulari mida i temps */}
@@ -187,7 +190,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
           {/* Selector de dificultat (vides) */}
           <div>
             <label style={styles.label} htmlFor="difficulty">Dificultat</label>
-            <select 
+            <select
               id="difficulty" style={styles.select}
               value={difficulty} onChange={(e) => setDifficulty(e.target.value as 'normal' | 'hard')}
             >
@@ -195,7 +198,20 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
               <option value="hard">Difícil (Amb vides)</option>
             </select>
           </div>
-          
+
+          {/* Input per a Seed */}
+          <div>
+            <label style={styles.label} htmlFor="seed">Seed (Opcional - Repta als teus amics!)</label>
+            <input
+              style={styles.input}
+              type="text"
+              id="seed"
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+              placeholder="Ex: REPTEDIARI"
+            />
+          </div>
+
           {(() => {
             const parsedWidth = parseInt(width, 10);
             const parsedHeight = parseInt(height, 10);

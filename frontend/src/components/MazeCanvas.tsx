@@ -5,7 +5,7 @@ type Pos = { x: number; y: number }
 
 // Tipus per a les props del component MazeCanvas
 type Props = {
-  level: Level  
+  level: Level
   phase?: 'memorize' | 'playing' | 'completed' | 'failed'
   playerPos?: Pos
   settings?: {
@@ -25,10 +25,10 @@ type Props = {
 }
 
 // Renderitzar el laberint en un canvas HTML5
-export default function MazeCanvas({ 
-  level, 
-  phase = 'memorize', 
-  playerPos, 
+export default function MazeCanvas({
+  level,
+  phase = 'memorize',
+  playerPos,
   settings = {},
   showReveal = false,
   showPlayerPath = false,
@@ -36,10 +36,10 @@ export default function MazeCanvas({
   forcePathHistory,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  
+
   // Guardar les posicions del jugador per dibuixar el camí
   const pathHistoryRef = useRef<Pos[]>([])
-  
+
   // Configuració per defecte
   const s = {
     path_color: '#EEF2FF',
@@ -88,7 +88,7 @@ export default function MazeCanvas({
       canvas.height = size
 
       const ctx = canvas.getContext('2d')!
-      
+
       // 💡 Nova lògica: escalar segons la dimensió més gran i centrar el laberint
       const maxDim = Math.max(level.width, level.height)
       const cell = size / maxDim
@@ -106,7 +106,7 @@ export default function MazeCanvas({
       const ex = offsetX + level.exit.x * cell
       const ey = offsetY + level.exit.y * cell
 
-      const sz = cell * 0.7, pad = (cell - sz) / 2  
+      const sz = cell * 0.7, pad = (cell - sz) / 2
       ctx.fillStyle = s.exit_color
       ctx.roundRect?.(ex + pad, ey + pad, sz, sz, cell * 0.15) ?? ctx.fillRect(ex + pad, ey + pad, sz, sz)
       ctx.fill()
@@ -114,8 +114,8 @@ export default function MazeCanvas({
       // Camí del jugador
       if (phase === 'playing' && showPlayerPath && currentPath.length > 1) {
         ctx.strokeStyle = s.player_path_color
-        ctx.lineWidth = s.wall_thickness 
-        ctx.globalAlpha = 0.4 
+        ctx.lineWidth = s.wall_thickness
+        ctx.globalAlpha = 0.4
         ctx.beginPath()
         const start = currentPath[0]
         ctx.moveTo(
@@ -140,8 +140,8 @@ export default function MazeCanvas({
         ctx.lineJoin = 'round'
         for (let y = 0; y < level.height; y++) {
           for (let x = 0; x < level.width; x++) {
-            const c = level.maze[y][x]  
-            const px = offsetX + x * cell 
+            const c = level.maze[y][x]
+            const px = offsetX + x * cell
             const py = offsetY + y * cell
             ctx.beginPath()
             if (c.walls.top) { ctx.moveTo(px, py); ctx.lineTo(px + cell, py) }
@@ -182,7 +182,7 @@ export default function MazeCanvas({
 
       // Jugador
       if ((phase === 'playing' || phase === 'memorize') && playerPos) {
-        const px = offsetX + playerPos.x * cell + cell / 2  
+        const px = offsetX + playerPos.x * cell + cell / 2
         const py = offsetY + playerPos.y * cell + cell / 2
         const radius = cell * 0.3
         ctx.fillStyle = s.player_color
@@ -196,9 +196,9 @@ export default function MazeCanvas({
     window.addEventListener('resize', draw)
     return () => window.removeEventListener('resize', draw)
 
-  // Actualitzar dependències
+    // Actualitzar dependències
   }, [
-    level, phase, playerPos, 
+    level, phase, playerPos,
     showReveal, showPlayerPath, crashPosition,
     s.path_color, s.wall_color, s.wall_thickness, s.exit_color, s.player_color,
     s.player_path_color, s.crash_help_color,

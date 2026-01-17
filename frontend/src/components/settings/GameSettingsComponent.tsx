@@ -5,7 +5,7 @@ import KeybindingInput from './KeybindingInput';
 
 type Props = {
   settings: GameSettings;
-  onChange: (key: keyof GameSettings, value: boolean | string) => void;
+  onChange: (key: keyof GameSettings, value: boolean | string | number) => void;
 };
 
 // Component Toggle simple
@@ -20,6 +20,22 @@ const ToggleInput = ({ label, checked, onChange }: any) => (
     >
       <span style={{ ...styles.toggleKnob, ...(checked ? styles.knobOn : styles.knobOff) }} />
     </button>
+  </label>
+);
+
+// Component Slider
+const SliderInput = ({ label, value, onChange }: any) => (
+  <label style={styles.sliderContainer}>
+    <span style={styles.sliderLabel}>{label} ({Math.round(value * 100)}%)</span>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.05"
+      value={value}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+      style={styles.slider}
+    />
   </label>
 );
 
@@ -56,7 +72,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
   }, [settings]); // Es recalcula cada cop que 'settings' canvia
   return (
     <div style={styles.container}>
-      
+
       {/* --- SECCIÓ DE SO --- */}
       <h4 style={styles.title}>Configuració de So</h4>
       <div style={styles.group}>
@@ -65,11 +81,26 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
           checked={settings.soundEffects}
           onChange={(value: boolean) => onChange('soundEffects', value)}
         />
+        {settings.soundEffects && (
+          <SliderInput
+            label="Volum SFX"
+            value={settings.soundVolume}
+            onChange={(value: number) => onChange('soundVolume', value)}
+          />
+        )}
+
         <ToggleInput
           label="Música de Fons"
           checked={settings.backgroundMusic}
           onChange={(value: boolean) => onChange('backgroundMusic', value)}
         />
+        {settings.backgroundMusic && (
+          <SliderInput
+            label="Volum Música"
+            value={settings.musicVolume}
+            onChange={(value: number) => onChange('musicVolume', value)}
+          />
+        )}
       </div>
 
       {/* --- SECCIÓ DE TECLES --- */}
@@ -206,6 +237,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   knobOn: { transform: 'translateX(2px)' },
   knobOff: { transform: 'translateX(-20px)' },
+
+  // Estils del Slider
+  sliderContainer: {
+    display: 'flex', flexDirection: 'column', gap: '6px',
+    padding: '0 4px',
+  },
+  sliderLabel: {
+    fontSize: '0.8rem', color: PALETTE.subtext,
+  },
+  slider: {
+    width: '100%', cursor: 'pointer', accentColor: PALETTE.playBtnFrom,
+  },
+
   errorText: {
     color: PALETTE.hardRed,
     background: 'rgba(248, 113, 113, 0.1)',

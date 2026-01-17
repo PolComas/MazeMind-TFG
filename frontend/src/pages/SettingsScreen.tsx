@@ -183,7 +183,7 @@ export default function SettingsScreen({ onBack }: Props) {
     updateSetting(`visuals.${screen}.${key}`, value);
   };
 
-  const handleGameChange = (key: keyof GameSettings, value: boolean | string) => {
+  const handleGameChange = (key: keyof GameSettings, value: boolean | string | number) => {
     updateSetting(`game.${key}`, value);
   };
 

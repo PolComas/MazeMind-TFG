@@ -9,7 +9,7 @@ export type VisualSettings = {
   borderColor: string;
 
   // Accents (botons, focus, etc.)
-  accentColor1: string; 
+  accentColor1: string;
   accentColor2: string;
 
   // Colors semàntics per dificultat
@@ -40,6 +40,9 @@ export type ScreenSettings = {
 export type GameSettings = {
   soundEffects: boolean;
   backgroundMusic: boolean;
+  // Volum (0.0 a 1.0)
+  soundVolume: number;
+  musicVolume: number;
   // Tecles de moviment
   keyMoveUp: string;
   keyMoveDown: string;
@@ -70,26 +73,26 @@ const STORAGE_KEY = 'mazeMindSettings';
 // --- VALORS PER DEFECTE ---
 const DEFAULT_VISUALS: VisualSettings = {
   backgroundColor: ORIGINAL_PALETTE.bg,
-    textColor: ORIGINAL_PALETTE.text,
-    subtextColor: ORIGINAL_PALETTE.subtext,
-    surfaceColor: ORIGINAL_PALETTE.surface,
-    borderColor: ORIGINAL_PALETTE.borderColor,
-    accentColor1: ORIGINAL_PALETTE.playBtnFrom,
-    accentColor2: ORIGINAL_PALETTE.playBtnTo,
-    
-    easyColor: ORIGINAL_PALETTE.easyGreen,
-    normalColor: ORIGINAL_PALETTE.normalYellow,
-    hardColor: ORIGINAL_PALETTE.hardRed,
+  textColor: ORIGINAL_PALETTE.text,
+  subtextColor: ORIGINAL_PALETTE.subtext,
+  surfaceColor: ORIGINAL_PALETTE.surface,
+  borderColor: ORIGINAL_PALETTE.borderColor,
+  accentColor1: ORIGINAL_PALETTE.playBtnFrom,
+  accentColor2: ORIGINAL_PALETTE.playBtnTo,
 
-    // Valors específics del laberint per defecte
-    mazePathColor: '#EEF2FF',
-    mazeWallColor: '#3B82F6', 
-    mazePlayerColor: '#111',
-    mazeExitColor: '#F59E0B',
-    mazeWallThickness: 3,
-    // Colors d'ajuda per defecte
-    playerPathColor: 'rgba(0, 0, 0, 0.4)',
-    crashHelpColor: '#E11D48',
+  easyColor: ORIGINAL_PALETTE.easyGreen,
+  normalColor: ORIGINAL_PALETTE.normalYellow,
+  hardColor: ORIGINAL_PALETTE.hardRed,
+
+  // Valors específics del laberint per defecte
+  mazePathColor: '#EEF2FF',
+  mazeWallColor: '#3B82F6',
+  mazePlayerColor: '#111',
+  mazeExitColor: '#F59E0B',
+  mazeWallThickness: 3,
+  // Colors d'ajuda per defecte
+  playerPathColor: 'rgba(0, 0, 0, 0.4)',
+  crashHelpColor: '#E11D48',
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -101,6 +104,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   game: {
     soundEffects: true,
     backgroundMusic: true,
+    soundVolume: 0.5,
+    musicVolume: 0.5,
     keyMoveUp: 'w',
     keyMoveDown: 's',
     keyMoveLeft: 'a',
@@ -184,7 +189,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     mazePathColor: '#FFFFFF',
     mazeWallColor: '#2F3A8A',
     mazePlayerColor: '#0B1021',
-    mazeExitColor: '#D55E00', 
+    mazeExitColor: '#D55E00',
     mazeWallThickness: 3,
     // Colors d'ajuda
     playerPathColor: 'rgba(0, 0, 0, 0.4)',
@@ -196,7 +201,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     textColor: '#FFFFFF',
     subtextColor: '#FFFFFF',
     surfaceColor: '#000000',
-    borderColor: '#FFFFFF', 
+    borderColor: '#FFFFFF',
     // Accents
     accentColor1: '#2563eb',
     accentColor2: '#2563eb',

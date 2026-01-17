@@ -4,7 +4,7 @@ import LevelSelect from './components/LevelSelect';
 import LevelScreen from './pages/LevelScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import { generateLevel, type Level } from './maze/maze_generator';
-import AuthModal from './components/AuthModal'; 
+import AuthModal from './components/AuthModal';
 import SettingsScreen from './pages/SettingsScreen';
 import { loadProgress, type GameProgress } from './utils/progress';
 import type { Diff } from './maze/maze_generator';
@@ -160,15 +160,10 @@ type Route =
   | { type: 'maze-lab' }
   | { type: 'levels' }
   | { type: 'level'; difficulty: Diff; number: number }
-  | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'> }
+  | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'>; seed?: string }
   | { type: 'home' }
   | { type: 'unknown'; path: string }
   | { type: 'auth-reset' };
-
- 
-
- 
-
 
 export default function App() {
   const { user, logout } = useUser();
@@ -350,8 +345,9 @@ export default function App() {
       const time = parsePositiveIntParam(params.get('t'), 10);
       const rawDifficulty = params.get('d');
       const difficulty = rawDifficulty === 'hard' ? 'hard' : 'normal';
+      const seed = params.get('s') || undefined;
 
-      return { type: 'custom', width, height, time, difficulty };
+      return { type: 'custom', width, height, time, difficulty, seed };
     }
 
     const levelMatch = pathOnly.match(/^\/level\/(easy|normal|hard)\/(\d+)$/);
@@ -432,6 +428,7 @@ export default function App() {
     params.set('h', String(config.height));
     params.set('t', String(config.time));
     params.set('d', config.difficulty);
+    if (config.seed) params.set('s', config.seed);
 
     go(`/level/custom?${params.toString()}`);
   }, [go]);
@@ -482,6 +479,7 @@ export default function App() {
         height: route.height,
         memorizeTime: route.time,
         stars: [60, 45, 30],
+        seed: route.seed,
       });
 
       const retryParams = new URLSearchParams({
@@ -490,6 +488,7 @@ export default function App() {
         t: String(route.time),
         d: route.difficulty,
       });
+      if (route.seed) retryParams.set('s', route.seed);
 
       screen = (
         <LevelScreen
@@ -498,7 +497,7 @@ export default function App() {
           onBack={() => go('/practice/free')}
           onRetry={() => go(`/level/custom?${retryParams.toString()}`)}
           isTutorialMode={false}
-          onCompleteTutorial={() => {}}
+          onCompleteTutorial={() => { }}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
           progress={progress}
@@ -532,7 +531,7 @@ export default function App() {
           onBack={() => go('/levels')}
           onRetry={() => go('/practice/ia')}
           isTutorialMode={false}
-          onCompleteTutorial={() => {}}
+          onCompleteTutorial={() => { }}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
           progress={progress}
@@ -553,7 +552,7 @@ export default function App() {
           onStartPracticeIA={() => go('/practice/ia')}
           onStartPracticeNormal={() => go('/practice/normal')}
           onStartPracticeFree={() => go('/practice/free')}
-//          onOpenGenerator={() => go('/dev/maze-lab')}
+        //          onOpenGenerator={() => go('/dev/maze-lab')}
         />
       );
       break;

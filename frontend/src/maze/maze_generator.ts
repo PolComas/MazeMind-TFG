@@ -1,4 +1,4 @@
-export type Dir = 'top' | 'right' | 'bottom' | 'left' 
+export type Dir = 'top' | 'right' | 'bottom' | 'left'
 export type Cell = { walls: Record<Dir, boolean>; visited?: boolean } // Parets i si ha estat visitada
 export type Grid = Cell[][]
 
@@ -6,16 +6,45 @@ export type Diff = 'easy' | 'normal' | 'hard';
 
 // Tipus per a un nivell complet del joc
 export type Level = {
-  id: string  
-  number: number  
+  id: string
+  number: number
   difficulty: Diff;
-  width: number 
-  height: number  
-  maze: Grid  
+  width: number
+  height: number
+  maze: Grid
   memorizeTime: number
   starThresholds: readonly number[]
   start: { x: number; y: number }
-  exit: { x: number; y: number } 
+  exit: { x: number; y: number }
+}
+
+// PRNG Simple: Mulberry32
+class PRNG {
+  private state: number;
+
+  constructor(seed: string | number) {
+    if (typeof seed === 'string') {
+      // Hash string to number
+      let h = 0xdeadbeef;
+      for (let i = 0; i < seed.length; i++) {
+        h = Math.imul(h ^ seed.charCodeAt(i), 2654435761);
+        h = ((h ^ (h >>> 16)) * 2246822507) >>> 0;
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        this.state = (h ^ (h >>> 16)) >>> 0;
+      }
+      this.state = h; // Fallback assign
+    } else {
+      this.state = seed >>> 0;
+    }
+  }
+
+  // Retorna un float entre 0 i 1
+  next(): number {
+    this.state = (this.state + 0x6d2b79f5) | 0;
+    let t = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
 }
 
 // Generador de laberints utilitzant l'algorisme de backtracking recursiu
@@ -23,10 +52,13 @@ export class MazeGenerator {
   width: number
   height: number
   grid: Grid = []
+  private prng: PRNG;
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, seed?: string | number) {
     this.width = width
     this.height = height
+    // Si no hi ha seed, n'utilitzem una d'aleatòria basada en el temps
+    this.prng = new PRNG(seed ?? Date.now());
   }
 
   generate(): Grid {
@@ -51,8 +83,8 @@ export class MazeGenerator {
       const nbs = this.getUnvisitedNeighbors(cur.x, cur.y)  // Veïns no visitats
 
       if (nbs.length) {
-        // Escull un veí aleatori
-        const next = nbs[Math.floor(Math.random() * nbs.length)]
+        // Escull un veí aleatori utilitzant el PRNG
+        const next = nbs[Math.floor(this.prng.next() * nbs.length)]
         // Treu la paret entre la cel·la actual i la següent
         this.removeWall(cur, next)
         // Marca la següent com visitada i afegeix a la pila
@@ -79,8 +111,8 @@ export class MazeGenerator {
 
   // Treu la paret entre dues cel·les adjacents
   private removeWall(a: { x: number; y: number }, b: { x: number; y: number }) {
-    const dx = b.x - a.x  
-    const dy = b.y - a.y  
+    const dx = b.x - a.x
+    const dy = b.y - a.y
     if (dx === 1) {  // Moviment cap a la dreta
       this.grid[a.y][a.x].walls.right = false
       this.grid[b.y][b.x].walls.left = false
@@ -105,22 +137,23 @@ export type LevelParams = {
   memorizeTime: number;  // Temps de memorització
   stars: readonly number[];  // Llindars d'estrelles
   levelNumber: number;  // Número del nivell
+  seed?: string | number; // Seed opcional per a generació determinista
 };
 
 // Funció per generar un nivell complet amb laberint
 export function generateLevel(params: LevelParams): Level {
-  const gen = new MazeGenerator(params.width, params.height);
-  
+  const gen = new MazeGenerator(params.width, params.height, params.seed);
+
   return {
     id: `${params.difficulty}-level-${params.levelNumber}`,
     number: params.levelNumber,
     difficulty: params.difficulty,
-    maze: gen.generate(), 
+    maze: gen.generate(),
     width: params.width,
     height: params.height,
     memorizeTime: params.memorizeTime,
     starThresholds: params.stars,
-    start: { x: 0, y: 0 },  
+    start: { x: 0, y: 0 },
     exit: { x: params.width - 1, y: params.height - 1 },
   };
 }
