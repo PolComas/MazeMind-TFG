@@ -71,13 +71,13 @@ export default function GameHUD({
       flexDirection: 'column',
       gap: '4px',
       flexGrow: 1,
-      flexBasis: '180px', 
+      flexBasis: '180px',
     },
     helpsCard: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: '8px',
-      flexBasis: '300px', 
+      flexBasis: '300px',
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -178,7 +178,7 @@ export default function GameHUD({
         </button>
 
         <button
-          style={{...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {})}}
+          style={{ ...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {}) }}
           onClick={onTogglePathHelp}
           title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -2 pts/s`}
         >
@@ -189,7 +189,7 @@ export default function GameHUD({
 
         {difficulty !== 'hard' && (
           <button
-            style={{...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {})}}
+            style={{ ...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {}) }}
             onClick={onToggleCrashHelp}
             title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
           >

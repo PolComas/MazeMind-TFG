@@ -8,9 +8,9 @@ import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type Gam
 
 type UserType = { id: string; email: string; };
 
-type Props = { 
-  user: UserType | null;   
-  onNavigate: () => void; 
+type Props = {
+  user: UserType | null;
+  onNavigate: () => void;
   onUserClick: () => void;
   onLogout: () => void;
   onSettingsClick: () => void;
@@ -28,20 +28,20 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
   // Calcular les estadístiques dinàmicament
   const playerStats = useMemo(() => {
     return [
-      { 
-        icon: "🎯", 
-        label: "Nivells Superats", 
-        value: getTotalCompletedLevels(progress) 
+      {
+        icon: "🎯",
+        label: "Nivells Superats",
+        value: getTotalCompletedLevels(progress)
       },
-      { 
-        icon: "🏆", 
-        label: "Estrelles", 
-        value: getTotalStars(progress) 
+      {
+        icon: "⚡️",
+        label: "Nivells Perfectes",
+        value: getTotalPerfectLevels(progress)
       },
-      { 
-        icon: "⚡️", 
-        label: "Nivells Perfectes", 
-        value: getTotalPerfectLevels(progress) 
+      {
+        icon: "🏆",
+        label: "Estrelles",
+        value: getTotalStars(progress)
       },
     ];
   }, [progress]);
@@ -199,22 +199,22 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
       marginBottom: 8,
     },
   }), [screenSettings]);
-  
+
   return (
     <main role="main" style={styles.page}>
       {/* Botó d'usuari */}
-      <button 
-        style={styles.userButton} 
-        onClick={handleUserInteractionWithSound} 
+      <button
+        style={styles.userButton}
+        onClick={handleUserInteractionWithSound}
         disabled={isLoggingOut}
         aria-busy={isLoggingOut ? 'true' : 'false'}
         onMouseEnter={() => audio.playHover()}
         aria-label={user ? `Compte de ${user.email}. Tancar sessió.` : "Iniciar sessió o registrar-se"}
       >
         {/* Icona condicional */}
-        {user ? <LogOut size={24} /> : <User size={24} />} 
+        {user ? <LogOut size={24} /> : <User size={24} />}
       </button>
-      
+
       <div style={styles.container} aria-labelledby="title">
         {/* LOGO */}
         <div style={styles.logoWrap} role="img" aria-label="Logotip de MazeMind">
@@ -229,10 +229,10 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
 
         {/* Estadístiques */}
         <ul style={styles.statsGrid} aria-label="Estadístiques de progrés">
-          {playerStats.map(s => ( 
+          {playerStats.map(s => (
             <li key={s.label} style={styles.statCard}>
               <div aria-hidden="true" style={styles.statIcon}>{s.icon}</div>
-              <div style={styles.statValue} aria-live="polite">{s.value}</div> 
+              <div style={styles.statValue} aria-live="polite">{s.value}</div>
               <div style={styles.statLabel}>{s.label}</div>
             </li>
           ))}

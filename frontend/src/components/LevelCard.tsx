@@ -12,6 +12,7 @@ type Props = {
   difficulty: Diff; 
   stars: number;
   bestTime: number | null;
+  isRecommended?: boolean;
   onPlay: () => void;
 };
 
@@ -23,7 +24,7 @@ function formatTime(seconds: number | null): string | null {
   return `${mins}:${secs}`;
 }
 
-export default function LevelCard({ index, unlocked, difficulty, stars, bestTime, onPlay }: Props) {
+export default function LevelCard({ index, unlocked, difficulty, stars, bestTime, isRecommended = false, onPlay }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
   
@@ -63,7 +64,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       starArray.push(
         <Star 
           key={i} 
-          size={14} 
+          size={12} 
           fill={i < stars ? PALETTE.normalYellow : 'none'} 
           color={i < stars ? PALETTE.normalYellow : PALETTE.subtext + '80'} 
         />
@@ -82,7 +83,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       padding: 8,
       width: '100%',
       aspectRatio: '1/1', 
-      boxShadow: PALETTE.shadow,
+      boxShadow: 'none',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
       display: 'flex',
     },
@@ -102,17 +103,17 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       padding: 'clamp(8px, 2vw, 12px)',
     },
     badge: { // Insígnia decorativa amb fons translúcid i forma rodona
-      background: 'rgba(255,255,255,.1)',
+      background: 'rgba(255,255,255,0.06)',
       borderRadius: '999px',
       padding: '4px 8px',
-      fontSize: 16,
+      fontSize: 15,
       lineHeight: 1,
     },
     levelNum: { // Número del nivell amb font gran i negreta
       fontSize: 32, fontWeight: 800, color: screenSettings.textColor 
     },
     stars: { // Estrelles decoratives amb color secundari
-      color: screenSettings.subtextColor, fontSize: 14 
+      color: screenSettings.subtextColor, fontSize: 12 
     },
     starsContainer: { // Contenidor per a les estrelles
       display: 'flex',
@@ -123,7 +124,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      fontSize: 12,
+      fontSize: 11,
       color: screenSettings.subtextColor,
       margin: '0 0 8px 0', 
     },
@@ -150,6 +151,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
     <div
       style={{
         ...styles.cardBase,
+        ...(isRecommended ? { boxShadow: PALETTE.shadow, borderWidth: 2 } : {}),
         borderColor: unlocked ? difficultyStyles[difficulty].accent + '60' : screenSettings.borderColor,
         ...(!unlocked ? styles.cardLocked : {}),
       }}

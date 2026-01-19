@@ -84,32 +84,34 @@ export default function LevelSelect({
       setIndicatorStyle({
         left: `${activeButton.offsetLeft}px`,
         width: `${activeButton.offsetWidth}px`,
-        background: difficultyColors[difficulty], 
+        background: difficultyColors[difficulty],
         opacity: 1,
       });
     } else {
-      setIndicatorStyle({ opacity: 0 }); 
+      setIndicatorStyle({ opacity: 0 });
     }
   }, [difficulty, difficultyColors]);
 
   // Lògica de nivells desbloquejats
   const levels = Array.from({ length: 15 }, (_, i) => i + 1);
   const unlockedCount = progress.highestUnlocked[difficulty] || 0;
+  const maxLevel = levels.length;
+  const recommendedLevelNumber = Math.max(1, Math.min(unlockedCount || 1, maxLevel));
 
   // Efectes de so per a les interaccions
   const onBackWithSound = useCallback(() => {
-    audio.playFail(); 
-    originalOnBack(); 
+    audio.playFail();
+    originalOnBack();
   }, [originalOnBack, audio]);
 
   const onPlayLevelWithSound = useCallback((levelNumber: number, difficulty: Diff) => {
     //audio.playBtnSound(); 
     audio.playFail();
-    originalOnPlayLevel(levelNumber, difficulty); 
+    originalOnPlayLevel(levelNumber, difficulty);
   }, [originalOnPlayLevel, audio]);
 
   const onPracticeClick = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     setShowPracticeModal(true);
   }, [audio]);
 
@@ -185,14 +187,33 @@ export default function LevelSelect({
     diffBar: { // Barra de botons per seleccionar dificultat
       display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24
     },
+    primaryCtaWrap: { // CTA principal per anar al següent nivell
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: 24,
+    },
+    primaryCta: {
+      padding: '14px 20px',
+      borderRadius: 12,
+      border: 'none',
+      background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
+      color: screenSettings.textColor,
+      fontSize: 18,
+      fontWeight: 800,
+      cursor: 'pointer',
+      boxShadow: PALETTE.shadow,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+    },
     grid: { // Graella responsiva per les targetes de nivell
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
       gap: 'clamp(12px, 2vw, 20px)',
     },
     footer: { // Peu de pàgina centrat amb botó de pràctica
-      display:'flex',
-      justifyContent:'center',
+      display: 'flex',
+      justifyContent: 'center',
       marginTop: 32,
     },
     practiceBtn: { // Botó de mode pràctica amb estil de superfície
@@ -218,7 +239,7 @@ export default function LevelSelect({
               <h1 style={styles.title}>Selecciona el Nivell</h1>
             </div>
             {/* Element buit per equilibrar el flexbox */}
-            <div style={{ width: 100 }} /> 
+            <div style={{ width: 100 }} />
           </header>
 
           {/* Barra de selecció de dificultat */}
@@ -228,15 +249,15 @@ export default function LevelSelect({
             {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
               <button
                 key={d}
-                role="tab" 
+                role="tab"
                 onClick={() => { audio.playSlide(); onDifficultyChange(d); }}
-                aria-selected={difficulty === d} 
+                aria-selected={difficulty === d}
                 style={{
-                  ...styles.diffTab, 
+                  ...styles.diffTab,
                   color: difficulty === d ? screenSettings.textColor : screenSettings.subtextColor,
                 }}
               >
-                {difficultyIcons[d]} 
+                {difficultyIcons[d]}
                 {DIFF_LABEL[d]}
               </button>
             ))}
@@ -253,9 +274,10 @@ export default function LevelSelect({
                     key={`${difficulty}-${n}`}
                     index={n}
                     unlocked={n <= unlockedCount}
-                    difficulty={difficulty} 
+                    difficulty={difficulty}
                     stars={stats?.stars ?? 0}
                     bestTime={stats?.bestTime ?? null}
+                    isRecommended={n === recommendedLevelNumber && n <= unlockedCount}
                     onPlay={() => onPlayLevelWithSound(n, difficulty)}
                   />
                 );
@@ -263,7 +285,7 @@ export default function LevelSelect({
             </div>
           </section>
 
-            {/* Peu de pàgina amb botó de mode pràctica */}
+          {/* Peu de pàgina amb botó de mode pràctica */}
           <footer style={styles.footer}>
             <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
               <Dumbbell size={18} style={{ marginBottom: -1 }} /> Mode Pràctica
@@ -295,8 +317,8 @@ export default function LevelSelect({
         </div>
       </main>
 
-    {/* Renderitzar el modal */}
-    <HowToPlayModal 
+      {/* Renderitzar el modal */}
+      <HowToPlayModal
         open={showHowToPlay}
         onClose={() => setShowHowToPlay(false)}
         onStartTutorial={onStartTutorial}
@@ -311,5 +333,5 @@ export default function LevelSelect({
         onStartFree={onStartPracticeFree}
       />
     </>
-  );  
+  );
 }
