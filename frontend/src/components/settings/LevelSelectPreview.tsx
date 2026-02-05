@@ -1,10 +1,12 @@
+
 import React, { useState, useCallback } from 'react';
-import type { VisualSettings } from '../../utils/settings'; 
-import { ArrowLeft, Dumbbell, Zap, Flame, Lock, Star, Clock } from 'lucide-react'; 
+import type { VisualSettings } from '../../utils/settings';
+import { ArrowLeft, Dumbbell, Zap, Flame, Lock, Star, Clock } from 'lucide-react';
 import { PALETTE } from '../palette';
+import NetworkBackground from '../NetworkBackground';
 
 type Props = {
-  settings: VisualSettings; 
+  settings: VisualSettings;
 };
 
 export default function LevelSelectPreview({ settings }: Props) {
@@ -21,22 +23,23 @@ export default function LevelSelectPreview({ settings }: Props) {
 
   const styles: Record<string, React.CSSProperties> = {
     pagePreview: {
-      background: settings.backgroundColor,
+      background: 'transparent',
       color: settings.textColor,
       padding: '16px',
-      borderRadius: '8px', 
+      borderRadius: '8px',
       height: '100%', width: '100%',
       display: 'flex', flexDirection: 'column',
       gap: '12px',
-      overflow: 'hidden', 
+      overflow: 'hidden',
       position: 'relative',
+      isolation: 'isolate',
       boxSizing: 'border-box',
     },
     headerPreview: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     backBtnPreview: {
       background: settings.surfaceColor,
       color: settings.textColor,
-      border: `1px solid ${settings.borderColor}`,
+      border: `1px solid ${settings.borderColor} `,
       borderRadius: '8px', padding: '4px 6px',
       fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px'
     },
@@ -63,7 +66,7 @@ export default function LevelSelectPreview({ settings }: Props) {
     },
     cardPreview: {
       background: settings.surfaceColor,
-      border: `1px solid ${settings.borderColor}`,
+      border: `1px solid ${settings.borderColor} `,
       borderRadius: '12px', padding: '4px', aspectRatio: '1/1',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'space-around', fontSize: '10px',
@@ -75,7 +78,7 @@ export default function LevelSelectPreview({ settings }: Props) {
     },
     levelNumPreview: { fontSize: '18px', fontWeight: 700 },
     starsPreview: { display: 'flex', gap: '2px' },
-    timePreview: { display: 'flex', gap: '4px', alignItems: 'center', fontSize: '10px', color: settings.subtextColor},
+    timePreview: { display: 'flex', gap: '4px', alignItems: 'center', fontSize: '10px', color: settings.subtextColor },
     playBtnPreview: {
       background: settings.easyColor,
       color: '#0B1021',
@@ -89,7 +92,7 @@ export default function LevelSelectPreview({ settings }: Props) {
     practiceBtnPreview: {
       background: settings.surfaceColor,
       color: settings.textColor,
-      border: `1px solid ${settings.borderColor}`,
+      border: `1px solid ${settings.borderColor} `,
       borderRadius: '8px', padding: '6px 10px',
       fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px'
     }
@@ -97,6 +100,7 @@ export default function LevelSelectPreview({ settings }: Props) {
 
   return (
     <div style={styles.pagePreview}>
+      <NetworkBackground primaryColor={getDiffColor(difficulty) || settings.accentColor1} opacity={0.4} />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.backBtnPreview}><ArrowLeft size={12} /> Inici</div>
@@ -127,7 +131,7 @@ export default function LevelSelectPreview({ settings }: Props) {
 
       {/* Graella de nivells */}
       <div style={styles.gridPreview}>
-  {/* Card 1: Completat */}
+        {/* Card 1: Completat */}
         <div style={{ ...styles.cardPreview, borderColor: (getDiffColor(difficulty) || PALETTE.easyGreen) + '60' }}>
           <div style={styles.levelNumPreview}>1</div>
           <div style={styles.starsPreview}>
@@ -138,11 +142,11 @@ export default function LevelSelectPreview({ settings }: Props) {
           <div style={styles.timePreview}><Clock size={10} /> 0:45</div>
           <div style={{ ...styles.playBtnPreview, background: getDiffColor(difficulty) }} >Jugar</div>
         </div>
-        
+
         {/* Card 2: Completat */}
         <div style={{ ...styles.cardPreview, borderColor: (getDiffColor(difficulty) || PALETTE.easyGreen) + '60' }}>
           <div style={styles.levelNumPreview}>2</div>
-           <div style={styles.starsPreview}>
+          <div style={styles.starsPreview}>
             <Star size={10} fill={'#FBBF24'} color={'#FBBF24'} />
             <Star size={10} fill={'none'} color={'#FBBF24'} />
             <Star size={10} fill={'none'} color={'#FBBF24'} />
@@ -156,7 +160,7 @@ export default function LevelSelectPreview({ settings }: Props) {
           <div style={styles.levelNumPreview}>3</div>
           <Lock size={16} color={settings.subtextColor} />
         </div>
-        
+
         {/* Card 4: Bloquejat */}
         <div style={{ ...styles.cardPreview, ...styles.cardLocked }}>
           <div style={styles.levelNumPreview}>4</div>

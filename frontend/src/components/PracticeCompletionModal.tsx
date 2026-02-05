@@ -48,7 +48,7 @@ const buildStyles = (visuals: VisualSettings): PracticeCompletionStyles => {
   return {
     overlay: {
       position: 'fixed', inset: 0,
-      background: applyAlpha(visuals.textColor, 0.75),
+      background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(8px)',
       display: 'grid', placeItems: 'center', zIndex: 50,
     },

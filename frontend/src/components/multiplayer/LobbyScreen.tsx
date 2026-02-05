@@ -1,15 +1,19 @@
 import React, { useMemo } from 'react';
 import type { MultiplayerMatch, MultiplayerPlayer } from '../../lib/multiplayer';
+import NetworkBackground from '../NetworkBackground';
+import { useSettings } from '../../context/SettingsContext';
 
 type LobbyScreenProps = {
     match: MultiplayerMatch;
     players: MultiplayerPlayer[];
     currentUserId: string;
     onLeave: () => void;
-    onStart?: () => void; // Only host sees this if manual start is needed (though logic auto-starts)
+    onStart?: () => void;
 };
 
 export default function LobbyScreen({ match, players, currentUserId, onLeave }: LobbyScreenProps) {
+    const { getVisualSettings } = useSettings();
+    const screenSettings = getVisualSettings('levelSelect');
     const me = players.find((p) => p.user_id === currentUserId);
     const opponent = players.find((p) => p.user_id !== currentUserId);
 
@@ -126,6 +130,7 @@ export default function LobbyScreen({ match, players, currentUserId, onLeave }: 
 
     return (
         <div style={styles.container}>
+            <NetworkBackground primaryColor={screenSettings.accentColor1} />
             <div style={styles.header}>
                 <h1 style={styles.title}>Multijugador</h1>
                 <div style={styles.subtitle}>Esperant jugadors...</div>

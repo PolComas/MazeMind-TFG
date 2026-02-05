@@ -21,7 +21,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
       inset: 0,
       display: 'grid',
       placeItems: 'center',
-      background: overlayColor,
+      background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(8px)',
       zIndex: 80,
       padding: '16px',

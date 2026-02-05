@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
-import type { VisualSettings } from '../../utils/settings'; 
-import { Eye, Footprints, ArrowLeft, RefreshCw } from 'lucide-react'; 
+import type { VisualSettings } from '../../utils/settings';
+import { Eye, Footprints, ArrowLeft, RefreshCw } from 'lucide-react';
 import MazeCanvas from '../../components/MazeCanvas';
+import NetworkBackground from '../NetworkBackground';
 import type { Level } from '../../maze/maze_generator';
-import previewLevelData from '../../levels/easy-level-1.json'; 
+import previewLevelData from '../../levels/easy-level-1.json';
 
 type Props = {
-  settings: VisualSettings; 
+  settings: VisualSettings;
 };
 
 const previewLevel = previewLevelData as Level;
@@ -22,21 +23,22 @@ const previewPath = [
   { x: 2, y: 2 }, // dreta
 ];
 export default function LevelScreenPreview({ settings }: Props) {
-    const styles: Record<string, React.CSSProperties> = useMemo(() => ({
+  const styles: Record<string, React.CSSProperties> = useMemo(() => ({
     pagePreview: {
-      background: settings.backgroundColor,
+      background: 'transparent',
       color: settings.textColor,
       padding: '16px',
-      borderRadius: '8px', 
+      borderRadius: '8px',
       height: '100%', width: '100%',
       display: 'flex', flexDirection: 'column',
       gap: '10px',
-      overflow: 'hidden', 
+      overflow: 'hidden',
       position: 'relative',
+      isolation: 'isolate',
       boxSizing: 'border-box',
     },
     // Capçalera
-    headerPreview: { 
+    headerPreview: {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       fontSize: '10px', flexShrink: 0,
     },
@@ -48,7 +50,7 @@ export default function LevelScreenPreview({ settings }: Props) {
       display: 'flex', alignItems: 'center', gap: '4px',
     },
     headerTitle: { fontSize: '14px', fontWeight: 700, margin: 0 },
-    
+
     // Panell Memoritzar
     memorizePanel: {
       background: `linear-gradient(90deg, ${settings.accentColor1}, ${settings.accentColor2})`,
@@ -57,7 +59,7 @@ export default function LevelScreenPreview({ settings }: Props) {
     },
     memorizeTitle: { fontSize: '12px', fontWeight: 600, margin: 0, opacity: 0.9 },
     memorizeTime: { fontSize: '24px', fontWeight: 800, margin: '2px 0' },
-    
+
     // HUD
     hudPreview: { display: 'flex', gap: '6px', flexShrink: 0 },
     hudCard: {
@@ -79,7 +81,7 @@ export default function LevelScreenPreview({ settings }: Props) {
       color: '#000',
       borderColor: 'transparent'
     },
-    
+
     // Laberint
     mazeWrap: {
       flexGrow: 1, minHeight: 0,
@@ -93,6 +95,7 @@ export default function LevelScreenPreview({ settings }: Props) {
 
   return (
     <div style={styles.pagePreview}>
+      <NetworkBackground primaryColor={settings.accentColor1} opacity={0.4} />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.headerBtn}><ArrowLeft size={10} /> Nivells</div>
@@ -108,7 +111,7 @@ export default function LevelScreenPreview({ settings }: Props) {
 
       {/* HUD (mostrar només 2 targetes) */}
       <div style={styles.hudPreview}>
-         <div style={styles.hudCard}>
+        <div style={styles.hudCard}>
           <div style={styles.hudLabel}>⏱ Temps</div>
           <div style={styles.hudValue}>0:00</div>
         </div>
@@ -116,9 +119,9 @@ export default function LevelScreenPreview({ settings }: Props) {
           <div style={styles.hudLabel}>⭐️ Objectiu</div>
           <div style={styles.hudValue}>1000</div>
         </div>
-        <div style={{...styles.hudCard, padding: '6px', display: 'flex', gap: '4px'}}>
-           <div style={{...styles.helpButton, ...styles.helpActive}}><Eye size={10}/></div>
-           <div style={styles.helpButton}><Footprints size={10}/></div>
+        <div style={{ ...styles.hudCard, padding: '6px', display: 'flex', gap: '4px' }}>
+          <div style={{ ...styles.helpButton, ...styles.helpActive }}><Eye size={10} /></div>
+          <div style={styles.helpButton}><Footprints size={10} /></div>
         </div>
       </div>
 
@@ -137,7 +140,7 @@ export default function LevelScreenPreview({ settings }: Props) {
             wall_thickness: settings.mazeWallThickness,
             exit_color: settings.mazeExitColor,
             player_color: settings.mazePlayerColor,
-            player_path_color: settings.playerPathColor, 
+            player_path_color: settings.playerPathColor,
             crash_help_color: settings.crashHelpColor,
           }}
         />

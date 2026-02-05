@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, } from "react";
 import MazeCanvas from "../components/MazeCanvas";
+import NetworkBackground from "../components/NetworkBackground";
 import { PALETTE } from "../components/palette";
 import { useGameAudio } from "../audio/sound";
 import { useSettings } from "../context/SettingsContext";
@@ -108,12 +109,12 @@ export default function PracticeNormalScreen({
   const [level, setLevel] = useState<Level>(() => {
     const cfg = getLevelConfig(1);
     return generateLevel({
-        levelNumber: 1,
-        difficulty: "normal",
-        width: cfg.width,
-        height: cfg.height,
-        memorizeTime: cfg.memorizeTime,
-        stars: [60, 45, 30],
+      levelNumber: 1,
+      difficulty: "normal",
+      width: cfg.width,
+      height: cfg.height,
+      memorizeTime: cfg.memorizeTime,
+      stars: [60, 45, 30],
     });
   });
 
@@ -271,12 +272,12 @@ export default function PracticeNormalScreen({
     if (phase !== "playing") return;
 
     const gameTick = setInterval(() => {
-        setGameTime((t) => t + 1);
-        setPoints((p) => {
+      setGameTime((t) => t + 1);
+      setPoints((p) => {
         let loss = scoreTuning.timeLossPerSecond;
         if (pathHelpRef.current) loss += scoreTuning.pathHelpLossPerSecond;
         return Math.max(0, p - loss);
-        });
+      });
     }, 1000);
 
     return () => clearInterval(gameTick);
@@ -328,12 +329,12 @@ export default function PracticeNormalScreen({
 
     const cfg = getLevelConfig(1);
     const firstLevel = generateLevel({
-        levelNumber: 1,
-        difficulty: "normal",
-        width: cfg.width,
-        height: cfg.height,
-        memorizeTime: cfg.memorizeTime,
-        stars: [60, 45, 30],
+      levelNumber: 1,
+      difficulty: "normal",
+      width: cfg.width,
+      height: cfg.height,
+      memorizeTime: cfg.memorizeTime,
+      stars: [60, 45, 30],
     });
     const firstTuning = getScoreTuning(1);
 
@@ -348,24 +349,24 @@ export default function PracticeNormalScreen({
     audio.stopMusic();
 
     setCurrentLevel((prevLevel) => {
-        const nextLevel = prevLevel + 1;
+      const nextLevel = prevLevel + 1;
 
-        const cfg = getLevelConfig(nextLevel);
-        const newLevel = generateLevel({
+      const cfg = getLevelConfig(nextLevel);
+      const newLevel = generateLevel({
         levelNumber: nextLevel,
         difficulty: "normal",
         width: cfg.width,
         height: cfg.height,
         memorizeTime: cfg.memorizeTime,
         stars: [60, 45, 30],
-        });
-        const newTuning = getScoreTuning(nextLevel);
+      });
+      const newTuning = getScoreTuning(nextLevel);
 
-        setLevel(newLevel);
-        setScoreTuning(newTuning);
-        resetForLevel(newLevel, newTuning);
+      setLevel(newLevel);
+      setScoreTuning(newTuning);
+      resetForLevel(newLevel, newTuning);
 
-        return nextLevel;
+      return nextLevel;
     });
 
     setShowScoreModal(false);
@@ -493,8 +494,8 @@ export default function PracticeNormalScreen({
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [ phase, settings, level, playerPos, lives, showReveal, audio,
-    onRevealHelp, onTogglePathHelp, onToggleCrashHelp, totalScore, user ]);
+  }, [phase, settings, level, playerPos, lives, showReveal, audio,
+    onRevealHelp, onTogglePathHelp, onToggleCrashHelp, totalScore, user]);
 
   const mazeSettings = useMemo(
     () => ({
@@ -512,20 +513,22 @@ export default function PracticeNormalScreen({
     }),
     [screenSettings]
   );
- 
+
   const styles: Record<string, React.CSSProperties> = {
     page: {
       minHeight: "100svh",
       width: "100%",
       margin: 0,
-      background: screenSettings.backgroundColor,
+      background: 'transparent', // Removed static color
       color: screenSettings.textColor,
       boxSizing: "border-box",
       padding: "clamp(16px, 3vw, 24px)",
       display: "flex",
       flexDirection: "column",
       gap: "clamp(12px, 2vw, 16px)",
-      alignItems: "center", 
+      alignItems: "center",
+      position: 'relative',
+      isolation: 'isolate',
     },
     headerRow: {
       display: "flex",
@@ -533,8 +536,8 @@ export default function PracticeNormalScreen({
       alignItems: "center",
       gap: 16,
       flexShrink: 0,
-      width: "100%", 
-      maxWidth: "980px", 
+      width: "100%",
+      maxWidth: "980px",
     },
     title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
     ghostBtn: {
@@ -554,7 +557,7 @@ export default function PracticeNormalScreen({
       gap: "clamp(12px, 2vw, 16px)",
       minHeight: 0,
       width: "100%",
-      maxWidth: "980px", 
+      maxWidth: "980px",
     },
     memorizePanel: {
       background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
@@ -607,15 +610,15 @@ export default function PracticeNormalScreen({
       borderRadius: 16,
       boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
       overflow: "hidden",
-      position: 'relative', 
+      position: 'relative',
     },
-    footer: { 
+    footer: {
       flexShrink: 0,
       width: "100%",
       maxWidth: "980px",
       textAlign: "center",
     },
-    tip: { 
+    tip: {
       display: 'inline-block',
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
@@ -628,6 +631,7 @@ export default function PracticeNormalScreen({
 
   return (
     <div style={styles.page}>
+      <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
       {/* HEADER */}
       <header style={styles.headerRow}>
         <button

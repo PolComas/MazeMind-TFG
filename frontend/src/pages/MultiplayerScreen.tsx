@@ -10,6 +10,7 @@ import {
   listOpenMatches,
   type MultiplayerMatch,
 } from '../lib/multiplayer';
+import NetworkBackground from '../components/NetworkBackground';
 
 const sizePreset = (difficulty: 'easy' | 'normal' | 'hard') => {
   if (difficulty === 'easy') return 5;
@@ -124,9 +125,11 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
     page: {
       minHeight: '100svh',
       padding: 24,
-      background: screenSettings.backgroundColor,
+      background: 'transparent', // Removed static color
       color: screenSettings.textColor,
       fontFamily: '"Space Grotesk", "Sora", "Segoe UI", sans-serif',
+      position: 'relative',
+      isolation: 'isolate',
     },
     header: {
       display: 'flex',
@@ -211,6 +214,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
 
   return (
     <div style={styles.page}>
+      <NetworkBackground primaryColor={screenSettings.accentColor1} />
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Multijugador</h1>

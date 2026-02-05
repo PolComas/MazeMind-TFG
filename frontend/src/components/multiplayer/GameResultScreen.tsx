@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import type { MultiplayerPlayer } from '../../lib/multiplayer';
+import NetworkBackground from '../NetworkBackground';
+import { useSettings } from '../../context/SettingsContext';
 
 type GameResultScreenProps = {
     players: MultiplayerPlayer[];
@@ -8,6 +10,9 @@ type GameResultScreenProps = {
 };
 
 export default function GameResultScreen({ players, currentUserId, onExit }: GameResultScreenProps) {
+    const { getVisualSettings } = useSettings();
+    const screenSettings = getVisualSettings('levelSelect');
+
     // Sort by points descending
     const sortedPlayers = [...players].sort((a, b) => b.total_points - a.total_points);
     const winner = sortedPlayers[0];
@@ -22,7 +27,7 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
             justifyContent: 'center',
             minHeight: '100svh',
             padding: 24,
-            background: 'radial-gradient(circle at center, #1f2937 0%, #111827 100%)',
+            // background: 'radial-gradient(circle at center, #1f2937 0%, #111827 100%)', // Removed
             color: 'white',
             fontFamily: '"Space Grotesk", sans-serif',
             position: 'relative',
@@ -107,6 +112,7 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
 
     return (
         <div style={styles.container}>
+            <NetworkBackground primaryColor={screenSettings.accentColor1} />
             {/* Background Confetti hint */}
             {isMeWinner && (
                 <div style={{ position: 'absolute', inset: 0, opacity: 0.2, backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\' fill=\'%23fff\'/%3E%3C/svg%3E")', animation: 'fadeIn 2s' }} />

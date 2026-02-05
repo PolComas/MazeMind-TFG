@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { PALETTE } from '../components/palette'; 
+import { PALETTE } from '../components/palette';
 import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
+import NetworkBackground from '../components/NetworkBackground';
 
-import HomeScreenSettings from '../components/settings/HomeScreenSettings'; 
+import HomeScreenSettings from '../components/settings/HomeScreenSettings';
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
 import LevelSelectSettings from '../components/settings/LevelSelectSettings';
 import LevelSelectPreview from '../components/settings/LevelSelectPreview';
@@ -151,12 +152,12 @@ export default function SettingsScreen({ onBack }: Props) {
   const updateSetting = useCallback((keyPath: string, value: any) => {
     setCurrentSettings(prevSettings => {
       const keys = keyPath.split('.');
-      const newSettings = JSON.parse(JSON.stringify(prevSettings)); 
+      const newSettings = JSON.parse(JSON.stringify(prevSettings));
 
       let currentLevel = newSettings;
       for (let i = 0; i < keys.length - 1; i++) {
         currentLevel = currentLevel[keys[i]];
-        if (!currentLevel) return prevSettings; 
+        if (!currentLevel) return prevSettings;
       }
 
       currentLevel[keys[keys.length - 1]] = value;
@@ -206,13 +207,14 @@ export default function SettingsScreen({ onBack }: Props) {
 
   return (
     <div style={styles.page}>
+      <NetworkBackground primaryColor={initialSettings.visuals.home.accentColor1} opacity={0.4} />
       {/* Capçalera */}
       <header style={styles.header}>
         <button onClick={onBackWithSound} style={styles.backButton} aria-label="Tornar" onMouseEnter={() => audio.playHover()}>
           <ArrowLeft size={20} /> Tornar
         </button>
         <h1 style={styles.title}>Configuració i Accessibilitat</h1>
-        <div style={{ width: 100 }} /> 
+        <div style={{ width: 100 }} />
       </header>
 
       <div style={styles.contentGrid}>
@@ -238,8 +240,8 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* --- ACORDIÓ --- */}
           {/* Secció HomeScreen */}
           <div style={styles.accordionItem}>
-            <button 
-              style={styles.accordionHeader} 
+            <button
+              style={styles.accordionHeader}
               onClick={() => toggleSection('home')}
               aria-expanded={activeSection === 'home'}
             >
@@ -249,9 +251,9 @@ export default function SettingsScreen({ onBack }: Props) {
             {/* Contingut que es mostra si la secció està activa */}
             {activeSection === 'home' && (
               <div style={styles.accordionContent}>
-                <HomeScreenSettings 
-                  settings={currentSettings.visuals.home} 
-                  onChange={(key, value) => handleVisualChange('home', key, value)} 
+                <HomeScreenSettings
+                  settings={currentSettings.visuals.home}
+                  onChange={(key, value) => handleVisualChange('home', key, value)}
                 />
               </div>
             )}
@@ -259,8 +261,8 @@ export default function SettingsScreen({ onBack }: Props) {
 
           {/* Secció LevelSelect */}
           <div style={styles.accordionItem}>
-            <button 
-              style={styles.accordionHeader} 
+            <button
+              style={styles.accordionHeader}
               onClick={() => toggleSection('levelSelect')}
               aria-expanded={activeSection === 'levelSelect'}
             >
@@ -269,9 +271,9 @@ export default function SettingsScreen({ onBack }: Props) {
             </button>
             {activeSection === 'levelSelect' && (
               <div style={styles.accordionContent}>
-                <LevelSelectSettings 
-                  settings={currentSettings.visuals.levelSelect} 
-                  onChange={(key, value) => handleVisualChange('levelSelect', key, value)} 
+                <LevelSelectSettings
+                  settings={currentSettings.visuals.levelSelect}
+                  onChange={(key, value) => handleVisualChange('levelSelect', key, value)}
                 />
               </div>
             )}
@@ -279,43 +281,43 @@ export default function SettingsScreen({ onBack }: Props) {
 
           {/* Secció LevelScreen */}
           <div style={styles.accordionItem}>
-            <button 
-              style={styles.accordionHeader} 
+            <button
+              style={styles.accordionHeader}
               onClick={() => toggleSection('levelScreen')}
               aria-expanded={activeSection === 'levelScreen'}
             >
               <span>🕹️ Pantalla de Joc</span>
-                {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {activeSection === 'levelScreen' && (
               <div style={styles.accordionContent}>
-                <LevelScreenSettings 
-                  settings={currentSettings.visuals.levelScreen} 
-                  onChange={(key, value) => handleVisualChange('levelScreen', key, value)} 
+                <LevelScreenSettings
+                  settings={currentSettings.visuals.levelScreen}
+                  onChange={(key, value) => handleVisualChange('levelScreen', key, value)}
                 />
               </div>
             )}
           </div>
 
-           {/* Secció Configuració de Joc */}
-           <div style={styles.accordionItem}>
-              <button 
-                style={styles.accordionHeader} 
-                onClick={() => toggleSection('game')}
-                aria-expanded={activeSection === 'game'}
-              >
-                <span>🔊 Configuració de Joc</span>
-                {activeSection === 'game' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </button>
-              {activeSection === 'game' && (
-                <div style={styles.accordionContent}>
-                  <GameSettingsComponent
-                    settings={currentSettings.game}
-                    onChange={handleGameChange}
-                  />
-                </div>
-              )}
-            </div>
+          {/* Secció Configuració de Joc */}
+          <div style={styles.accordionItem}>
+            <button
+              style={styles.accordionHeader}
+              onClick={() => toggleSection('game')}
+              aria-expanded={activeSection === 'game'}
+            >
+              <span>🔊 Configuració de Joc</span>
+              {activeSection === 'game' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+            {activeSection === 'game' && (
+              <div style={styles.accordionContent}>
+                <GameSettingsComponent
+                  settings={currentSettings.game}
+                  onChange={handleGameChange}
+                />
+              </div>
+            )}
+          </div>
 
 
           <button onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>
@@ -330,7 +332,7 @@ export default function SettingsScreen({ onBack }: Props) {
 
         {/* Columna Dreta: Previsualització */}
         <aside style={styles.previewColumn} aria-label="Vista prèvia en temps real">
-           <div style={styles.previewHeader}>
+          <div style={styles.previewHeader}>
             <span>Vista Prèvia en Temps Real</span>
           </div>
           <div style={styles.previewContent}>
@@ -351,9 +353,9 @@ export default function SettingsScreen({ onBack }: Props) {
             )}
 
             {!previewSection && (
-                <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
-                  {"Selecciona una secció per veure la previsualització."}
-                </p>
+              <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
+                {"Selecciona una secció per veure la previsualització."}
+              </p>
             )}
           </div>
           {/* Llegenda */}
@@ -387,7 +389,7 @@ export default function SettingsScreen({ onBack }: Props) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100svh", width: "100%", margin: 0, background: PALETTE.bg, color: PALETTE.text, padding: 'clamp(16px, 3vw, 24px)', boxSizing: 'border-box' },
+  page: { minHeight: "100svh", width: "100%", margin: 0, background: 'transparent', position: 'relative', isolation: 'isolate', overflow: 'hidden', color: PALETTE.text, padding: 'clamp(16px, 3vw, 24px)', boxSizing: 'border-box' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', width: '100%', maxWidth: '1400px', margin: '0 auto 24px' },
   backButton: { padding: "10px 14px", borderRadius: 12, border: PALETTE.borderColor, background: PALETTE.surface, color: PALETTE.text, cursor: "pointer", fontSize: 16, display: 'flex', alignItems: 'center', gap: '6px', width: 100 },
   title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
@@ -395,7 +397,7 @@ const styles: Record<string, React.CSSProperties> = {
   presetsSection: { display: 'flex', flexDirection: 'column', gap: '12px' },
   presetsTitle: { fontSize: '1.125rem', fontWeight: 600, margin: 0, color: PALETTE.accentCyan || PALETTE.text },
   presetsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' },
-  presetButton: { padding: '12px', borderRadius: '8px', border: `1px solid ${PALETTE.borderColor}`, background: 'rgba(255, 255, 255, 0.06)', color: PALETTE.text, fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s ease'},
+  presetButton: { padding: '12px', borderRadius: '8px', border: `1px solid ${PALETTE.borderColor}`, background: 'rgba(255, 255, 255, 0.06)', color: PALETTE.text, fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', textAlign: 'center', transition: 'background 0.2s ease' },
   separator: { border: 'none', borderTop: `1px solid ${PALETTE.borderColor}`, margin: '16px 0 8px 0' },
   accordionMainTitle: { fontSize: '1.125rem', fontWeight: 600, margin: '0 0 8px 0', color: PALETTE.accentCyan || PALETTE.text },
   accordionColumn: { background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 16, padding: 'clamp(16px, 3vw, 24px)', boxShadow: PALETTE.shadow, display: 'flex', flexDirection: 'column', gap: '12px' },

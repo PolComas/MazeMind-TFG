@@ -5,6 +5,7 @@ import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
+import NetworkBackground from './NetworkBackground';
 
 type UserType = { id: string; email: string; };
 
@@ -13,7 +14,7 @@ type Props = {
   onNavigate: () => void;
   onMultiplayer: () => void;
   onUserClick: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void> | void;
   onSettingsClick: () => void;
   progress: GameProgress;
 };
@@ -22,9 +23,6 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
   // Obtenir la configuració específica per home
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
-
-  // Carregar el progrés quan el component es munta
-  //const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Calcular les estadístiques dinàmicament
   const playerStats = useMemo(() => {
@@ -90,10 +88,12 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: { // Omple tota la pantalla amb gradients i fons base, elements centrats
       minHeight: "100svh", width: "100vw", margin: 0,
-      background: screenSettings.backgroundColor,
+      // background: screenSettings.backgroundColor, // Removed static background
       color: screenSettings.textColor,
       display: "grid", placeItems: "center", padding: 24,
       boxSizing: "border-box",
+      position: 'relative',
+      isolation: 'isolate',
     },
     userButton: { // Botó d'usuari a la cantonada superior dreta
       position: 'absolute', top: 'clamp(16px, 3vw, 24px)', right: 'clamp(16px, 3vw, 24px)',
@@ -209,6 +209,8 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
 
   return (
     <main role="main" style={styles.page}>
+      <NetworkBackground primaryColor={screenSettings.accentColor1} />
+
       {/* Botó d'usuari */}
       <button
         style={styles.userButton}

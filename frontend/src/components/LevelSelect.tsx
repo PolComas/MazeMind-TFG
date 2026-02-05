@@ -9,6 +9,7 @@ import { useUser } from '../context/UserContext';
 import HowToPlayModal from './HowToPlayModal';
 import PracticeModeModal from './PracticeModeModal';
 import PracticeIaLockedModal from './PracticeIaLockedModal';
+import NetworkBackground from './NetworkBackground';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -63,8 +64,6 @@ export default function LevelSelect({
   }), [screenSettings]);
 
   const difficulty = selectedDifficulty;
-  //const [difficulty, setDifficulty] = useState<Diff>('easy');
-  //const [progress] = useState<GameProgress>(() => loadProgress());
 
   // Estat per al modal "Com Jugar"
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -109,13 +108,12 @@ export default function LevelSelect({
   }, [originalOnBack, audio]);
 
   const onPlayLevelWithSound = useCallback((levelNumber: number, difficulty: Diff) => {
-    //audio.playBtnSound(); 
     audio.playFail();
     originalOnPlayLevel(levelNumber, difficulty);
   }, [originalOnPlayLevel, audio]);
 
   const onPracticeClick = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     setShowPracticeModal(true);
   }, [audio]);
 
@@ -129,12 +127,14 @@ export default function LevelSelect({
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: { // Fons de pantalla completa amb padding responsiu
-      background: screenSettings.backgroundColor,
+      // background: screenSettings.backgroundColor, // Removed
       color: screenSettings.textColor,
       minHeight: '100svh',
       width: '100vw',
       padding: 'clamp(16px, 4vw, 32px)',
       boxSizing: 'border-box',
+      position: 'relative',
+      isolation: 'isolate',
     },
     container: { // Contenidor centrat amb amplada màxima
       maxWidth: 960,
@@ -196,14 +196,6 @@ export default function LevelSelect({
       zIndex: 1,
       opacity: 0,
     },
-    diffBar: { // Barra de botons per seleccionar dificultat
-      display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24
-    },
-    primaryCtaWrap: { // CTA principal per anar al següent nivell
-      display: 'flex',
-      justifyContent: 'center',
-      marginBottom: 24,
-    },
     primaryCta: {
       padding: '14px 20px',
       borderRadius: 12,
@@ -242,6 +234,7 @@ export default function LevelSelect({
   return (
     <>
       <main style={styles.page}>
+        <NetworkBackground primaryColor={difficultyColors[difficulty]} opacity={0.4} />
         <div style={styles.container}>
           <header style={styles.header}>
             <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
@@ -311,30 +304,16 @@ export default function LevelSelect({
             </button>
 
             <div style={{ width: 12 }} />
-
-            {/* Eina temporal de desenvolupament
-            <button
-              style={{
-                ...styles.practiceBtn,
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                color: '#0B1021',
-                border: 'none',
-              }}
-              onMouseEnter={() => audio.playHover()}
-              onClick={onOpenGenerator}
-            >
-              Generador de Laberints
-            </button> */}
           </footer>
         </div>
       </main>
 
       {/* Renderitzar el modal */}
-    <HowToPlayModal 
-      open={showHowToPlay} 
-      onClose={() => setShowHowToPlay(false)} 
-      onStartTutorial={onStartTutorial} 
-    />
+      <HowToPlayModal
+        open={showHowToPlay}
+        onClose={() => setShowHowToPlay(false)}
+        onStartTutorial={onStartTutorial}
+      />
 
       {/* Renderitzar el modal de Pràctica */}
       <PracticeModeModal

@@ -4,6 +4,8 @@ import { generateLevel, type Level } from '../maze/maze_generator';
 import LevelScreen from './LevelScreen';
 import { recommendPracticeIaParams } from '../lib/dda';
 import type { GameProgress } from '../utils/progress';
+import NetworkBackground from '../components/NetworkBackground';
+import { useSettings } from '../context/SettingsContext';
 
 export default function PracticeIAScreen({
   onBack,
@@ -13,6 +15,8 @@ export default function PracticeIAScreen({
   progress: GameProgress;
 }) {
   const { user } = useUser();
+  const { getVisualSettings } = useSettings();
+  const screenSettings = getVisualSettings('levelSelect');
   const [level, setLevel] = useState<Level | null>(null);
   const [run, setRun] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +106,9 @@ export default function PracticeIAScreen({
 
   if (!user) {
     return (
-      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center' }}>
+      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24, position: 'relative', isolation: 'isolate' }}>
+        <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <p>Per jugar el mode pràctica amb IA cal iniciar sessió o registrar-se.</p>
           <button onClick={onBack}>Tornar</button>
         </div>
@@ -113,8 +118,9 @@ export default function PracticeIAScreen({
 
   if (!level) {
     return (
-      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24 }}>
-        <div style={{ textAlign: 'center' }}>
+      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24, position: 'relative', isolation: 'isolate' }}>
+        <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <p>Carregant nivell adaptatiu...</p>
           {error && <p style={{ opacity: 0.8 }}>{error}</p>}
         </div>
@@ -130,8 +136,8 @@ export default function PracticeIAScreen({
       onRetry={() => setRun((r) => r + 1)}
       onNextLevel={handleNext}
       isTutorialMode={false}
-      onCompleteTutorial={() => {}}
-      onLevelComplete={() => {}}
+      onCompleteTutorial={() => { }}
+      onLevelComplete={() => { }}
       isPracticeMode={true}
       telemetryMode="practice_ia"
       progress={progress}

@@ -20,7 +20,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 
   return {
     overlay: {
-      position: 'fixed', inset: 0, background: overlayColor,
+      position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center',
       zIndex: 60, padding: '16px',
     },

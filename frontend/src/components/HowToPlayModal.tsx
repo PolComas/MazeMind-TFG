@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
-import { X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull,
+import {
+  X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull,
   Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft,
-  ArrowRight, TrendingUp,} from 'lucide-react';
+  ArrowRight, TrendingUp,
+} from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
@@ -30,7 +32,7 @@ const createStyles = (visuals: VisualSettings) => {
 
   const styles: Record<string, React.CSSProperties> = {
     overlay: {
-      position: 'fixed', inset: 0, background: applyAlpha(visuals.textColor, 0.75),
+      position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.75)',
       display: 'grid', placeItems: 'center', zIndex: 50, padding: '16px',
       backdropFilter: 'blur(8px)',
     },

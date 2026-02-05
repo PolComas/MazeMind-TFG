@@ -1,10 +1,11 @@
 import React from 'react';
-import type { VisualSettings } from '../../utils/settings'; 
-import Logo from '../../assets/cervell.svg?react'; 
-import { User } from 'lucide-react'; 
+import type { VisualSettings } from '../../utils/settings';
+import Logo from '../../assets/cervell.svg?react';
+import { User } from 'lucide-react';
+import NetworkBackground from '../NetworkBackground';
 
 type Props = {
-  settings: VisualSettings; 
+  settings: VisualSettings;
 };
 
 const previewStats = [
@@ -18,19 +19,20 @@ export default function HomeScreenPreview({ settings }: Props) {
   const styles: Record<string, React.CSSProperties> = {
     // Aplicar el fons i el color de text rebuts
     pagePreview: {
-      background: settings.backgroundColor,
+      background: 'transparent', // remove static color
       color: settings.textColor,
       padding: '24px',
-      borderRadius: '8px', 
+      borderRadius: '8px',
       height: '100%',
       width: '100%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center', 
+      justifyContent: 'center',
       gap: '16px',
-      overflow: 'hidden', 
+      overflow: 'hidden',
       position: 'relative',
+      isolation: 'isolate',
       boxSizing: 'border-box',
     },
     // Icona d'usuari
@@ -53,11 +55,11 @@ export default function HomeScreenPreview({ settings }: Props) {
       display: 'grid', placeItems: 'center',
     },
     logoSvgPreview: { width: 40, height: 40, filter: 'brightness(0) invert(1)' },
-    titlePreview: { 
+    titlePreview: {
       fontSize: '24px',
-      fontWeight: 900, margin: 0, 
+      fontWeight: 900, margin: 0,
     },
-    subtitlePreview: { 
+    subtitlePreview: {
       fontSize: '12px',
       color: settings.subtextColor, margin: 0, maxWidth: '250px',
     },
@@ -87,7 +89,7 @@ export default function HomeScreenPreview({ settings }: Props) {
       color: '#fff', fontSize: '14px', fontWeight: 700,
     },
     secondaryBtnPreview: {
-      padding: '10px', borderRadius: '8px', 
+      padding: '10px', borderRadius: '8px',
       border: `1px solid ${settings.borderColor}`,
       background: 'rgba(255,255,255,0.06)',
       color: settings.textColor, fontSize: '14px', fontWeight: 600,
@@ -96,6 +98,7 @@ export default function HomeScreenPreview({ settings }: Props) {
 
   return (
     <div style={styles.pagePreview}>
+      <NetworkBackground primaryColor={settings.accentColor1} opacity={0.4} />
       {/* Icona usuari (només visual) */}
       <div style={styles.userIconPreview}><User size={16} /></div>
 

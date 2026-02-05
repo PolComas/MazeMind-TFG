@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import MazeCanvas from "../components/MazeCanvas";
+import NetworkBackground from "../components/NetworkBackground";
 import type { Level } from "../maze/maze_generator";
 import { PALETTE } from "../components/palette";
 import GameHUD from "../components/GameHUD";
@@ -8,7 +9,7 @@ import CompletionModal from '../components/CompletionModal';
 import GameOverModal from '../components/GameOverModal';
 import PracticeCompletionModal from '../components/PracticeCompletionModal';
 import PracticeIaCompletionModal from '../components/PracticeIaCompletionModal';
-import { saveLevelCompletion, type GameProgress} from '../utils/progress';
+import { saveLevelCompletion, type GameProgress } from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
 import { useUser } from '../context/UserContext';
@@ -22,7 +23,7 @@ type Phase = "memorize" | "playing" | "completed" | "failed";
 const POINTS_START = 1000;
 const POINTS_LOSS_PER_SECOND = 1;
 const POINTS_LOSS_PATH_HELP = 2; // Cost extra per segon
-const POINTS_LOSS_CRASH_HELP = 20; 
+const POINTS_LOSS_CRASH_HELP = 20;
 const POINTS_COST_REVEAL = 50;
 const REVEAL_DURATION_MS = 500; // 0.5 segons
 const LIVES = 3;
@@ -80,7 +81,7 @@ export default function LevelScreen({
   telemetryMode?: 'campaign' | 'practice_ia' | 'practice_free' | 'practice_normal' | 'other';
   suppressModals?: boolean;
   onGameEnd?: (result: { completed: boolean; timeSeconds: number; points: number }) => void;
-}) {  
+}) {
   const audio = useGameAudio();
   const { user } = useUser();
 
@@ -124,7 +125,7 @@ export default function LevelScreen({
   // Estats per al Joc
   const [gameTime, setGameTime] = useState(0);
   const [points, setPoints] = useState(() => tuning.pointsStart);
-  
+
   const levelAnalysis = useMemo(() => analyzeLevel(level), [level]);
   const [crashes, setCrashes] = useState(0);
   const [revealUsed, setRevealUsed] = useState(0);
@@ -139,6 +140,12 @@ export default function LevelScreen({
 
   // Comprovar si estem en mode difícil
   const isHardMode = level.difficulty === 'hard';
+
+  const difficultyColors = useMemo<Record<string, string>>(() => ({
+    easy: screenSettings.easyColor || '#4ade80',
+    normal: screenSettings.normalColor || '#60a5fa',
+    hard: screenSettings.hardColor || '#f87171',
+  }), [screenSettings]);
 
   // Estat per a les vides
   // -1 --> les vides no estan actives (no és mode difícil)
@@ -185,7 +192,7 @@ export default function LevelScreen({
 
   useEffect(() => {
     if (currentStars < prevStarsRef.current) {
-      audio.playStarLoss(); 
+      audio.playStarLoss();
     }
     prevStarsRef.current = currentStars;
   }, [currentStars, audio.playStarLoss]);
@@ -196,7 +203,7 @@ export default function LevelScreen({
 
   // Estats per passar al Canvas
   const [showReveal, setShowReveal] = useState(false);
-  const [crashedAt, setCrashedAt] = useState<{x: number, y: number} | null>(null);
+  const [crashedAt, setCrashedAt] = useState<{ x: number, y: number } | null>(null);
 
   // Barra de progrés (0–100)
   const progressPct = useMemo(() => {
@@ -255,10 +262,10 @@ export default function LevelScreen({
           return 0;
         }
         // So de compte enrere
-        if (r <= 4) { 
-          audio.playTickFinal(); 
+        if (r <= 4) {
+          audio.playTickFinal();
         } else {
-          audio.playTick(); 
+          audio.playTick();
         }
 
         return r - 1;
@@ -374,12 +381,12 @@ export default function LevelScreen({
   useEffect(() => {
     if ((phase === 'completed' || phase === 'failed') && !attemptRecordedRef.current && attemptStartRef.current && telemetryMode && user) {
       attemptRecordedRef.current = true;
-      
+
       const success = phase === 'completed';
       const durationMs = new Date().getTime() - attemptStartRef.current.getTime();
       const revisits = countRevisits(playerPath);
       const failReason = success ? null : (failReasonRef.current ?? 'failed');
-      
+
       recordAttemptAndUpdateSkill({
         userId: user.id,
         level,
@@ -424,7 +431,7 @@ export default function LevelScreen({
     playerPath,
   ]);
 
-  
+
   // Lògica d'Ajudes
   const onRevealHelp = useCallback(() => {
     if (phase !== 'playing' || revealCharges <= 0 || showReveal) return;
@@ -439,7 +446,7 @@ export default function LevelScreen({
   const onTogglePathHelp = useCallback(() => {
     if (phase !== 'playing') return;
     setIsPathHelpActive(active => {
-      active ? audio.playToggleOff() : audio.playToggleOn(); 
+      active ? audio.playToggleOff() : audio.playToggleOn();
       return !active;
     });
   }, [phase, audio]);
@@ -447,30 +454,30 @@ export default function LevelScreen({
   const onToggleCrashHelp = useCallback(() => {
     if (phase !== 'playing') return;
     setIsCrashHelpActive(active => {
-      active ? audio.playToggleOff() : audio.playToggleOn(); 
+      active ? audio.playToggleOff() : audio.playToggleOn();
       return !active;
     });
   }, [phase, audio]);
 
   const onRetryWithSound = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     audio.stopMusic();
-    originalOnRetry(); 
+    originalOnRetry();
   }, [originalOnRetry, audio]);
 
   const onBackWithSound = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     onBackOriginal();
   }, [onBackOriginal, audio]);
 
   const handleRetryNewMaze = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     audio.stopMusic();
-    originalOnRetry(); 
+    originalOnRetry();
   }, [originalOnRetry, audio]);
 
   const handleBack = useCallback(() => {
-    audio.playFail(); 
+    audio.playFail();
     audio.stopMusic();
     onBackOriginal();
   }, [onBackOriginal, audio]);
@@ -479,7 +486,7 @@ export default function LevelScreen({
   const handleRetrySameMaze = useCallback(() => {
     audio.playFail();
     audio.stopMusic();
-    
+
     // Resetejem tots els estats del joc al seu valor inicial
     setPhase("memorize");
     setRemaining(memorizeDuration);
@@ -494,10 +501,10 @@ export default function LevelScreen({
     setIsCrashHelpActive(false);
     setCrashedAt(null);
   }, [
-    memorizeDuration, level.start.x, level.start.y, 
+    memorizeDuration, level.start.x, level.start.y,
     isHardMode, audio, tuning.pointsStart, tuning.revealCharges
   ]);
-  
+
   // Gestió de Teclat (Moviment + Ajudes)
   useEffect(() => {
     if (phase !== "playing") return;
@@ -557,7 +564,7 @@ export default function LevelScreen({
 
       if (didCrash) {
         setCrashes(c => c + 1);
-        
+
         // Lògica de Vides
         if (isHardMode) {
           audio.playCrash();
@@ -574,8 +581,8 @@ export default function LevelScreen({
             setPlayerPos({ x: level.start.x, y: level.start.y });
             setPlayerPath([{ x: level.start.x, y: level.start.y }]);
           }
-          
-          return; 
+
+          return;
         }
 
         if (isCrashHelpActive) {
@@ -592,7 +599,7 @@ export default function LevelScreen({
           const basePenalty = Math.round(tuning.pointsLossCrashHelp * 0.5);
           setPoints(p => Math.max(0, p - basePenalty));
         }
-        return; 
+        return;
       }
 
       // Actualitzar la posició del jugador
@@ -603,7 +610,7 @@ export default function LevelScreen({
 
       // Lògica de Victòria
       if (newX === level.exit.x && newY === level.exit.y) {
-        audio.playWin(); 
+        audio.playWin();
         audio.stopMusic();
         setPhase("completed");
       }
@@ -611,8 +618,8 @@ export default function LevelScreen({
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp, 
-    onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points, 
+  }, [phase, playerPos, level, isCrashHelpActive, onRevealHelp,
+    onTogglePathHelp, onToggleCrashHelp, showReveal, audio, points,
     settings, isHardMode, lives, onRetryWithSound, onBackWithSound]);
 
   // Funcions per controlar el tutorial
@@ -640,7 +647,7 @@ export default function LevelScreen({
     setPoints(POINTS_START);
   };
 
-  
+
   // Objecte de configuració per al MazeCanvas
   const mazeSettings = useMemo(() => ({
     path_color: screenSettings.mazePathColor || '#EEF2FF',
@@ -657,14 +664,16 @@ export default function LevelScreen({
       minHeight: "100svh",
       width: "100%",
       margin: 0,
-      background: screenSettings.backgroundColor,
+      background: 'transparent',
       color: screenSettings.textColor,
       boxSizing: "border-box",
       padding: "clamp(16px, 3vw, 24px)",
       display: "flex",
       flexDirection: "column",
       gap: "clamp(12px, 2vw, 16px)",
-      alignItems: "center", 
+      alignItems: "center",
+      position: 'relative',
+      isolation: 'isolate',
     },
     headerRow: {
       display: "flex",
@@ -672,8 +681,8 @@ export default function LevelScreen({
       alignItems: "center",
       gap: 16,
       flexShrink: 0,
-      width: "100%", 
-      maxWidth: "980px", 
+      width: "100%",
+      maxWidth: "980px",
     },
     title: { margin: 0, fontSize: "clamp(22px, 4vw, 28px)", textAlign: "center" },
     ghostBtn: {
@@ -693,7 +702,7 @@ export default function LevelScreen({
       gap: "clamp(12px, 2vw, 16px)",
       minHeight: 0,
       width: "100%",
-      maxWidth: "980px", 
+      maxWidth: "980px",
     },
     memorizePanel: {
       background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
@@ -746,15 +755,15 @@ export default function LevelScreen({
       borderRadius: 16,
       boxShadow: "0 16px 48px rgba(0,0,0,.35), inset 0 0 0 3px rgba(0,0,0,.25)",
       overflow: "hidden",
-      position: 'relative', 
+      position: 'relative',
     },
-    footer: { 
+    footer: {
       flexShrink: 0,
       width: "100%",
       maxWidth: "980px",
       textAlign: "center",
     },
-    tip: { 
+    tip: {
       display: 'inline-block',
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
@@ -778,20 +787,21 @@ export default function LevelScreen({
 
   return (
     <div style={styles.page}>
+      <NetworkBackground primaryColor={difficultyColors[level.difficulty] || difficultyColors.normal} opacity={0.4} />
       {/* HEADER */}
       <header style={styles.headerRow}>
         <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
           <span aria-hidden="true">←</span> Tornar
         </button>
         <h1 style={styles.title}>{title}</h1>
-        <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{...styles.ghostBtn, justifySelf: 'end'}} aria-label="Reintentar el nivell">
+        <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{ ...styles.ghostBtn, justifySelf: 'end' }} aria-label="Reintentar el nivell">
           <span aria-hidden="true">↻</span> Reintentar
         </button>
       </header>
 
       <main style={styles.mainArea}>
 
-        {/* Mostrar el panell de memorització O el HUD del joc */}        
+        {/* Mostrar el panell de memorització O el HUD del joc */}
         {phase === "memorize" ? (
           <section aria-labelledby="memorizeTitle" style={styles.memorizePanel}>
             <h2 id="memorizeTitle" style={styles.memorizeHeading}>
@@ -833,10 +843,10 @@ export default function LevelScreen({
         {/* TAULER DEL LABERINT */}
         <section aria-label="Tauler del laberint" style={styles.boardWrap}>
           <div style={styles.boardInner}>
-            <MazeCanvas 
-              level={level} 
-              phase={phase} 
-              playerPos={playerPos} 
+            <MazeCanvas
+              level={level}
+              phase={phase}
+              playerPos={playerPos}
               showReveal={showReveal}
               settings={mazeSettings}
               showPlayerPath={isPathHelpActive}
@@ -855,25 +865,25 @@ export default function LevelScreen({
             <kbd> {formatKey(keyMoveUp)}</kbd>
             <kbd>{formatKey(keyMoveLeft)}</kbd>
             <kbd>{formatKey(keyMoveDown)}</kbd>
-            <kbd>{formatKey(keyMoveRight)} </kbd> 
+            <kbd>{formatKey(keyMoveRight)} </kbd>
             per moure’t.
           </p>
         ) : phase === 'memorize' ? (
           <p style={styles.tip}>
             Memoritza el camí des de l'inici (cercle) fins al final (quadrat).
           </p>
-        ) : null }
+        ) : null}
       </footer>
 
       {/* Nivell completat */}
       {!suppressModals && phase === "completed" && !isTutorialMode && (
         <CompletionModal
           levelNumber={level.number}
-          stars={currentStars} 
+          stars={currentStars}
           time={gameTime}
           points={points}
           onNextLevel={onNextLevel}
-          onRetry={onRetryWithSound} 
+          onRetry={onRetryWithSound}
           onBack={onBackWithSound}
         />
       )}
@@ -906,7 +916,7 @@ export default function LevelScreen({
 
       {/* Renderitzar l'overlay del tutorial */}
       {isTutorialMode && tutorialStep >= 0 && tutorialStep < tutorialSteps.length && (
-        <TutorialOverlay 
+        <TutorialOverlay
           step={tutorialStep}
           onNext={handleNextTutorialStep}
           onSkip={handleSkipTutorial}

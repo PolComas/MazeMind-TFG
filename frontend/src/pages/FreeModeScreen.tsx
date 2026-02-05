@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import NetworkBackground from '../components/NetworkBackground';
 
 export type CustomLevelConfig = {
   width: number;
@@ -21,6 +22,11 @@ const clamp = (val: number, min: number, max: number) => {
 export default function FreeModeScreen({ onBack, onStartGame }: Props) {
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('levelSelect');
+
+  const difficultyColors = useMemo(() => ({
+    normal: screenSettings.normalColor || '#60a5fa',
+    hard: screenSettings.hardColor || '#f87171',
+  }), [screenSettings]);
 
   // Mantenir les entrades com a cadenes per permetre l'edició lliure (esborrar, valors parcials)
   const [width, setWidth] = useState('7');
@@ -55,9 +61,12 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
-      background: screenSettings.backgroundColor, color: screenSettings.textColor,
+      // background: screenSettings.backgroundColor,
+      color: screenSettings.textColor,
       minHeight: '100svh', width: '100vw',
       padding: 'clamp(16px, 4vw, 32px)', boxSizing: 'border-box',
+      position: 'relative',
+      isolation: 'isolate',
     },
     container: { maxWidth: 600, margin: '0 auto' },
     header: {
@@ -98,6 +107,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
 
   return (
     <main style={styles.page}>
+      <NetworkBackground primaryColor={difficultyColors[difficulty]} opacity={0.4} />
       <div style={styles.container}>
         <header style={styles.header}>
           <button style={styles.backBtn} onClick={onBack} aria-label="Tornar a selecció de nivell">

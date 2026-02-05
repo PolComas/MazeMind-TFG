@@ -24,7 +24,7 @@ const buildStyles = (visuals: VisualSettings) => {
   return {
     overlay: {
       position: 'fixed', inset: 0,
-      background: overlayColor,
+      background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(8px)',
       display: 'grid', placeItems: 'center',
       zIndex: 100,
