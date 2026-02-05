@@ -13,6 +13,8 @@ import LevelSelectPreview from '../components/settings/LevelSelectPreview';
 import LevelScreenSettings from '../components/settings/LevelScreenSettings';
 import LevelScreenPreview from '../components/settings/LevelScreenPreview';
 import LevelScreenLegend from '../components/settings/LevelScreenLegend';
+import MultiplayerScreenSettings from '../components/settings/MultiplayerScreenSettings';
+import MultiplayerScreenPreview from '../components/settings/MultiplayerScreenPreview';
 import GameSettingsComponent from '../components/settings/GameSettingsComponent';
 import type { GameSettings } from '../utils/settings';
 
@@ -20,7 +22,7 @@ type Props = {
   onBack: () => void;
 };
 
-// 'home', 'levelSelect', 'levelScreen', 'game'
+// 'home', 'levelSelect', 'levelScreen', 'multiplayer', 'game'
 type AccordionSection = keyof ScreenSettings | 'game';
 
 // Tecles a comprovar que no es repeteixin
@@ -201,13 +203,18 @@ export default function SettingsScreen({ onBack }: Props) {
         home: { ...prev.visuals.home, ...themeSettings },
         levelSelect: { ...prev.visuals.levelSelect, ...themeSettings },
         levelScreen: { ...prev.visuals.levelScreen, ...themeSettings },
+        multiplayer: { ...prev.visuals.multiplayer, ...themeSettings },
       }
     }));
   }, []);
 
   return (
     <div style={styles.page}>
-      <NetworkBackground primaryColor={initialSettings.visuals.home.accentColor1} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={initialSettings.visuals.home.accentColor1}
+        backgroundColor={initialSettings.visuals.home.backgroundColor}
+        opacity={0.4}
+      />
       {/* Capçalera */}
       <header style={styles.header}>
         <button onClick={onBackWithSound} style={styles.backButton} aria-label="Tornar" onMouseEnter={() => audio.playHover()}>
@@ -299,6 +306,26 @@ export default function SettingsScreen({ onBack }: Props) {
             )}
           </div>
 
+          {/* Secció Multiplayer */}
+          <div style={styles.accordionItem}>
+            <button
+              style={styles.accordionHeader}
+              onClick={() => toggleSection('multiplayer')}
+              aria-expanded={activeSection === 'multiplayer'}
+            >
+              <span>👥 Multijugador</span>
+              {activeSection === 'multiplayer' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+            {activeSection === 'multiplayer' && (
+              <div style={styles.accordionContent}>
+                <MultiplayerScreenSettings
+                  settings={currentSettings.visuals.multiplayer}
+                  onChange={(key, value) => handleVisualChange('multiplayer', key, value)}
+                />
+              </div>
+            )}
+          </div>
+
           {/* Secció Configuració de Joc */}
           <div style={styles.accordionItem}>
             <button
@@ -346,6 +373,10 @@ export default function SettingsScreen({ onBack }: Props) {
 
             {previewSection === 'levelScreen' && (
               <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
+            )}
+
+            {previewSection === 'multiplayer' && (
+              <MultiplayerScreenPreview settings={currentSettings.visuals.multiplayer} />
             )}
 
             {previewSection === 'game' && (

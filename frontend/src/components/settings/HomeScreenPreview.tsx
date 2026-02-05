@@ -94,11 +94,20 @@ export default function HomeScreenPreview({ settings }: Props) {
       background: 'rgba(255,255,255,0.06)',
       color: settings.textColor, fontSize: '14px', fontWeight: 600,
     },
+    multiplayerBtnPreview: {
+      padding: '10px', borderRadius: '8px', border: 'none',
+      background: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), linear-gradient(90deg, ${settings.accentColor1}, ${settings.accentColor2 || settings.accentColor1})`,
+      color: '#fff', fontSize: '14px', fontWeight: 700,
+    },
   };
 
   return (
     <div style={styles.pagePreview}>
-      <NetworkBackground primaryColor={settings.accentColor1} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={settings.accentColor1}
+        backgroundColor={settings.backgroundColor}
+        opacity={0.4}
+      />
       {/* Icona usuari (només visual) */}
       <div style={styles.userIconPreview}><User size={16} /></div>
 
@@ -127,6 +136,18 @@ export default function HomeScreenPreview({ settings }: Props) {
       {/* Botons (només visuals) */}
       <div style={styles.actionsColPreview}>
         <div style={styles.playBtnPreview}>▶ Jugar</div>
+        <div style={styles.multiplayerBtnPreview}><svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 8, marginBottom: 2 }}
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <line x1="19" y1="8" x2="19" y2="14" />
+          <line x1="22" y1="11" x2="16" y2="11" />
+        </svg>Multijugador</div>
         <div style={styles.secondaryBtnPreview}>⚙ Configuració</div>
       </div>
     </div>

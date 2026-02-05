@@ -787,7 +787,11 @@ export default function LevelScreen({
 
   return (
     <div style={styles.page}>
-      <NetworkBackground primaryColor={difficultyColors[level.difficulty] || difficultyColors.normal} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={difficultyColors[level.difficulty] || difficultyColors.normal}
+        backgroundColor={screenSettings.backgroundColor}
+        opacity={0.4}
+      />
       {/* HEADER */}
       <header style={styles.headerRow}>
         <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">

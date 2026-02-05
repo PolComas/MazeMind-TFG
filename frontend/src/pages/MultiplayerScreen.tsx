@@ -123,168 +123,274 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
-      minHeight: '100svh',
-      padding: 24,
-      background: 'transparent', // Removed static color
+      height: '100svh', // Fixed height
+      padding: 'clamp(16px, 3vw, 32px)',
+      // background: 'transparent',
       color: screenSettings.textColor,
       fontFamily: '"Space Grotesk", "Sora", "Segoe UI", sans-serif',
       position: 'relative',
       isolation: 'isolate',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden', // Prevent body scroll
     },
     header: {
-      display: 'flex',
-      justifyContent: 'space-between',
+      display: 'grid',
+      gridTemplateColumns: 'min-content 1fr min-content',
       alignItems: 'center',
-      marginBottom: 16,
-      gap: 12,
+      marginBottom: 20, // Compact margin
+      gap: 16,
+      width: '100%',
+      maxWidth: 1200,
+      marginInline: 'auto',
+      flexShrink: 0,
     },
-    title: { fontSize: 32, fontWeight: 800, margin: 0 },
-    subtitle: { opacity: 0.8, maxWidth: 520, margin: 0 },
-    hero: {
-      padding: 16,
-      borderRadius: 18,
-      background: `linear-gradient(135deg, ${screenSettings.accentColor1}22, ${screenSettings.accentColor2}22)`,
-      border: `1px solid ${screenSettings.borderColor}`,
-      marginBottom: 20,
+    headerTitleCol: {
+      textAlign: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
+    title: { fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, margin: 0, lineHeight: 1.1 },
+    subtitle: { opacity: 0.8, maxWidth: 600, margin: '4px 0 0 0', fontSize: 'clamp(13px, 1.5vw, 15px)' },
+
+    // Scrollable Grid Container
+    gridContainer: {
+      flex: 1,
+      width: '100%',
+      overflowY: 'auto',
+      paddingBottom: 20,
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: 16,
+      gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+      gap: 20, // Compact gap
+      width: '100%',
+      maxWidth: 1200,
+      marginInline: 'auto',
+      alignItems: 'start',
     },
     card: {
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
-      borderRadius: 16,
-      padding: 18,
-      boxShadow: '0 16px 28px rgba(0,0,0,0.16)',
+      borderRadius: 24,
+      padding: 24, // Compact padding
+      boxShadow: '0 16px 32px rgba(0,0,0,0.12)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16, // Compact gap
+      boxSizing: 'border-box',
     },
-    row: { display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' },
-    label: { fontWeight: 700 },
-    input: {
-      padding: 10,
-      borderRadius: 10,
-      border: `1px solid ${screenSettings.borderColor}`,
-      background: 'rgba(255,255,255,0.04)',
-      color: screenSettings.textColor,
-    },
-    chip: {
-      padding: '6px 10px',
-      borderRadius: 999,
-      background: 'rgba(255,255,255,0.06)',
-      border: `1px solid ${screenSettings.borderColor}`,
-      fontSize: 12,
+    cardHeader: {
+      fontSize: 22,
       fontWeight: 700,
+      margin: 0,
+      marginBottom: 4,
+      borderBottom: `1px solid ${screenSettings.borderColor}`,
+      paddingBottom: 12,
     },
+
+    // Controls
+    label: { fontWeight: 600, fontSize: 13, color: screenSettings.subtextColor, marginBottom: 6, display: 'block' },
+
+    // Custom Toggle Switch
+    switchRow: { display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', userSelect: 'none' },
+    switchTrack: {
+      width: 44, height: 24, borderRadius: 999,
+      background: isPublic ? `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})` : 'rgba(255,255,255,0.1)',
+      position: 'relative', transition: 'background 0.3s ease',
+      border: `1px solid ${screenSettings.borderColor}`,
+    },
+    switchThumb: {
+      width: 18, height: 18, borderRadius: '50%', background: '#fff',
+      position: 'absolute', top: 2, left: isPublic ? 22 : 2,
+      transition: 'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+    },
+
+    // Segmented Controls
+    segmentGroup: {
+      display: 'flex', gap: 4, background: 'rgba(0,0,0,0.2)', padding: 4, borderRadius: 10, border: `1px solid ${screenSettings.borderColor}`,
+    },
+    segmentBtn: {
+      flex: 1, padding: '8px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+      fontSize: 13, fontWeight: 600, transition: 'all 0.2s ease',
+      textAlign: 'center',
+    },
+
+    // Inputs
+    input: {
+      padding: '10px 14px', borderRadius: 10,
+      border: `1px solid ${screenSettings.borderColor}`,
+      background: 'rgba(0,0,0,0.2)',
+      color: screenSettings.textColor,
+      fontSize: 15, width: '100%', boxSizing: 'border-box',
+      outline: 'none',
+      transition: 'border-color 0.2s',
+    },
+
     button: {
-      padding: '12px 16px',
-      borderRadius: 12,
-      border: `2px solid ${screenSettings.borderColor}`,
+      padding: '14px 20px', borderRadius: 14,
+      border: `none`,
       background: `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
       color: screenSettings.textColor,
-      fontWeight: 800,
-      cursor: 'pointer',
+      fontWeight: 800, fontSize: 16,
+      cursor: 'pointer', width: '100%',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      transition: 'transform 0.1s ease',
     },
     ghost: {
-      padding: '10px 14px',
-      borderRadius: 10,
+      padding: '10px 16px', borderRadius: 10,
       border: `1px solid ${screenSettings.borderColor}`,
-      background: 'transparent',
+      background: screenSettings.surfaceColor,
       color: screenSettings.textColor,
-      cursor: 'pointer',
+      cursor: 'pointer', fontWeight: 600, fontSize: 13,
     },
+
+    // List
     list: {
-      display: 'grid',
-      gap: 12,
-      marginTop: 12,
+      display: 'flex', flexDirection: 'column', gap: 8,
+      overflowY: 'auto',
+      height: 260, // Fixed height for scrolling
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: 12,
+      padding: 4,
     },
     matchRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: 8,
-      padding: 12,
-      borderRadius: 12,
-      background: 'rgba(255,255,255,0.03)',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: 12, borderRadius: 12, background: 'rgba(255,255,255,0.03)',
       border: `1px solid ${screenSettings.borderColor}`,
     },
-    hint: { opacity: 0.75, fontSize: 14 },
-    error: { color: '#fca5a5', fontWeight: 700, marginBottom: 12 },
-  }), [screenSettings]);
+    error: { color: '#fca5a5', background: 'rgba(252, 165, 165, 0.1)', padding: 10, borderRadius: 8, fontWeight: 600, marginBottom: 12, textAlign: 'center', fontSize: 14 },
+  }), [screenSettings, isPublic]);
+
+  const getSegmentStyle = (isActive: boolean) => ({
+    ...styles.segmentBtn,
+    background: isActive ? screenSettings.surfaceColor : 'transparent',
+    color: isActive ? screenSettings.textColor : screenSettings.subtextColor,
+    boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+    transform: isActive ? 'scale(1.02)' : 'none',
+  });
 
   return (
     <div style={styles.page}>
-      <NetworkBackground primaryColor={screenSettings.accentColor1} />
+      <NetworkBackground
+        primaryColor={screenSettings.accentColor1}
+        backgroundColor={screenSettings.backgroundColor}
+      />
+
+      {/* Header Grid: Back | Title | Spacer */}
       <div style={styles.header}>
-        <div>
+        <button style={styles.ghost} onClick={onBack} onMouseEnter={() => audio.playHover()}>
+          ← Tornar
+        </button>
+        <div style={styles.headerTitleCol}>
           <h1 style={styles.title}>Multijugador</h1>
-          <p style={styles.subtitle}>Crea una partida privada amb codi o obre una sala pública per jugar amb altres persones.</p>
+          <p style={styles.subtitle}>Desafia als teus amics en temps real</p>
         </div>
-        <button style={styles.ghost} onClick={onBack} onMouseEnter={() => audio.playHover()}>Tornar</button>
+        <div style={{ width: 80 }}></div> {/* Spacer to balance Back button */}
       </div>
 
-      {error && <div style={styles.error}>{error}</div>}
-
       <div style={styles.grid}>
+        {/* CREATE CARD */}
         <section style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>Crear partida</h2>
-          <div style={styles.row}>
-            <label style={styles.label}>
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-              />
-              &nbsp; Partida oberta
-            </label>
+          <h2 style={styles.cardHeader}>Crear partida</h2>
+
+          {/* Custom Switch */}
+          <div style={styles.switchRow} onClick={() => setIsPublic(!isPublic)}>
+            <div style={styles.switchTrack}>
+              <div style={styles.switchThumb} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700 }}>Partida pública</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Qualsevol usuari s'hi podrà unir</div>
+            </div>
           </div>
-          <div style={{ ...styles.row, marginTop: 12 }}>
-            <label style={styles.label}>Rondes</label>
-            <select style={styles.input} value={roundsCount} onChange={(e) => setRoundsCount(Number(e.target.value))}>
-              <option value={3}>3</option>
-              <option value={5}>5</option>
-            </select>
-            <label style={styles.label}>Dificultat</label>
-            <select style={styles.input} value={difficulty} onChange={(e) => setDifficulty(e.target.value as any)}>
-              <option value="easy">Fàcil</option>
-              <option value="normal">Normal</option>
-              <option value="hard">Difícil</option>
-            </select>
+
+          <div style={{ display: 'grid', gap: 24 }}>
+            <div>
+              <span style={styles.label}>Rondes</span>
+              <div style={styles.segmentGroup}>
+                {[3, 5, 7].map(r => (
+                  <button
+                    key={r}
+                    style={getSegmentStyle(roundsCount === r)}
+                    onClick={() => setRoundsCount(r)}
+                  >
+                    {r} Rondes
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span style={styles.label}>Dificultat</span>
+              <div style={styles.segmentGroup}>
+                {(['easy', 'normal', 'hard'] as const).map(d => (
+                  <button
+                    key={d}
+                    style={getSegmentStyle(difficulty === d)}
+                    onClick={() => setDifficulty(d)}
+                  >
+                    {d === 'easy' ? 'Fàcil' : d === 'normal' ? 'Normal' : 'Difícil'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{ marginTop: 8, ...styles.hint }}>Mida: {size}x{size} · Memorització: {memorizeTime}s</div>
-          <div style={{ marginTop: 16 }}>
+
+          <div style={{ marginTop: 'auto', paddingTop: 24 }}>
+            <div style={{ marginBottom: 16, fontSize: 13, textAlign: 'center', opacity: 0.6 }}>
+              Mida: {size}x{size} · Memorització: {memorizeTime}s
+            </div>
             <button style={styles.button} onClick={handleCreate} disabled={busy}>
               Crear partida
             </button>
           </div>
         </section>
 
+        {/* JOIN CARD */}
         <section style={styles.card}>
-          <h2 style={{ marginTop: 0 }}>Unir-se</h2>
-          <div style={styles.row}>
+          <h2 style={styles.cardHeader}>Unir-se</h2>
+
+          {error && <div style={styles.error}>{error}</div>}
+
+          <div style={{ display: 'flex', gap: 12 }}>
             <input
               style={styles.input}
-              placeholder="Codi de partida"
+              placeholder="Codi de partida (ex: AB12)"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
             />
-            <button style={styles.button} onClick={handleJoinByCode} disabled={busy}>
-              Unir-me amb codi
+            <button style={{ ...styles.button, width: 'auto' }} onClick={handleJoinByCode} disabled={busy}>
+              →
             </button>
           </div>
 
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
             <div style={styles.label}>Partides obertes</div>
+
             <div style={styles.list}>
-              {openMatches.length === 0 && <div style={styles.hint}>No hi ha partides obertes ara mateix.</div>}
+              {openMatches.length === 0 && (
+                <div style={{
+                  flex: 1, display: 'grid', placeItems: 'center',
+                  opacity: 0.5, fontStyle: 'italic', border: '2px dashed rgba(255,255,255,0.1)',
+                  borderRadius: 16, margin: '8px 0'
+                }}>
+                  No hi ha partides obertes ara mateix.
+                </div>
+              )}
+
               {openMatches.map((m) => (
                 <div key={m.id} style={styles.matchRow}>
                   <div>
-                    <div><strong>Codi:</strong> {m.code}</div>
-                    <div style={styles.hint}>Rondes: {m.rounds_count} · Dificultat: {m.config?.difficulty ?? 'normal'}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{m.display_name ?? 'Anònim'}</div>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>
+                      Codi: <strong>{m.code}</strong> · {m.rounds_count} Rondes · {m.config?.difficulty}
+                    </div>
                   </div>
                   <button
-                    style={styles.ghost}
+                    style={{ ...styles.ghost, padding: '8px 16px', fontSize: 13 }}
                     onClick={async () => {
                       try {
                         setBusy(true);

@@ -20,6 +20,7 @@ export type MultiplayerMatch = {
   config: MatchConfig;
   created_at?: string;
   updated_at?: string;
+  display_name?: string | null;
 };
 
 export type MultiplayerPlayer = {

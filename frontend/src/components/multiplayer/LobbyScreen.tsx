@@ -130,7 +130,10 @@ export default function LobbyScreen({ match, players, currentUserId, onLeave }: 
 
     return (
         <div style={styles.container}>
-            <NetworkBackground primaryColor={screenSettings.accentColor1} />
+            <NetworkBackground
+                primaryColor={screenSettings.accentColor1}
+                backgroundColor={screenSettings.backgroundColor}
+            />
             <div style={styles.header}>
                 <h1 style={styles.title}>Multijugador</h1>
                 <div style={styles.subtitle}>Esperant jugadors...</div>

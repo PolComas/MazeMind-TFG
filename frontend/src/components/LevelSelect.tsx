@@ -234,7 +234,11 @@ export default function LevelSelect({
   return (
     <>
       <main style={styles.page}>
-        <NetworkBackground primaryColor={difficultyColors[difficulty]} opacity={0.4} />
+        <NetworkBackground
+          primaryColor={difficultyColors[difficulty]}
+          backgroundColor={screenSettings.backgroundColor}
+          opacity={0.4}
+        />
         <div style={styles.container}>
           <header style={styles.header}>
             <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">

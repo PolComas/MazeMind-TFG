@@ -107,7 +107,11 @@ export default function PracticeIAScreen({
   if (!user) {
     return (
       <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24, position: 'relative', isolation: 'isolate' }}>
-        <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
+        <NetworkBackground
+          primaryColor={screenSettings.normalColor || '#60a5fa'}
+          backgroundColor={screenSettings.backgroundColor}
+          opacity={0.4}
+        />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <p>Per jugar el mode pràctica amb IA cal iniciar sessió o registrar-se.</p>
           <button onClick={onBack}>Tornar</button>
@@ -119,7 +123,11 @@ export default function PracticeIAScreen({
   if (!level) {
     return (
       <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24, position: 'relative', isolation: 'isolate' }}>
-        <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
+        <NetworkBackground
+          primaryColor={screenSettings.normalColor || '#60a5fa'}
+          backgroundColor={screenSettings.backgroundColor}
+          opacity={0.4}
+        />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <p>Carregant nivell adaptatiu...</p>
           {error && <p style={{ opacity: 0.8 }}>{error}</p>}

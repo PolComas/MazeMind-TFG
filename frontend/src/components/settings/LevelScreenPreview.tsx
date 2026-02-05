@@ -95,7 +95,11 @@ export default function LevelScreenPreview({ settings }: Props) {
 
   return (
     <div style={styles.pagePreview}>
-      <NetworkBackground primaryColor={settings.accentColor1} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={settings.accentColor1}
+        backgroundColor={settings.backgroundColor}
+        opacity={0.4}
+      />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.headerBtn}><ArrowLeft size={10} /> Nivells</div>

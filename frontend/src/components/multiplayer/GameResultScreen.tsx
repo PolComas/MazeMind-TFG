@@ -112,7 +112,10 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
 
     return (
         <div style={styles.container}>
-            <NetworkBackground primaryColor={screenSettings.accentColor1} />
+            <NetworkBackground
+                primaryColor={screenSettings.accentColor1}
+                backgroundColor={screenSettings.backgroundColor}
+            />
             {/* Background Confetti hint */}
             {isMeWinner && (
                 <div style={{ position: 'absolute', inset: 0, opacity: 0.2, backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'2\' fill=\'%23fff\'/%3E%3C/svg%3E")', animation: 'fadeIn 2s' }} />

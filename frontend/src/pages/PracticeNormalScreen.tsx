@@ -631,7 +631,11 @@ export default function PracticeNormalScreen({
 
   return (
     <div style={styles.page}>
-      <NetworkBackground primaryColor={screenSettings.normalColor || '#60a5fa'} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={screenSettings.normalColor || '#60a5fa'}
+        backgroundColor={screenSettings.backgroundColor}
+        opacity={0.4}
+      />
       {/* HEADER */}
       <header style={styles.headerRow}>
         <button

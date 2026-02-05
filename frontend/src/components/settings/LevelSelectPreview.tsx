@@ -100,7 +100,11 @@ export default function LevelSelectPreview({ settings }: Props) {
 
   return (
     <div style={styles.pagePreview}>
-      <NetworkBackground primaryColor={getDiffColor(difficulty) || settings.accentColor1} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={getDiffColor(difficulty) || settings.accentColor1}
+        backgroundColor={settings.backgroundColor}
+        opacity={0.4}
+      />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.backBtnPreview}><ArrowLeft size={12} /> Inici</div>

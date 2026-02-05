@@ -107,7 +107,11 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
 
   return (
     <main style={styles.page}>
-      <NetworkBackground primaryColor={difficultyColors[difficulty]} opacity={0.4} />
+      <NetworkBackground
+        primaryColor={difficultyColors[difficulty]}
+        backgroundColor={screenSettings.backgroundColor}
+        opacity={0.4}
+      />
       <div style={styles.container}>
         <header style={styles.header}>
           <button style={styles.backBtn} onClick={onBack} aria-label="Tornar a selecció de nivell">

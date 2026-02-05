@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react';
 
 type NetworkBackgroundProps = {
     primaryColor: string;
+    backgroundColor?: string;
     opacity?: number; // 0 to 1, default 1
 };
 
-export default function NetworkBackground({ primaryColor, opacity = 1 }: NetworkBackgroundProps) {
+export default function NetworkBackground({ primaryColor, backgroundColor = '#0f172a', opacity = 1 }: NetworkBackgroundProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -97,7 +98,7 @@ export default function NetworkBackground({ primaryColor, opacity = 1 }: Network
             inset: 0,
             zIndex: -1,
             overflow: 'hidden',
-            background: '#0f172a', // Dark base
+            background: backgroundColor,
         }}>
             {/* Hex Grid Overlay (CSS Pattern) */}
             <div style={{

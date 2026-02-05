@@ -34,6 +34,7 @@ export type ScreenSettings = {
   home: VisualSettings;
   levelSelect: VisualSettings;
   levelScreen: VisualSettings;
+  multiplayer: VisualSettings;
 };
 
 // Configuració global del joc (so, etc.)
@@ -100,6 +101,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     home: { ...DEFAULT_VISUALS },
     levelSelect: { ...DEFAULT_VISUALS },
     levelScreen: { ...DEFAULT_VISUALS },
+    multiplayer: { ...DEFAULT_VISUALS },
   },
   game: {
     soundEffects: true,
