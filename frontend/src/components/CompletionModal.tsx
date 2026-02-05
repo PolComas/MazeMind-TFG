@@ -158,7 +158,7 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
           </div>
           <div style={styles.resultItem}>
             <span style={styles.resultLabel}>Punts</span>
-            <span style={styles.resultValue}>{points}</span>
+            <span style={styles.resultValue}>{Math.round(points)}</span>
           </div>
         </div>
 

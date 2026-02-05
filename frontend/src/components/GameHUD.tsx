@@ -8,9 +8,10 @@ function formatTime(seconds: number) {
   return `${mins}:${secs}`;
 }
 
-function getStars(points: number) {
-  if (points >= 800) return '★★★';
-  if (points >= 400) return '★★☆';
+function getStars(points: number, thresholds: readonly number[]) {
+  const [three, two] = thresholds;
+  if (points >= three) return '★★★';
+  if (points >= two) return '★★☆';
   if (points > 0) return '★☆☆';
   return '☆☆☆';
 }
@@ -34,6 +35,10 @@ type Props = {
   onToggleCrashHelp: () => void;
   lives: number;
   difficulty: 'easy' | 'normal' | 'hard';
+  starThresholds: readonly number[];
+  revealCost: number;
+  pathHelpLoss: number;
+  crashHelpLoss: number;
 };
 
 export default function GameHUD({
@@ -46,7 +51,11 @@ export default function GameHUD({
   onTogglePathHelp,
   onToggleCrashHelp,
   lives,
-  difficulty
+  difficulty,
+  starThresholds,
+  revealCost,
+  pathHelpLoss,
+  crashHelpLoss
 }: Props) {
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
@@ -157,10 +166,10 @@ export default function GameHUD({
 
       {/* CARD 2: OBJECTIU */}
       <div style={styles.card}>
-        <span style={styles.label}>⭐️ Objectiu</span>
+          <span style={styles.label}>⭐️ Objectiu</span>
         <div style={styles.pointsStars}>
-          <span style={styles.valueSmall}>{points} pts</span>
-          <span style={styles.stars}>{getStars(points)}</span>
+          <span style={styles.valueSmall}>{Math.round(points)} pts</span>
+          <span style={styles.stars}>{getStars(points, starThresholds)}</span>
         </div>
       </div>
 
@@ -170,7 +179,7 @@ export default function GameHUD({
           style={styles.helpButton}
           onClick={onRevealHelp}
           disabled={revealCharges === 0}
-          title={`Mostra el laberint (${formatKey(gameSettings.keyHelpReveal)}) | Cost: 50 pts`}
+          title={`Mostra el laberint (${formatKey(gameSettings.keyHelpReveal)}) | Cost: ${revealCost} pts`}
         >
           <Eye size={18} />
           <span>Revelar ({revealCharges})</span>
@@ -180,7 +189,7 @@ export default function GameHUD({
         <button
           style={{ ...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {}) }}
           onClick={onTogglePathHelp}
-          title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -2 pts/s`}
+          title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -${pathHelpLoss} pts/s`}
         >
           <Footprints size={18} />
           <span>Camí</span>
@@ -191,7 +200,7 @@ export default function GameHUD({
           <button
             style={{ ...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {}) }}
             onClick={onToggleCrashHelp}
-            title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -20 pts`}
+            title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -${crashHelpLoss} pts`}
           >
             <Skull size={18} />
             <span>Ajuda Xoc</span>

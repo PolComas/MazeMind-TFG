@@ -7,11 +7,14 @@ import { useGameAudio } from "../audio/sound";
 import CompletionModal from '../components/CompletionModal';
 import GameOverModal from '../components/GameOverModal';
 import PracticeCompletionModal from '../components/PracticeCompletionModal';
+import PracticeIaCompletionModal from '../components/PracticeIaCompletionModal';
 import { saveLevelCompletion, type GameProgress} from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
 import { useUser } from '../context/UserContext';
 import { pushProgress } from '../lib/sync';
+import { analyzeLevel } from '../maze/maze_stats';
+import { recordAttemptAndUpdateSkill, recommendDdaTuning, type DdaTuning } from '../lib/dda';
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -33,6 +36,17 @@ const formatKey = (key: string) => {
   return key;
 };
 
+const countRevisits = (path: Pos[]) => {
+  const seen = new Set<string>();
+  let revisits = 0;
+  for (const step of path) {
+    const key = `${step.x},${step.y}`;
+    if (seen.has(key)) revisits += 1;
+    else seen.add(key);
+  }
+  return revisits;
+};
+
 // Helper per als títols de dificultat
 const DIFF_LABEL: Record<string, string> = {
   easy: 'Fàcil',
@@ -50,6 +64,7 @@ export default function LevelScreen({
   onNextLevel,
   isPracticeMode,
   progress,
+  telemetryMode,
 }: {
   level: Level;
   onBack: () => void;
@@ -60,6 +75,7 @@ export default function LevelScreen({
   onNextLevel?: () => void;
   isPracticeMode: boolean;
   progress: GameProgress;
+  telemetryMode?: 'campaign' | 'practice_ia' | 'practice_free' | 'practice_normal' | 'other';
 }) {  
   const audio = useGameAudio();
   const { user } = useUser();
@@ -69,7 +85,26 @@ export default function LevelScreen({
   const screenSettings = getVisualSettings('levelScreen');
   const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
 
-  const memorizeDuration = level.memorizeTime;
+  const [ddaTuning, setDdaTuning] = useState<DdaTuning | null>(null);
+  const defaultTuning = useMemo(() => ({
+    memorizeTime: level.memorizeTime,
+    revealCharges: 3,
+    pointsStart: POINTS_START,
+    pointsLossPerSecond: POINTS_LOSS_PER_SECOND,
+    pointsLossPathHelp: POINTS_LOSS_PATH_HELP,
+    pointsLossCrashHelp: POINTS_LOSS_CRASH_HELP,
+    pointsCostReveal: POINTS_COST_REVEAL,
+    starThresholds: [800, 400, 1],
+  }), [level.memorizeTime]);
+  const tuning = useMemo(() => {
+    const merged = ddaTuning ? { ...defaultTuning, ...ddaTuning } : defaultTuning;
+    if (telemetryMode === 'campaign') {
+      return { ...merged, starThresholds: defaultTuning.starThresholds };
+    }
+    return merged;
+  }, [ddaTuning, defaultTuning, telemetryMode]);
+
+  const memorizeDuration = tuning.memorizeTime;
 
   const [phase, setPhase] = useState<Phase>("memorize");
   const [remaining, setRemaining] = useState<number>(memorizeDuration);
@@ -84,7 +119,18 @@ export default function LevelScreen({
 
   // Estats per al Joc
   const [gameTime, setGameTime] = useState(0);
-  const [points, setPoints] = useState(POINTS_START);
+  const [points, setPoints] = useState(() => tuning.pointsStart);
+  
+  const levelAnalysis = useMemo(() => analyzeLevel(level), [level]);
+  const [crashes, setCrashes] = useState(0);
+  const [revealUsed, setRevealUsed] = useState(0);
+  const [pathHelpSeconds, setPathHelpSeconds] = useState(0);
+  const [crashHelpUsed, setCrashHelpUsed] = useState(0);
+  const skippedMemorizeRef = useRef(false);
+  const attemptStartRef = useRef<Date | null>(null);
+  const attemptRecordedRef = useRef(false);
+  const failReasonRef = useRef<string | null>(null);
+  const progressSavedRef = useRef(false);
 
   // Comprovar si estem en mode difícil
   const isHardMode = level.difficulty === 'hard';
@@ -95,14 +141,15 @@ export default function LevelScreen({
 
   // Sorolls Estrella
   const getStars = (p: number) => {
-    if (p >= 800) return 3;
-    if (p >= 400) return 2;
+    const [three, two] = tuning.starThresholds;
+    if (p >= three) return 3;
+    if (p >= two) return 2;
     if (p > 0) return 1;
     return 0;
   };
 
   const currentStars = useMemo(() => getStars(points), [points]);
-  const prevStarsRef = useRef(getStars(POINTS_START));
+  const prevStarsRef = useRef(getStars(tuning.pointsStart));
   const latestProgressRef = useRef(progress);
   useEffect(() => {
     latestProgressRef.current = progress;
@@ -111,6 +158,8 @@ export default function LevelScreen({
   // Guardar el progrés quan es completa el nivell
   useEffect(() => {
     if (phase === "completed" && !isTutorialMode && !isPracticeMode) {
+      if (progressSavedRef.current) return;
+      progressSavedRef.current = true;
       const newProgress = saveLevelCompletion(
         level.difficulty as 'easy' | 'normal' | 'hard',
         level.number,
@@ -136,7 +185,7 @@ export default function LevelScreen({
     prevStarsRef.current = currentStars;
   }, [currentStars, audio.playStarLoss]);
 
-  const [revealCharges, setRevealCharges] = useState(3);
+  const [revealCharges, setRevealCharges] = useState(() => tuning.revealCharges);
   const [isPathHelpActive, setIsPathHelpActive] = useState(false);
   const [isCrashHelpActive, setIsCrashHelpActive] = useState(false);
 
@@ -150,10 +199,40 @@ export default function LevelScreen({
     return Math.min(100, Math.max(0, (done / total.current) * 100));
   }, [remaining]);
 
+  useEffect(() => {
+    if (phase === 'memorize' && !attemptStartRef.current) {
+      setRemaining(tuning.memorizeTime);
+      total.current = tuning.memorizeTime;
+      setRevealCharges(tuning.revealCharges);
+      setPoints(tuning.pointsStart);
+    }
+  }, [phase, tuning.memorizeTime, tuning.revealCharges, tuning.pointsStart]);
+
+  useEffect(() => {
+    if (!user || !telemetryMode) {
+      setDdaTuning(null);
+      return;
+    }
+    if (telemetryMode !== 'campaign' && telemetryMode !== 'practice_ia') {
+      setDdaTuning(null);
+      return;
+    }
+
+    recommendDdaTuning(user.id, telemetryMode, level, levelAnalysis)
+      .then((next) => setDdaTuning(next))
+      .catch((error) => {
+        console.warn('No s\'ha pogut calcular el tuning DDA:', error);
+        setDdaTuning(null);
+      });
+  }, [user, telemetryMode, level, levelAnalysis]);
+
   const startPlaying = useCallback(() => {
     audio.playStart();
     setPhase("playing");
     setPlayerPos({ x: level.start.x, y: level.start.y });
+    attemptStartRef.current = new Date();
+    attemptRecordedRef.current = false;
+    failReasonRef.current = null;
   }, [audio, level.start.x, level.start.y]);
 
   // Compte enrere (Memorize)
@@ -207,6 +286,7 @@ export default function LevelScreen({
           memorizeTimerRef.current = null;
         }
         setRemaining(0);
+        skippedMemorizeRef.current = true;
         startPlaying();
       }
     };
@@ -248,15 +328,83 @@ export default function LevelScreen({
       setGameTime(t => t + 1);
 
       setPoints(p => {
-        let pointLoss = POINTS_LOSS_PER_SECOND;
-        if (pathHelpRef.current) pointLoss += POINTS_LOSS_PATH_HELP;
+        let pointLoss = tuning.pointsLossPerSecond;
+        if (pathHelpRef.current) pointLoss += tuning.pointsLossPathHelp;
         // if (crashHelpRef.current) pointLoss += POINTS_LOSS_CRASH_HELP;
         return Math.max(0, p - pointLoss);
       });
+
+      if (pathHelpRef.current) setPathHelpSeconds(s => s + 1);
     }, 1000);
 
     return () => clearInterval(gameTick);
   }, [phase, isTutorialMode, tutorialStep]);
+
+  useEffect(() => {
+    setCrashes(0);
+    setRevealUsed(0);
+    setPathHelpSeconds(0);
+    setCrashHelpUsed(0);
+    skippedMemorizeRef.current = false;
+    attemptStartRef.current = null;
+    attemptRecordedRef.current = false;
+    failReasonRef.current = null;
+    progressSavedRef.current = false;
+  }, [level.id]);
+
+  // Registrar intent i actualitzar skill quan acaba el nivell
+  useEffect(() => {
+    if ((phase === 'completed' || phase === 'failed') && !attemptRecordedRef.current && attemptStartRef.current && telemetryMode && user) {
+      attemptRecordedRef.current = true;
+      
+      const success = phase === 'completed';
+      const durationMs = new Date().getTime() - attemptStartRef.current.getTime();
+      const revisits = countRevisits(playerPath);
+      const failReason = success ? null : (failReasonRef.current ?? 'failed');
+      
+      recordAttemptAndUpdateSkill({
+        userId: user.id,
+        level,
+        attempt: {
+          memorizeTime: memorizeDuration,
+          startedAt: attemptStartRef.current.toISOString(),
+          endedAt: new Date().toISOString(),
+          completed: success,
+          failReason,
+          timeSeconds: Math.round(durationMs / 1000),
+          pointsFinal: Math.round(points),
+          stars: currentStars,
+          moves: playerPath.length - 1,
+          crashes,
+          revisits,
+          revealUsed,
+          pathHelpSeconds,
+          crashHelpUsed,
+          skippedMemorize: skippedMemorizeRef.current,
+        },
+        analysis: levelAnalysis,
+        mode: telemetryMode,
+        settingsSnapshot: { dda: tuning },
+      }).catch((error) => {
+        console.error('Error registrant intent:', error);
+      });
+    }
+  }, [
+    phase,
+    user,
+    level,
+    crashes,
+    revealUsed,
+    pathHelpSeconds,
+    crashHelpUsed,
+    levelAnalysis,
+    telemetryMode,
+    memorizeDuration,
+    points,
+    currentStars,
+    tuning,
+    playerPath,
+  ]);
 
   
   // Lògica d'Ajudes
@@ -264,7 +412,8 @@ export default function LevelScreen({
     if (phase !== 'playing' || revealCharges <= 0 || showReveal) return;
     audio.playReveal();
     setRevealCharges(c => c - 1);
-    setPoints(p => Math.max(0, p - POINTS_COST_REVEAL));
+    setRevealUsed(c => c + 1);
+    setPoints(p => Math.max(0, p - tuning.pointsCostReveal));
     setShowReveal(true);
     setTimeout(() => setShowReveal(false), REVEAL_DURATION_MS);
   }, [phase, revealCharges, showReveal, audio]);
@@ -316,18 +465,19 @@ export default function LevelScreen({
     // Resetejem tots els estats del joc al seu valor inicial
     setPhase("memorize");
     setRemaining(memorizeDuration);
+    total.current = memorizeDuration;
     setPlayerPos({ x: level.start.x, y: level.start.y });
     setPlayerPath([{ x: level.start.x, y: level.start.y }]);
     setGameTime(0);
-    setPoints(POINTS_START);
+    setPoints(tuning.pointsStart);
     setLives(isHardMode ? LIVES : -1);
-    setRevealCharges(3);
+    setRevealCharges(tuning.revealCharges);
     setIsPathHelpActive(false);
     setIsCrashHelpActive(false);
     setCrashedAt(null);
   }, [
     memorizeDuration, level.start.x, level.start.y, 
-    isHardMode, audio
+    isHardMode, audio, tuning.pointsStart, tuning.revealCharges
   ]);
   
   // Gestió de Teclat (Moviment + Ajudes)
@@ -388,6 +538,8 @@ export default function LevelScreen({
       }
 
       if (didCrash) {
+        setCrashes(c => c + 1);
+        
         // Lògica de Vides
         if (isHardMode) {
           audio.playCrash();
@@ -397,6 +549,7 @@ export default function LevelScreen({
           if (newLives <= 0) {
             setLives(0);
             audio.stopMusic();
+            failReasonRef.current = 'out_of_lives';
             setPhase("failed");
           } else {
             setLives(newLives);
@@ -409,10 +562,17 @@ export default function LevelScreen({
 
         if (isCrashHelpActive) {
           // Mostrar l'ajuda de xoc
+          setCrashHelpUsed(c => c + 1);
           audio.playCrash();
           setCrashedAt({ x, y });
-          setPoints(p => Math.max(0, p - POINTS_LOSS_CRASH_HELP));
+          const basePenalty = Math.round(tuning.pointsLossCrashHelp * 0.5);
+          const extraPenalty = Math.max(0, tuning.pointsLossCrashHelp - basePenalty);
+          setPoints(p => Math.max(0, p - basePenalty - extraPenalty));
           setTimeout(() => setCrashedAt(null), REVEAL_DURATION_MS);
+        }
+        if (!isCrashHelpActive) {
+          const basePenalty = Math.round(tuning.pointsLossCrashHelp * 0.5);
+          setPoints(p => Math.max(0, p - basePenalty));
         }
         return; 
       }
@@ -644,6 +804,10 @@ export default function LevelScreen({
             onToggleCrashHelp={onToggleCrashHelp}
             lives={lives}
             difficulty={level.difficulty as 'easy' | 'normal' | 'hard'}
+            starThresholds={tuning.starThresholds}
+            revealCost={tuning.pointsCostReveal}
+            pathHelpLoss={tuning.pointsLossPathHelp}
+            crashHelpLoss={tuning.pointsLossCrashHelp}
           />
         )}
 
@@ -705,13 +869,20 @@ export default function LevelScreen({
       )}
 
       {/* Modal de Pràctica */}
-      {(phase === "completed" || phase === "failed") && isPracticeMode && (
+      {(phase === "completed" || phase === "failed") && isPracticeMode && telemetryMode !== 'practice_ia' && (
         <PracticeCompletionModal
           status={phase}
           time={gameTime}
           onRetrySameMaze={handleRetrySameMaze}
           onRetryNewMaze={handleRetryNewMaze}
           onBackToSettings={handleBack}
+        />
+      )}
+
+      {phase === "completed" && isPracticeMode && telemetryMode === 'practice_ia' && (
+        <PracticeIaCompletionModal
+          onNextLevel={onNextLevel}
+          onBack={handleBack}
         />
       )}
 

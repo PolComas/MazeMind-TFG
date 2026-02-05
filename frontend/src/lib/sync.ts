@@ -86,13 +86,15 @@ export async function pushProgress(userId: string, progress: GameProgress): Prom
   const levelRows = Object.entries(progress.levels)
     .filter(([key]) => isCampaignKey(key)).map(([key, stats]) => {
     const [difficulty, levelNumber] = key.split('-');
+    const safeTime = Number.isFinite(stats.bestTime) ? Math.round(stats.bestTime as number) : null;
+    const safePoints = Number.isFinite(stats.bestPoints) ? Math.round(stats.bestPoints as number) : null;
     return {
       user_id: userId,
       difficulty: difficulty as Difficulty,
       level_number: Number(levelNumber),
       stars: stats.stars,
-      best_time: stats.bestTime,
-      best_points: stats.bestPoints,
+      best_time: safeTime,
+      best_points: safePoints,
     };
   }).filter((row) => Number.isFinite(row.level_number));
 

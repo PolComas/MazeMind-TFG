@@ -76,6 +76,8 @@ export function saveLevelCompletion(
   points: number,
   options?: SaveLevelCompletionOptions
 ): GameProgress {
+  const safeTime = Number.isFinite(time) ? Math.round(time) : 0;
+  const safePoints = Number.isFinite(points) ? Math.round(points) : 0;
   const sourceProgress = options?.baseProgress ?? loadProgress();
   const nextProgress: GameProgress = {
     levels: { ...sourceProgress.levels },
@@ -91,8 +93,8 @@ export function saveLevelCompletion(
   const prevStars: number = previousBest?.stars ?? 0;
 
   // Actualitzar les millors puntuacions
-  const newBestTime = (prevBestTime === null || time < prevBestTime) ? time : prevBestTime;
-  const newBestPoints = (prevBestPoints === null || points > prevBestPoints) ? points : prevBestPoints;
+  const newBestTime = (prevBestTime === null || safeTime < prevBestTime) ? safeTime : prevBestTime;
+  const newBestPoints = (prevBestPoints === null || safePoints > prevBestPoints) ? safePoints : prevBestPoints;
   const newBestStars = Math.max(prevStars, stars);
 
   // Guardar les noves dades del nivell

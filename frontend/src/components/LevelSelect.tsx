@@ -5,8 +5,10 @@ import { Dumbbell, Zap, Flame, CircleQuestionMarkIcon } from 'lucide-react';
 import { getLevelStats, type GameProgress } from '../utils/progress';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
+import { useUser } from '../context/UserContext';
 import HowToPlayModal from './HowToPlayModal';
 import PracticeModeModal from './PracticeModeModal';
+import PracticeIaLockedModal from './PracticeIaLockedModal';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -47,6 +49,7 @@ export default function LevelSelect({
   //onOpenGenerator: () => void;
 }) {
   const audio = useGameAudio();
+  const { user } = useUser();
 
   // Obtenir configuració visual
   const { getVisualSettings } = useSettings();
@@ -66,6 +69,7 @@ export default function LevelSelect({
   // Estat per al modal "Com Jugar"
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
+  const [showIaLockedModal, setShowIaLockedModal] = useState(false);
 
   // Indicador lliscant
   const diffBarRef = useRef<HTMLDivElement>(null);
@@ -111,9 +115,17 @@ export default function LevelSelect({
   }, [originalOnPlayLevel, audio]);
 
   const onPracticeClick = useCallback(() => {
-    audio.playFail();
+    audio.playFail(); 
     setShowPracticeModal(true);
   }, [audio]);
+
+  const handleStartPracticeIA = useCallback(() => {
+    if (!user) {
+      setShowIaLockedModal(true);
+      return;
+    }
+    onStartPracticeIA();
+  }, [user, onStartPracticeIA]);
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: { // Fons de pantalla completa amb padding responsiu
@@ -318,19 +330,24 @@ export default function LevelSelect({
       </main>
 
       {/* Renderitzar el modal */}
-      <HowToPlayModal
-        open={showHowToPlay}
-        onClose={() => setShowHowToPlay(false)}
-        onStartTutorial={onStartTutorial}
-      />
+    <HowToPlayModal 
+      open={showHowToPlay} 
+      onClose={() => setShowHowToPlay(false)} 
+      onStartTutorial={onStartTutorial} 
+    />
 
       {/* Renderitzar el modal de Pràctica */}
       <PracticeModeModal
         open={showPracticeModal}
         onClose={() => setShowPracticeModal(false)}
-        onStartIA={onStartPracticeIA}
+        onStartIA={handleStartPracticeIA}
         onStartNormal={onStartPracticeNormal}
         onStartFree={onStartPracticeFree}
+      />
+      <PracticeIaLockedModal
+        open={showIaLockedModal}
+        visuals={screenSettings}
+        onClose={() => setShowIaLockedModal(false)}
       />
     </>
   );

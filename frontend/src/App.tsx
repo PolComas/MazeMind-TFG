@@ -14,6 +14,7 @@ import PracticeNormalScreen from './pages/PracticeNormalScreen';
 import { useUser } from './context/UserContext';
 import { useSettings } from './context/SettingsContext';
 import { getCloudSnapshot } from './lib/sync';
+import PracticeIAScreen from './pages/PracticeIAScreen';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
@@ -501,6 +502,7 @@ export default function App() {
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
           progress={progress}
+          telemetryMode="practice_free"
         />
       );
       break;
@@ -516,29 +518,16 @@ export default function App() {
       break;
 
     case 'practice-ia': {
-      const level = generateLevel({
-        levelNumber: 1,
-        difficulty: 'easy',
-        width: 7,
-        height: 7,
-        memorizeTime: 12,
-        stars: [60, 45, 30],
-      });
-      screen = (
-        <LevelScreen
-          key={navKey}
-          level={level}
-          onBack={() => go('/levels')}
-          onRetry={() => go('/practice/ia')}
-          isTutorialMode={false}
-          onCompleteTutorial={() => { }}
-          onLevelComplete={(newProgress) => setProgress(newProgress)}
-          isPracticeMode={true}
-          progress={progress}
-        />
-      );
-      break;
-    }
+    screen = (
+      <PracticeIAScreen
+        key={navKey}
+        onBack={() => go('/levels')}
+        progress={progress}
+      />
+    );
+    break;
+  }
+
 
     case 'levels':
       screen = (
@@ -582,6 +571,7 @@ export default function App() {
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={false}
           progress={progress}
+          telemetryMode="campaign"
         />
       );
       break;
