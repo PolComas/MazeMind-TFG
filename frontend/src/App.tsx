@@ -15,6 +15,8 @@ import { useUser } from './context/UserContext';
 import { useSettings } from './context/SettingsContext';
 import { getCloudSnapshot } from './lib/sync';
 import PracticeIAScreen from './pages/PracticeIAScreen';
+import MultiplayerScreen from './pages/MultiplayerScreen';
+import MultiplayerMatchScreen from './pages/MultiplayerMatchScreen';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
@@ -158,6 +160,8 @@ type Route =
   | { type: 'practice-free' }
   | { type: 'practice-normal' }
   | { type: 'practice-ia' }
+  | { type: 'multiplayer' }
+  | { type: 'multiplayer-match'; matchId: string }
   | { type: 'maze-lab' }
   | { type: 'levels' }
   | { type: 'level'; difficulty: Diff; number: number }
@@ -326,6 +330,15 @@ export default function App() {
       return { type: 'practice-ia' };
     }
 
+    if (pathOnly === '/multiplayer') {
+      return { type: 'multiplayer' };
+    }
+
+    const mpMatch = pathOnly.match(/^\/multiplayer\/match\/([0-9a-f-]+)$/);
+    if (mpMatch) {
+      return { type: 'multiplayer-match', matchId: mpMatch[1] };
+    }
+
     if (pathOnly === '/dev/maze-lab') {
       return { type: 'maze-lab' };
     }
@@ -370,6 +383,7 @@ export default function App() {
       route.type === 'level' ||
       route.type === 'practice-normal' ||
       route.type === 'practice-ia' ||
+      route.type === 'multiplayer-match' ||
       route.type === 'custom';
 
     const handleKey = (e: KeyboardEvent) => {
@@ -440,6 +454,7 @@ export default function App() {
         progress={progress}
         user={user}
         onNavigate={() => go('/levels')}
+        onMultiplayer={() => go('/multiplayer')}
         onUserClick={() => setShowAuthModal(true)}
         onLogout={handleLogoutRequest}
         onSettingsClick={() => go('/settings')}
@@ -527,6 +542,26 @@ export default function App() {
     );
     break;
   }
+
+    case 'multiplayer': {
+      screen = (
+        <MultiplayerScreen
+          onBack={() => go('/')}
+          onOpenMatch={(id) => go(`/multiplayer/match/${id}`)}
+        />
+      );
+      break;
+    }
+
+    case 'multiplayer-match': {
+      screen = (
+        <MultiplayerMatchScreen
+          matchId={route.matchId}
+          onBack={() => go('/multiplayer')}
+        />
+      );
+      break;
+    }
 
 
     case 'levels':

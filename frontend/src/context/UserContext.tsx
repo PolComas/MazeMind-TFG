@@ -81,17 +81,36 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const recoverySessionRef = useRef(isRecoverySession);
 
   const logout = async () => {
+    // Optimitzar UX: netegem estat local abans d'esperar resposta de xarxa
+    setUser(null);
     try {
-      await supabase.auth.signOut({ scope: 'global' });
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('mazeMindUser');
+      }
+    } catch {}
+
+    const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+      new Promise<T | null>((resolve) => {
+        const id = window.setTimeout(() => resolve(null), ms);
+        promise
+          .then((val) => {
+            window.clearTimeout(id);
+            resolve(val);
+          })
+          .catch(() => {
+            window.clearTimeout(id);
+            resolve(null);
+          });
+      });
+
+    try {
+      const result = await withTimeout(supabase.auth.signOut({ scope: 'global' }), 1500);
+      if (!result) {
+        // Fallback local per assegurar que la sessió es neteja encara que la xarxa falli
+        await supabase.auth.signOut({ scope: 'local' });
+      }
     } catch (e) {
       console.warn('signOut failed, continuing with local cleanup', e);
-    } finally {
-      setUser(null);
-      try {
-        if (typeof window !== 'undefined') {
-          window.localStorage.removeItem('mazeMindUser');
-        }
-      } catch {}
     }
   };
 

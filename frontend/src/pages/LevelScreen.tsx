@@ -65,6 +65,8 @@ export default function LevelScreen({
   isPracticeMode,
   progress,
   telemetryMode,
+  suppressModals,
+  onGameEnd,
 }: {
   level: Level;
   onBack: () => void;
@@ -76,6 +78,8 @@ export default function LevelScreen({
   isPracticeMode: boolean;
   progress: GameProgress;
   telemetryMode?: 'campaign' | 'practice_ia' | 'practice_free' | 'practice_normal' | 'other';
+  suppressModals?: boolean;
+  onGameEnd?: (result: { completed: boolean; timeSeconds: number; points: number }) => void;
 }) {  
   const audio = useGameAudio();
   const { user } = useUser();
@@ -131,6 +135,7 @@ export default function LevelScreen({
   const attemptRecordedRef = useRef(false);
   const failReasonRef = useRef<string | null>(null);
   const progressSavedRef = useRef(false);
+  const gameEndNotifiedRef = useRef(false);
 
   // Comprovar si estem en mode difícil
   const isHardMode = level.difficulty === 'hard';
@@ -350,7 +355,20 @@ export default function LevelScreen({
     attemptRecordedRef.current = false;
     failReasonRef.current = null;
     progressSavedRef.current = false;
+    gameEndNotifiedRef.current = false;
   }, [level.id]);
+
+  useEffect(() => {
+    if (!onGameEnd) return;
+    if (gameEndNotifiedRef.current) return;
+    if (phase !== 'completed' && phase !== 'failed') return;
+    gameEndNotifiedRef.current = true;
+    onGameEnd({
+      completed: phase === 'completed',
+      timeSeconds: gameTime,
+      points: Math.round(points),
+    });
+  }, [phase, onGameEnd, gameTime, points]);
 
   // Registrar intent i actualitzar skill quan acaba el nivell
   useEffect(() => {
@@ -848,7 +866,7 @@ export default function LevelScreen({
       </footer>
 
       {/* Nivell completat */}
-      {phase === "completed" && !isTutorialMode && (
+      {!suppressModals && phase === "completed" && !isTutorialMode && (
         <CompletionModal
           levelNumber={level.number}
           stars={currentStars} 
@@ -861,7 +879,7 @@ export default function LevelScreen({
       )}
 
       {/* Modal de Game Over */}
-      {phase === "failed" && (
+      {!suppressModals && phase === "failed" && (
         <GameOverModal
           onRetry={onRetryWithSound}
           onBack={onBackWithSound}
@@ -869,7 +887,7 @@ export default function LevelScreen({
       )}
 
       {/* Modal de Pràctica */}
-      {(phase === "completed" || phase === "failed") && isPracticeMode && telemetryMode !== 'practice_ia' && (
+      {!suppressModals && (phase === "completed" || phase === "failed") && isPracticeMode && telemetryMode !== 'practice_ia' && (
         <PracticeCompletionModal
           status={phase}
           time={gameTime}
@@ -879,7 +897,7 @@ export default function LevelScreen({
         />
       )}
 
-      {phase === "completed" && isPracticeMode && telemetryMode === 'practice_ia' && (
+      {!suppressModals && phase === "completed" && isPracticeMode && telemetryMode === 'practice_ia' && (
         <PracticeIaCompletionModal
           onNextLevel={onNextLevel}
           onBack={handleBack}

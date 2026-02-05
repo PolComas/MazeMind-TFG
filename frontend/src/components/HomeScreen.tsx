@@ -11,13 +11,14 @@ type UserType = { id: string; email: string; };
 type Props = {
   user: UserType | null;
   onNavigate: () => void;
+  onMultiplayer: () => void;
   onUserClick: () => void;
   onLogout: () => void;
   onSettingsClick: () => void;
   progress: GameProgress;
 };
 
-export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, onSettingsClick, progress }: Props) {
+export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClick, onLogout, onSettingsClick, progress }: Props) {
   // Obtenir la configuració específica per home
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
@@ -62,6 +63,7 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
   const audio = useGameAudio();
 
   const [playFocused, setPlayFocused] = useState(false);
+  const [multiFocused, setMultiFocused] = useState(false);
   const [settingsFocused, setSettingsFocused] = useState(false);
 
   const onNavigateWithSound = () => {
@@ -72,6 +74,11 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
   const onSettingsWithSound = () => {
     audio.playFail();
     onSettingsClick();
+  };
+
+  const onMultiplayerWithSound = () => {
+    audio.playFail();
+    onMultiplayer();
   };
 
   const handleUserInteractionWithSound = () => {
@@ -253,6 +260,21 @@ export default function HomeScreen({ user, onNavigate, onUserClick, onLogout, on
             aria-label="Jugar a MazeMind"
           >
             <span aria-hidden="true">▶</span> Jugar
+          </button>
+
+          <button
+            type="button"
+            style={{
+              ...styles.secondaryBtn,
+              ...(multiFocused ? { outline: `3px solid ${screenSettings.accentColor1}`, transform: 'translateY(-1px) scale(1.01)' } : {}),
+            }}
+            onClick={onMultiplayerWithSound}
+            onMouseEnter={() => audio.playHover()}
+            onFocus={() => { setMultiFocused(true); audio.playHover(); }}
+            onBlur={() => setMultiFocused(false)}
+            aria-label="Obrir multijugador"
+          >
+            <span aria-hidden="true">👥</span> Multijugador
           </button>
 
           <button
