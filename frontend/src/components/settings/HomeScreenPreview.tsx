@@ -3,18 +3,19 @@ import type { VisualSettings } from '../../utils/settings';
 import Logo from '../../assets/cervell.svg?react';
 import { User } from 'lucide-react';
 import NetworkBackground from '../NetworkBackground';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
 };
 
-const previewStats = [
-  { icon: "🎯", label: "Nivells", value: 11 },
-  { icon: "🏆", label: "Estrelles", value: 22 },
-  { icon: "⚡️", label: "Perfectes", value: 33 },
-];
-
 export default function HomeScreenPreview({ settings }: Props) {
+  const { t } = useLanguage();
+  const previewStats = [
+    { icon: "🎯", label: t('home.stats.completed'), value: 11 },
+    { icon: "🏆", label: t('home.stats.stars'), value: 22 },
+    { icon: "⚡️", label: t('home.stats.perfect'), value: 33 },
+  ];
   // Construïr els estils dinàmics basats en les settings rebudes
   const styles: Record<string, React.CSSProperties> = {
     // Aplicar el fons i el color de text rebuts
@@ -117,9 +118,9 @@ export default function HomeScreenPreview({ settings }: Props) {
       </div>
 
       {/* Títol i Subtítol */}
-      <h1 style={styles.titlePreview}>MazeMind</h1>
+      <h1 style={styles.titlePreview}>{t('home.title')}</h1>
       <p style={styles.subtitlePreview}>
-        Entrena la memòria visoespacial resolent laberints
+        {t('home.subtitle')}
       </p>
 
       {/* Estadístiques (versió simplificada) */}
@@ -135,7 +136,7 @@ export default function HomeScreenPreview({ settings }: Props) {
 
       {/* Botons (només visuals) */}
       <div style={styles.actionsColPreview}>
-        <div style={styles.playBtnPreview}>▶ Jugar</div>
+        <div style={styles.playBtnPreview}>▶ {t('home.play')}</div>
         <div style={styles.multiplayerBtnPreview}><svg
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
@@ -147,8 +148,8 @@ export default function HomeScreenPreview({ settings }: Props) {
           <circle cx="9" cy="7" r="4" />
           <line x1="19" y1="8" x2="19" y2="14" />
           <line x1="22" y1="11" x2="16" y2="11" />
-        </svg>Multijugador</div>
-        <div style={styles.secondaryBtnPreview}>⚙ Configuració</div>
+        </svg>{t('home.multiplayer')}</div>
+        <div style={styles.secondaryBtnPreview}>⚙ {t('home.settings')}</div>
       </div>
     </div>
   );

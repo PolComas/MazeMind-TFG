@@ -5,6 +5,7 @@ import MazeCanvas from '../../components/MazeCanvas';
 import NetworkBackground from '../NetworkBackground';
 import type { Level } from '../../maze/maze_generator';
 import previewLevelData from '../../levels/easy-level-1.json';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
@@ -23,6 +24,7 @@ const previewPath = [
   { x: 2, y: 2 }, // dreta
 ];
 export default function LevelScreenPreview({ settings }: Props) {
+  const { t } = useLanguage();
   const styles: Record<string, React.CSSProperties> = useMemo(() => ({
     pagePreview: {
       background: 'transparent',
@@ -102,25 +104,25 @@ export default function LevelScreenPreview({ settings }: Props) {
       />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
-        <div style={styles.headerBtn}><ArrowLeft size={10} /> Nivells</div>
-        <h1 style={styles.headerTitle}>Nivell {previewLevel.number}</h1>
-        <div style={styles.headerBtn}><RefreshCw size={10} /> Reintentar</div>
+        <div style={styles.headerBtn}><ArrowLeft size={10} /> {t('home.levels')}</div>
+        <h1 style={styles.headerTitle}>{t('common.level')} {previewLevel.number}</h1>
+        <div style={styles.headerBtn}><RefreshCw size={10} /> {t('common.retry')}</div>
       </div>
 
       {/* Panell Memoritzar */}
       <div style={styles.memorizePanel}>
-        <h2 style={styles.memorizeTitle}>👁️ Memoritza el Laberint!</h2>
+        <h2 style={styles.memorizeTitle}>👁️ {t('level.memorize.title')}</h2>
         <div style={styles.memorizeTime}>{previewLevel.memorizeTime}</div>
       </div>
 
       {/* HUD (mostrar només 2 targetes) */}
       <div style={styles.hudPreview}>
         <div style={styles.hudCard}>
-          <div style={styles.hudLabel}>⏱ Temps</div>
+          <div style={styles.hudLabel}>⏱ {t('hud.time')}</div>
           <div style={styles.hudValue}>0:00</div>
         </div>
         <div style={styles.hudCard}>
-          <div style={styles.hudLabel}>⭐️ Objectiu</div>
+          <div style={styles.hudLabel}>⭐️ {t('hud.objective')}</div>
           <div style={styles.hudValue}>1000</div>
         </div>
         <div style={{ ...styles.hudCard, padding: '6px', display: 'flex', gap: '4px' }}>

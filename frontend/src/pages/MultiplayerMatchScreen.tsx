@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 import { generateLevel, type Level } from '../maze/maze_generator';
 import LevelScreen from './LevelScreen';
 import LobbyScreen from '../components/multiplayer/LobbyScreen';
@@ -47,6 +48,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
   const { user } = useUser();
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('levelScreen');
+  const { t } = useLanguage();
 
   const [match, setMatch] = useState<MultiplayerMatch | null>(null);
   const [players, setPlayers] = useState<MultiplayerPlayer[]>([]);
@@ -65,7 +67,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
   const pollMatch = useCallback(async () => {
     const m = await getMatch(matchId);
     if (!m) {
-      setError('No s\'ha trobat la partida.');
+      setError(t('multiplayer.notFoundMatch'));
       return;
     }
     setMatch(m);
@@ -90,7 +92,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
         await pollMatch();
         if (mounted) setLoading(false);
       } catch (e) {
-        if (mounted) setError('No s\'ha pogut carregar la partida.');
+        if (mounted) setError(t('multiplayer.notFoundMatch'));
       }
     };
 
@@ -212,8 +214,9 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100svh' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100svh', gap: 12 }}>
         <div className="spinner" style={{ width: 32, height: 32, border: '3px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <div>{t('multiplayer.loadingMatch')}</div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -222,8 +225,8 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
   if (!user || !match) {
     return (
       <div style={{ padding: 20 }}>
-        <div>{error ?? 'Error desconegut'}</div>
-        <button onClick={handleLeave}>Sortir</button>
+        <div>{error ?? t('multiplayer.notFoundMatch')}</div>
+        <button onClick={handleLeave}>{t('common.exit')}</button>
       </div>
     );
   }
@@ -265,7 +268,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
       }}>
         <div style={{ background: 'rgba(0,0,0,0.5)', padding: '6px 12px', borderRadius: 20, color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }}>
-          Ronda {match.current_round} / {match.rounds_count}
+          {t('multiplayer.roundLabel')} {match.current_round} / {match.rounds_count}
         </div>
         <div style={{ background: 'rgba(0,0,0,0.5)', padding: '6px 12px', borderRadius: 20, color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }}>
           {me?.total_points ?? 0} pts
@@ -289,7 +292,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
         />
       ) : (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          Carregant nivell...
+          {t('common.loading')}
         </div>
       )}
 
@@ -298,7 +301,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
         <RoundResultOverlay
           winnerId={outcome.winnerId}
           myId={user.id}
-          opponentName={other?.display_name ?? 'Rival'}
+          opponentName={other?.display_name ?? t('multiplayer.opponent')}
           myStats={myResult ? { time: myResult.time_seconds, points: myResult.points } : undefined}
           opponentStats={oppResult ? { time: oppResult.time_seconds, points: oppResult.points } : undefined}
           reason={outcome.reason}
@@ -320,7 +323,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
           zIndex: 40,
           animation: 'fadeIn 0.3s'
         }}>
-          ⏳ Esperant al rival...
+          ⏳ {t('multiplayer.waitOpponent')}
         </div>
       )}
     </div>

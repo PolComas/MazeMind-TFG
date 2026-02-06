@@ -1,13 +1,7 @@
 import React from "react";
 import { Eye, Footprints } from "lucide-react";
 import { useSettings } from '../context/SettingsContext';
-
-// Helper per formatar la tecla
-const formatKey = (key: string) => {
-  if (key === ' ') return 'Espai';
-  if (key.length === 1) return key.toUpperCase();
-  return key;
-};
+import { useLanguage } from '../context/LanguageContext';
 
 // Props que el component rebrà
 type Props = {
@@ -31,8 +25,14 @@ export default function PracticeHUD({
 }: Props) {
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const screenSettings = getVisualSettings('levelScreen');
   const { game: gameSettings } = settings;
+  const formatKey = (key: string) => {
+    if (key === ' ') return t('keys.space');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     container: {
@@ -121,14 +121,14 @@ export default function PracticeHUD({
     <div style={styles.container}>
       {/* CARD 1: PUNTUACIÓ TOTAL */}
       <div style={styles.card}>
-        <span style={styles.label}>🏆 Puntuació Total</span>
+        <span style={styles.label}>🏆 {t('practiceHud.totalScore')}</span>
         <span style={styles.valueLarge}>{Math.round(totalScore)}</span>
       </div>
 
       {/* CARD 2: VIDES */}
       <div style={styles.card}>
-        <span style={styles.label}>❤️ Vides</span>
-        <span style={styles.livesText} aria-label={`${lives} vides restants`}>
+        <span style={styles.label}>❤️ {t('hud.lives')}</span>
+        <span style={styles.livesText} aria-label={`${lives} ${t('hud.livesRemaining')}`}>
         {'❤️'.repeat(lives)}
         {'🖤'.repeat(Math.max(0, 3 - lives))}
         </span>
@@ -140,20 +140,20 @@ export default function PracticeHUD({
           style={styles.helpButton}
           onClick={onRevealHelp}
           disabled={revealCharges === 0}
-          title={`Mostra el laberint (${formatKey(gameSettings.keyHelpReveal)}) | Cost: 50 pts`}
+          title={`${t('hud.help.reveal')} (${formatKey(gameSettings.keyHelpReveal)}) | ${t('hud.cost')}: 50 ${t('hud.pointsShort')}`}
         >
           <Eye size={18} />
-          <span>Revelar ({revealCharges})</span>
+          <span>{t('hud.help.reveal')} ({revealCharges})</span>
           <kbd>{formatKey(gameSettings.keyHelpReveal)}</kbd>
         </button>
 
         <button
           style={{...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {})}}
           onClick={onTogglePathHelp}
-          title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -2 pts/s`}
+          title={`${t('hud.help.path')} (${formatKey(gameSettings.keyHelpPath)}) | ${t('hud.cost')}: -2 ${t('hud.pointsShort')}/${t('hud.perSecondShort')}`}
         >
           <Footprints size={18} />
-          <span>Camí</span>
+          <span>{t('hud.help.path')}</span>
           <kbd>{formatKey(gameSettings.keyHelpPath)}</kbd>
         </button>
       </div>

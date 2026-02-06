@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Lock, LogIn } from 'lucide-react';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   open: boolean;
@@ -98,6 +99,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 
 export default function PracticeIaLockedModal({ open, onClose, onLogin, visuals }: Props) {
   const styles = useMemo(() => buildStyles(visuals), [visuals]);
+  const { t } = useLanguage();
 
   if (!open) return null;
 
@@ -108,17 +110,16 @@ export default function PracticeIaLockedModal({ open, onClose, onLogin, visuals 
           <div style={styles.iconWrap}>
             <Lock size={20} />
           </div>
-          <h2 style={styles.title}>Mode IA bloquejat</h2>
+          <h2 style={styles.title}>{t('practiceIaLocked.title')}</h2>
         </div>
         <p style={styles.body}>
-          El mode pràctica amb IA s&apos;adapta al teu nivell i necessita un perfil per guardar les mètriques.
-          Inicia sessió o registra&apos;t per activar-lo.
+          {t('practiceIaLocked.body')}
         </p>
         <div style={styles.actions}>
-          <button style={styles.ghostBtn} onClick={onClose}>Tornar</button>
+          <button style={styles.ghostBtn} onClick={onClose}>{t('common.back')}</button>
           {onLogin && (
             <button style={styles.primaryBtn} onClick={onLogin}>
-              <LogIn size={16} /> Iniciar sessió
+              <LogIn size={16} /> {t('auth.signin')}
             </button>
           )}
         </div>

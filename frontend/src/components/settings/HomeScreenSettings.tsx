@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { VisualSettings } from '../../utils/settings'; 
 import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
@@ -19,6 +20,7 @@ const extractGradientColors = (gradient: string): [string, string] => {
 };
 
 export default function HomeScreenSettings({ settings, onChange }: Props) {
+  const { t } = useLanguage();
   // Estats locals per als colors del gradient
   const [bgColor1, setBgColor1] = useState(() => extractGradientColors(settings.backgroundColor)[0]);
   const [bgColor2, setBgColor2] = useState(() => extractGradientColors(settings.backgroundColor)[1]);
@@ -51,15 +53,15 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
     <div style={styles.container}>    
       {/* Fons */}
       <div style={styles.gradientGroup}>
-          <label style={styles.label}>Gradient de Fons</label>
+          <label style={styles.label}>{t('settings.home.gradient')}</label>
           <ColorPickerWithTextInput
-            label="Color 1"
+            label={t('settings.home.color1')}
             value={bgColor1}
             onChange={handleBgColor1Change}
             inputId="home-bg-color1"
           />
           <ColorPickerWithTextInput
-            label="Color 2"
+            label={t('settings.home.color2')}
             value={bgColor2}
             onChange={handleBgColor2Change}
             inputId="home-bg-color2"
@@ -72,7 +74,7 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
         <div style={styles.column}>
           {/* Text Principal */}
           <ColorPickerWithTextInput
-            label="Color de Text Principal"
+            label={t('settings.home.textPrimary')}
             value={settings.textColor}
             onChange={(value) => onChange('textColor', value)}
             inputId="home-text-color"
@@ -80,7 +82,7 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
 
           {/* Accent Principal */}
            <ColorPickerWithTextInput
-            label="Color d'Accent Principal"
+            label={t('settings.home.accentPrimary')}
             value={settings.accentColor1}
             onChange={(value) => onChange('accentColor1', value)}
             inputId="home-accent1-color"
@@ -92,7 +94,7 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
         <div style={styles.column}>
           {/* Text Secundari */}
            <ColorPickerWithTextInput
-            label="Color de Text Secundari"
+            label={t('settings.home.textSecondary')}
             value={settings.subtextColor}
             onChange={(value) => onChange('subtextColor', value)}
             inputId="home-subtext-color"
@@ -100,7 +102,7 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
 
            {/* Accent Secundari */}
            <ColorPickerWithTextInput
-            label="Color d'Accent Secundari"
+            label={t('settings.home.accentSecondary')}
             value={settings.accentColor2}
             onChange={(value) => onChange('accentColor2', value)}
             inputId="home-accent2-color"
@@ -109,7 +111,7 @@ export default function HomeScreenSettings({ settings, onChange }: Props) {
 
         {/* Superfícies (Targetes) */}
           <ColorPickerWithTextInput
-          label="Color de les Targetes"
+          label={t('settings.home.cards')}
           value={settings.surfaceColor.startsWith('rgba') ? '#ffffff' : settings.surfaceColor} 
           onChange={(value) => onChange('surfaceColor', value)}
           inputId="home-surface-color"

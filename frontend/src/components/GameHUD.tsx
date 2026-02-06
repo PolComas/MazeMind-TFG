@@ -1,6 +1,7 @@
 import React from "react";
 import { Eye, Footprints, Skull } from "lucide-react";
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 
 function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60).toString();
@@ -15,13 +16,6 @@ function getStars(points: number, thresholds: readonly number[]) {
   if (points > 0) return '★☆☆';
   return '☆☆☆';
 }
-
-// Helper per formatar la tecla
-const formatKey = (key: string) => {
-  if (key === ' ') return 'Espai';
-  if (key.length === 1) return key.toUpperCase();
-  return key;
-};
 
 // Props que el component rebrà
 type Props = {
@@ -59,8 +53,14 @@ export default function GameHUD({
 }: Props) {
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const screenSettings = getVisualSettings('levelScreen');
   const { game: gameSettings } = settings;
+  const formatKey = (key: string) => {
+    if (key === ' ') return t('keys.space');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  };
 
   const styles: Record<string, React.CSSProperties> = {
     container: {
@@ -149,15 +149,15 @@ export default function GameHUD({
     <div style={styles.container}>
       {/* CARD 1: TEMPS */}
       <div style={styles.card}>
-        <span style={styles.label}>⏱ Temps</span>
+        <span style={styles.label}>⏱ {t('hud.time')}</span>
         <span style={styles.valueLarge}>{formatTime(gameTime)}</span>
       </div>
 
       {/* Card de Vides (només en difícil) */}
       {difficulty === 'hard' && (
         <div style={styles.card}>
-          <span style={styles.label}>❤️ Vides</span>
-          <span style={styles.livesText} aria-label={`${lives} vides restants`}>
+          <span style={styles.label}>❤️ {t('hud.lives')}</span>
+          <span style={styles.livesText} aria-label={`${lives} ${t('hud.livesRemaining')}`}>
             {'❤️'.repeat(lives)}
             {'🖤'.repeat(Math.max(0, 3 - lives))}
           </span>
@@ -166,9 +166,9 @@ export default function GameHUD({
 
       {/* CARD 2: OBJECTIU */}
       <div style={styles.card}>
-          <span style={styles.label}>⭐️ Objectiu</span>
+          <span style={styles.label}>⭐️ {t('hud.objective')}</span>
         <div style={styles.pointsStars}>
-          <span style={styles.valueSmall}>{Math.round(points)} pts</span>
+          <span style={styles.valueSmall}>{Math.round(points)} {t('hud.pointsShort')}</span>
           <span style={styles.stars}>{getStars(points, starThresholds)}</span>
         </div>
       </div>
@@ -179,20 +179,20 @@ export default function GameHUD({
           style={styles.helpButton}
           onClick={onRevealHelp}
           disabled={revealCharges === 0}
-          title={`Mostra el laberint (${formatKey(gameSettings.keyHelpReveal)}) | Cost: ${revealCost} pts`}
+          title={`${t('hud.help.reveal')} (${formatKey(gameSettings.keyHelpReveal)}) | ${t('hud.cost')}: ${revealCost} ${t('hud.pointsShort')}`}
         >
           <Eye size={18} />
-          <span>Revelar ({revealCharges})</span>
+          <span>{t('hud.help.reveal')} ({revealCharges})</span>
           <kbd>{formatKey(gameSettings.keyHelpReveal)}</kbd>
         </button>
 
         <button
           style={{ ...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {}) }}
           onClick={onTogglePathHelp}
-          title={`Mostra el camí recorregut (${formatKey(gameSettings.keyHelpPath)}) | Cost: -${pathHelpLoss} pts/s`}
+          title={`${t('hud.help.path')} (${formatKey(gameSettings.keyHelpPath)}) | ${t('hud.cost')}: -${pathHelpLoss} ${t('hud.pointsShort')}/${t('hud.perSecondShort')}`}
         >
           <Footprints size={18} />
-          <span>Camí</span>
+          <span>{t('hud.help.path')}</span>
           <kbd>{formatKey(gameSettings.keyHelpPath)}</kbd>
         </button>
 
@@ -200,10 +200,10 @@ export default function GameHUD({
           <button
             style={{ ...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {}) }}
             onClick={onToggleCrashHelp}
-            title={`Mostra parets properes al xocar (${formatKey(gameSettings.keyHelpCrash)}) | Cost: -${crashHelpLoss} pts`}
+            title={`${t('hud.help.crash')} (${formatKey(gameSettings.keyHelpCrash)}) | ${t('hud.cost')}: -${crashHelpLoss} ${t('hud.pointsShort')}`}
           >
             <Skull size={18} />
-            <span>Ajuda Xoc</span>
+            <span>{t('hud.help.crash')}</span>
             <kbd>{formatKey(gameSettings.keyHelpCrash)}</kbd>
           </button>
         )}

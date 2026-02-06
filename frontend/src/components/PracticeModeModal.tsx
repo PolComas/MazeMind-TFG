@@ -5,6 +5,7 @@ import { loadPracticeBestScore } from '../utils/practiceProgress';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   open: boolean;
@@ -61,6 +62,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 export default function PracticeModeModal({ open, onClose, onStartIA, onStartNormal, onStartFree }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelSelect');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -100,11 +102,11 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <button style={styles.closeButton} onClick={onClose} aria-label="Tancar">
+        <button style={styles.closeButton} onClick={onClose} aria-label={t('common.close')}>
           <X size={24} />
         </button>
         <div style={styles.header}>
-          <h2 style={styles.title}>Modes de Pràctica</h2>
+          <h2 style={styles.title}>{t('practice.mode.title')}</h2>
         </div>
         <div style={styles.body}>
           {/* Opció 1: Pràctica IA */}
@@ -113,8 +115,8 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
               <BrainCircuit size={24} color={visualSettings.accentColor2} />
             </div>
             <div>
-              <h3 style={styles.cardTitle}>Pràctica IA</h3>
-              <p style={styles.cardText}>Juga laberints aleatoris adaptats al teu nivell.</p>
+              <h3 style={styles.cardTitle}>{t('practice.mode.ai.title')}</h3>
+              <p style={styles.cardText}>{t('practice.mode.ai.desc')}</p>
             </div>
           </div>
 
@@ -124,12 +126,12 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
               <TrendingUp size={24} color={visualSettings.normalColor} />
             </div>
             <div>
-              <h3 style={styles.cardTitle}>Pràctica Score</h3>
+              <h3 style={styles.cardTitle}>{t('practice.mode.score.title')}</h3>
               <p style={styles.cardText}>
-                Juga laberints aleatoris que pugen de dificultat.
+                {t('practice.mode.score.desc')}
                 <br />
                 <span style={styles.bestScoreText}>
-                  Millor puntuació: <strong>{Math.round(bestScore)}</strong>
+                  {t('practice.mode.score.best')} <strong>{Math.round(bestScore)}</strong>
                 </span>
               </p>
             </div>
@@ -141,8 +143,8 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
               <Edit size={24} color={visualSettings.easyColor} />
             </div>
             <div>
-              <h3 style={styles.cardTitle}>Mode Lliure / Creació</h3>
-              <p style={styles.cardText}>Defineix la mida, temps i dificultat al teu gust.</p>
+              <h3 style={styles.cardTitle}>{t('practice.mode.free.title')}</h3>
+              <p style={styles.cardText}>{t('practice.mode.free.desc')}</p>
             </div>
           </div>
         </div>

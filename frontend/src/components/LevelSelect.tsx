@@ -10,14 +10,9 @@ import HowToPlayModal from './HowToPlayModal';
 import PracticeModeModal from './PracticeModeModal';
 import PracticeIaLockedModal from './PracticeIaLockedModal';
 import NetworkBackground from './NetworkBackground';
+import { useLanguage } from '../context/LanguageContext';
 
 type Diff = 'easy' | 'normal' | 'hard';
-
-const DIFF_LABEL: Record<Diff, string> = {
-  easy: 'Fàcil',
-  normal: 'Normal',
-  hard: 'Difícil',
-};
 
 // Icones per dificultat
 const difficultyIcons: Record<Diff, React.ReactNode> = {
@@ -51,6 +46,7 @@ export default function LevelSelect({
 }) {
   const audio = useGameAudio();
   const { user } = useUser();
+  const { t } = useLanguage();
 
   // Obtenir configuració visual
   const { getVisualSettings } = useSettings();
@@ -241,18 +237,18 @@ export default function LevelSelect({
         />
         <div style={styles.container}>
           <header style={styles.header}>
-            <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label="Tornar a la pantalla d'inici">
-              <span aria-hidden="true">←</span> Inici
+            <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label={t('levelSelect.aria.backHome')}>
+              <span aria-hidden="true">←</span> {t('common.home')}
             </button>
             <div style={{ textAlign: 'center' }}>
-              <h1 style={styles.title}>Selecciona el Nivell</h1>
+              <h1 style={styles.title}>{t('levelSelect.title')}</h1>
             </div>
             {/* Element buit per equilibrar el flexbox */}
             <div style={{ width: 100 }} />
           </header>
 
           {/* Barra de selecció de dificultat */}
-          <div role="tablist" aria-label="Selector de dificultat" style={styles.diffBarContainer} ref={diffBarRef} >
+          <div role="tablist" aria-label={t('levelSelect.difficultySelector')} style={styles.diffBarContainer} ref={diffBarRef} >
             <div style={{ ...styles.diffIndicator, ...indicatorStyle }} />
 
             {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
@@ -267,13 +263,13 @@ export default function LevelSelect({
                 }}
               >
                 {difficultyIcons[d]}
-                {DIFF_LABEL[d]}
+                {t(`difficulty.${d}`)}
               </button>
             ))}
           </div>
 
           {/* Graella de nivells */}
-          <section aria-label={`Nivells de dificultat ${DIFF_LABEL[difficulty]}`}>
+          <section aria-label={`${t('levelSelect.levelsLabel')} ${t(`difficulty.${difficulty}`)}`}>
             <div style={styles.grid}>
               {levels.map(n => {
                 const stats = getLevelStats(progress, difficulty, n);
@@ -297,14 +293,14 @@ export default function LevelSelect({
           {/* Peu de pàgina amb botó de mode pràctica */}
           <footer style={styles.footer}>
             <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
-              <Dumbbell size={18} style={{ marginBottom: -1 }} /> Mode Pràctica
+              <Dumbbell size={18} style={{ marginBottom: -1 }} /> {t('levelSelect.practice')}
             </button>
 
             <div style={{ width: 12 }} />
 
             {/* Botó "Com Jugar" */}
             <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={() => { audio.playBtnSound(); setShowHowToPlay(true); }}>
-              <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> Com Jugar
+              <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> {t('levelSelect.howToPlay')}
             </button>
 
             <div style={{ width: 12 }} />

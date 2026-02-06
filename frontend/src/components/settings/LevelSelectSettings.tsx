@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { VisualSettings } from '../../utils/settings'; 
 import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
@@ -20,6 +21,7 @@ const extractGradientColors = (gradient: string): [string, string] => {
 };
 
 export default function LevelSelectSettings({ settings, onChange }: Props) {
+  const { t } = useLanguage();
   const [bgColor1, setBgColor1] = useState(() => extractGradientColors(settings.backgroundColor)[0]);
   const [bgColor2, setBgColor2] = useState(() => extractGradientColors(settings.backgroundColor)[1]);
 
@@ -48,15 +50,15 @@ export default function LevelSelectSettings({ settings, onChange }: Props) {
     <div style={styles.container}>    
       {/* Fons */}
       <div style={styles.gradientGroup}>
-          <label style={styles.label}>Gradient de Fons</label>
+          <label style={styles.label}>{t('settings.levelSelect.gradient')}</label>
           <ColorPickerWithTextInput
-            label="Color 1"
+            label={t('settings.levelSelect.color1')}
             value={bgColor1}
             onChange={handleBgColor1Change}
             inputId="levelselect-bg-color1"
           />
           <ColorPickerWithTextInput
-            label="Color 2"
+            label={t('settings.levelSelect.color2')}
             value={bgColor2}
             onChange={handleBgColor2Change}
             inputId="levelselect-bg-color2"
@@ -66,19 +68,19 @@ export default function LevelSelectSettings({ settings, onChange }: Props) {
       {/* --- Secció de Dificultat (NOU) --- */}
       <div style={styles.difficultyGroup}>
           <ColorPickerWithTextInput
-            label="Color Fàcil (Botons)"
+            label={t('settings.levelSelect.easyButtons')}
             value={settings.easyColor}
             onChange={(value) => onChange('easyColor', value)}
             inputId="levelselect-easy-color"
           />
           <ColorPickerWithTextInput
-            label="Color Normal (Botons)"
+            label={t('settings.levelSelect.normalButtons')}
             value={settings.normalColor}
             onChange={(value) => onChange('normalColor', value)}
             inputId="levelselect-normal-color"
           />
           <ColorPickerWithTextInput
-            label="Color Difícil (Botons)"
+            label={t('settings.levelSelect.hardButtons')}
             value={settings.hardColor}
             onChange={(value) => onChange('hardColor', value)}
             inputId="levelselect-hard-color"
@@ -90,14 +92,14 @@ export default function LevelSelectSettings({ settings, onChange }: Props) {
         <div style={styles.column}>
           {/* Text Principal */}
           <ColorPickerWithTextInput
-            label="Color de Text Principal"
+            label={t('settings.levelSelect.textPrimary')}
             value={settings.textColor}
             onChange={(value) => onChange('textColor', value)}
             inputId="levelselect-text-color"
           />
           {/* Superfícies (Targetes) */}
           <ColorPickerWithTextInput
-            label="Color de Targetes/Botons"
+            label={t('settings.levelSelect.cards')}
             value={settings.surfaceColor.startsWith('rgba') ? '#ffffff' : settings.surfaceColor} 
             onChange={(value) => onChange('surfaceColor', value)}
             inputId="levelselect-surface-color"
@@ -107,14 +109,14 @@ export default function LevelSelectSettings({ settings, onChange }: Props) {
         <div style={styles.column}>
           {/* Text Secundari */}
            <ColorPickerWithTextInput
-            label="Color de Text Secundari"
+            label={t('settings.levelSelect.textSecondary')}
             value={settings.subtextColor}
             onChange={(value) => onChange('subtextColor', value)}
             inputId="levelselect-subtext-color"
           /> 
            {/* Vora */}
            <ColorPickerWithTextInput
-            label="Color de Vores"
+            label={t('settings.levelSelect.border')}
             value={settings.borderColor}
             onChange={(value) => onChange('borderColor', value)}
             inputId="levelselect-border-color"

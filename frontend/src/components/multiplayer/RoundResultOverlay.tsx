@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 type RoundResultOverlayProps = {
     winnerId: string | null;
@@ -17,6 +18,7 @@ export default function RoundResultOverlay({
     opponentStats,
     reason,
 }: RoundResultOverlayProps) {
+    const { t } = useLanguage();
     const [show, setShow] = useState(false);
 
     useEffect(() => {
@@ -104,22 +106,22 @@ export default function RoundResultOverlay({
     }), [show, isWin, isTie]);
 
     const getReasonText = () => {
-        if (reason === 'time') return 'Has estat més ràpid!';
-        if (reason === 'completed') return 'Has completat el laberint sent l\'únic!';
-        if (reason === 'finish') return 'Has acabat abans!';
-        if (isTie) return 'Empat tècnic!';
-        return 'Més sort la propera vegada...';
+        if (reason === 'time') return t('multiplayer.roundReasonTime');
+        if (reason === 'completed') return t('multiplayer.roundReasonCompleted');
+        if (reason === 'finish') return t('multiplayer.roundReasonFinish');
+        if (isTie) return t('multiplayer.roundReasonTie');
+        return t('multiplayer.roundReasonLoss');
     };
 
     return (
         <div style={styles.overlay}>
             <div style={styles.card}>
-                <h1 style={styles.title}>{isWin ? 'GUANYADOR!' : isTie ? 'EMPAT' : 'DERROTA'}</h1>
+                <h1 style={styles.title}>{isWin ? t('multiplayer.roundWin') : isTie ? t('multiplayer.roundTie') : t('multiplayer.roundLoss')}</h1>
                 <div style={styles.subtitle}>{getReasonText()}</div>
 
                 <div style={styles.statsContainer}>
                     <div style={styles.statBox}>
-                        <span style={styles.statLabel}>Tu</span>
+                        <span style={styles.statLabel}>{t('multiplayer.you')}</span>
                         <span style={{ ...styles.statValue, color: isWin ? '#4ade80' : undefined }}>
                             {myStats?.time.toFixed(1)}s
                         </span>
@@ -137,7 +139,7 @@ export default function RoundResultOverlay({
 
                 <div style={styles.loadingDocs}>
                     <div className="spinner" style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                    Preparant següent ronda...
+                    {t('multiplayer.nextRound')}
                 </div>
             </div>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

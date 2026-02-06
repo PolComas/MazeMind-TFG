@@ -1,12 +1,14 @@
 import React from 'react';
 import type { VisualSettings } from '../../utils/settings';
 import NetworkBackground from '../NetworkBackground';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
     settings: VisualSettings;
 };
 
 export default function MultiplayerScreenPreview({ settings }: Props) {
+    const { t } = useLanguage();
     const styles: Record<string, React.CSSProperties> = {
         pagePreview: {
             background: 'transparent',
@@ -113,8 +115,8 @@ export default function MultiplayerScreenPreview({ settings }: Props) {
             <div style={styles.headerPreview}>
                 <div style={styles.backBtnPreview}>←</div>
                 <div>
-                    <div style={styles.titlePreview}>Multijugador</div>
-                    <p style={styles.subtitlePreview}>Desafia amics</p>
+                    <div style={styles.titlePreview}>{t('multiplayer.title')}</div>
+                    <p style={styles.subtitlePreview}>{t('multiplayer.preview.subtitle')}</p>
                 </div>
                 <div style={{ width: 20 }}></div>
             </div>
@@ -122,17 +124,17 @@ export default function MultiplayerScreenPreview({ settings }: Props) {
             <div style={styles.gridPreview}>
                 {/* CREATE CARD */}
                 <div style={styles.cardPreview}>
-                    <div style={styles.cardHeaderPreview}>Crear</div>
+                    <div style={styles.cardHeaderPreview}>{t('multiplayer.create.title')}</div>
 
                     {/* Switch */}
                     <div style={styles.switchRow}>
                         <div style={styles.switchTrack}><div style={styles.switchThumb} /></div>
-                        <div style={{ fontSize: 10, fontWeight: 700 }}>Pública</div>
+                        <div style={{ fontSize: 10, fontWeight: 700 }}>{t('multiplayer.preview.public')}</div>
                     </div>
 
                     {/* Rounds */}
                     <div>
-                        <span style={styles.labelPreview}>Rondes</span>
+                        <span style={styles.labelPreview}>{t('multiplayer.create.rounds')}</span>
                         <div style={styles.segmentGroup}>
                             <div style={styles.segmentBtn}>3</div>
                             <div style={{ ...styles.segmentBtn, ...styles.segmentBtnActive }}>5</div>
@@ -142,40 +144,40 @@ export default function MultiplayerScreenPreview({ settings }: Props) {
 
                     {/* Difficulty */}
                     <div>
-                        <span style={styles.labelPreview}>Dificultat</span>
+                        <span style={styles.labelPreview}>{t('multiplayer.create.difficulty')}</span>
                         <div style={styles.segmentGroup}>
-                            <div style={styles.segmentBtn}>Fàcil</div>
-                            <div style={{ ...styles.segmentBtn, ...styles.segmentBtnActive }}>Normal</div>
-                            <div style={styles.segmentBtn}>Difícil</div>
+                            <div style={styles.segmentBtn}>{t('difficulty.easy')}</div>
+                            <div style={{ ...styles.segmentBtn, ...styles.segmentBtnActive }}>{t('difficulty.normal')}</div>
+                            <div style={styles.segmentBtn}>{t('difficulty.hard')}</div>
                         </div>
                     </div>
 
-                    <div style={styles.btnPreview}>Crear</div>
+                    <div style={styles.btnPreview}>{t('common.create')}</div>
                 </div>
 
                 {/* JOIN CARD */}
                 <div style={styles.cardPreview}>
-                    <div style={styles.cardHeaderPreview}>Unir-se</div>
+                    <div style={styles.cardHeaderPreview}>{t('multiplayer.join.title')}</div>
 
                     <div style={{ display: 'flex', gap: 4 }}>
-                        <input style={styles.inputPreview} placeholder="Codi..." disabled />
+                        <input style={styles.inputPreview} placeholder={t('multiplayer.join.code')} disabled />
                         <div style={{ ...styles.btnPreview, width: 'auto', padding: '0 10px', display: 'grid', placeItems: 'center' }}>→</div>
                     </div>
 
                     <div>
-                        <span style={styles.labelPreview}>Partides obertes</span>
+                        <span style={styles.labelPreview}>{t('multiplayer.open.title')}</span>
                         <div style={styles.listPreview}>
                             <div style={styles.matchRowPreview}>
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: 11 }}>Usuari123</div>
-                                    <div style={{ fontSize: 9, opacity: 0.7 }}>Normal · 5R</div>
+                                    <div style={{ fontWeight: 700, fontSize: 11 }}>{t('multiplayer.preview.sample1')}</div>
+                                    <div style={{ fontSize: 9, opacity: 0.7 }}>{t('difficulty.normal')} · 5{t('multiplayer.roundsShort')}</div>
                                 </div>
                                 <div style={{ fontSize: 14 }}>➜</div>
                             </div>
                             <div style={styles.matchRowPreview}>
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: 11 }}>PlayerOne</div>
-                                    <div style={{ fontSize: 9, opacity: 0.7 }}>Difícil · 3R</div>
+                                    <div style={{ fontWeight: 700, fontSize: 11 }}>{t('multiplayer.preview.sample2')}</div>
+                                    <div style={{ fontSize: 9, opacity: 0.7 }}>{t('difficulty.hard')} · 3{t('multiplayer.roundsShort')}</div>
                                 </div>
                                 <div style={{ fontSize: 14 }}>➜</div>
                             </div>

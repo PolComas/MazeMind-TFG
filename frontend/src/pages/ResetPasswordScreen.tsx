@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 const buildStyles = (v: VisualSettings) => {
   const cardBg = v.surfaceColor;
@@ -29,6 +30,7 @@ const buildStyles = (v: VisualSettings) => {
 
 export default function ResetPasswordScreen({ onDone }: { onDone?: () => void }) {
   const { getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const styles = useMemo(() => buildStyles(getVisualSettings('home')), [getVisualSettings]);
   const [p1, setP1] = useState('');
   const [p2, setP2] = useState('');
@@ -43,8 +45,8 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
     setError(null);
     setOk(null);
 
-    if (p1.length < 6) { setError('La contrasenya ha de tenir com a mínim 6 caràcters.'); return; }
-    if (p1 !== p2) { setError('Les contrasenyes no coincideixen.'); return; }
+    if (p1.length < 6) { setError(t('auth.validation.passwordMin')); return; }
+    if (p1 !== p2) { setError(t('auth.validation.passwordMismatch')); return; }
 
     setBusy(true);
     try {
@@ -53,11 +55,11 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
      
       // Gestionar errors
       if (updateError) {
-        setError('No s’ha pogut actualitzar la contrasenya. Torna-ho a provar.');
+        setError(t('resetPassword.error.update'));
         return;
       }
 
-      setOk('Contrasenya actualitzada correctament.');
+      setOk(t('resetPassword.success'));
       setFinished(true);
 
       // Tancar sessió en aquesta pestanya per no forçar la sessió a la resta de pestanyes
@@ -70,7 +72,7 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
         }
       }, 500);
     } catch (_e) {
-      setError('No s’ha pogut actualitzar la contrasenya. Torna-ho a provar.');
+      setError(t('resetPassword.error.update'));
     } finally {
       setBusy(false);
     }
@@ -83,29 +85,29 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
   return (
     <div style={styles.wrap}>
       <form style={styles.card} onSubmit={submit}>
-        <h2 style={styles.title}>Restablir contrasenya</h2>
+        <h2 style={styles.title}>{t('resetPassword.title')}</h2>
         {error && <div style={styles.error}>{error}</div>}
         {ok && <div style={styles.ok}>{ok}</div>}
 
         {!finished ? (
           <>
-            <label htmlFor="np1" style={styles.label}>Nova contrasenya</label>
+            <label htmlFor="np1" style={styles.label}>{t('resetPassword.new')}</label>
             <input id="np1" type="password" style={styles.input}
                    value={p1} onChange={e => setP1(e.target.value)}
                    minLength={6} required autoComplete="new-password" />
 
-            <label htmlFor="np2" style={styles.label}>Repeteix la contrasenya</label>
+            <label htmlFor="np2" style={styles.label}>{t('auth.passwordRepeat')}</label>
             <input id="np2" type="password" style={styles.input}
                    value={p2} onChange={e => setP2(e.target.value)}
                    minLength={6} required autoComplete="new-password" />
 
             <button type="submit" style={styles.btn} disabled={busy}>
-              {busy ? 'Guardant...' : 'Actualitzar'}
+              {busy ? t('resetPassword.saving') : t('resetPassword.update')}
             </button>
           </>
         ) : (
           <>
-            <button type="button" style={styles.btn} onClick={goHome}>Tornar a l’inici</button>
+            <button type="button" style={styles.btn} onClick={goHome}>{t('resetPassword.backHome')}</button>
           </>
         )}
       </form>

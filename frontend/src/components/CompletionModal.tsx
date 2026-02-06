@@ -5,6 +5,7 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 // Props que rep el modal
 type Props = {
@@ -120,6 +121,7 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
   // Gestionar àudio
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -144,20 +146,22 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
     <div style={styles.overlay}>
       {/* El contingut del modal */}
       <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <h2 id="modalTitle" style={styles.title}>¡Nivell {levelNumber} Superat!</h2>
+        <h2 id="modalTitle" style={styles.title}>
+          {t('completion.title.before')} {levelNumber} {t('completion.title.after')}
+        </h2>
 
         {/* Resultats */}
         <div style={styles.results}>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Estrelles</span>
+            <span style={styles.resultLabel}>{t('completion.result.stars')}</span>
             <span style={{ ...styles.resultValue, ...styles.starsValue }}>{displayStars(stars)}</span>
           </div>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Temps</span>
+            <span style={styles.resultLabel}>{t('completion.result.time')}</span>
             <span style={styles.resultValue}>{formatTime(time)}</span>
           </div>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Punts</span>
+            <span style={styles.resultLabel}>{t('completion.result.points')}</span>
             <span style={styles.resultValue}>{Math.round(points)}</span>
           </div>
         </div>
@@ -166,14 +170,14 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
         <div style={styles.actions}>
           {onNextLevel && (
             <button onMouseEnter={() => audio.playHover()} style={styles.nextButton} onClick={onNextLevel}>
-              Següent Nivell <ArrowRight size={18} />
+              {t('completion.action.next')} <ArrowRight size={18} />
             </button>
           )}
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetry}>
-            <RefreshCcw size={18} /> Tornar a Jugar
+            <RefreshCcw size={18} /> {t('completion.action.retry')}
           </button>
           <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBack}>
-            <ArrowLeft size={18} /> Tornar als Nivells
+            <ArrowLeft size={18} /> {t('completion.action.back')}
           </button>
         </div>
       </div>

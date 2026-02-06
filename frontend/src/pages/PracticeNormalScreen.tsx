@@ -11,6 +11,7 @@ import { generateLevel, type Level } from "../maze/maze_generator";
 import { savePracticeRun, loadPracticeBestScore } from "../utils/practiceProgress";
 import { useUser } from "../context/UserContext";
 import { pushPracticeBest } from "../lib/sync";
+import { useLanguage } from "../context/LanguageContext";
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -82,13 +83,6 @@ function getScoreTuning(levelIndex: number): ScoreTuning {
 
 type Pos = { x: number; y: number };
 
-// Tecles al footer
-const formatKey = (key: string) => {
-  if (key === " ") return "Espai";
-  if (key.length === 1) return key.toUpperCase();
-  return key;
-};
-
 export default function PracticeNormalScreen({
   onBack,
 }: {
@@ -97,8 +91,14 @@ export default function PracticeNormalScreen({
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
   const { user } = useUser();
+  const { t } = useLanguage();
   const screenSettings = getVisualSettings("levelScreen");
   const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
+  const formatKey = (key: string) => {
+    if (key === " ") return t('keys.space');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  };
 
   // Estat local de la RUN de Score
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -644,9 +644,9 @@ export default function PracticeNormalScreen({
           onMouseEnter={() => audio.playHover()}
           style={styles.ghostBtn}
         >
-          <span aria-hidden="true">←</span> Tornar
+          <span aria-hidden="true">←</span> {t('common.back')}
         </button>
-        <h1 style={styles.title}>Mode Score - Nivell {currentLevel}</h1>
+        <h1 style={styles.title}>{t('practiceScore.modeTitle')} {currentLevel}</h1>
         <div style={{ width: 100 }} />
       </header>
 
@@ -658,7 +658,7 @@ export default function PracticeNormalScreen({
             style={styles.memorizePanel}
           >
             <h2 id="memorizeTitle" style={styles.memorizeHeading}>
-              <span aria-hidden="true">👁️</span> Memoritza el Laberint!
+              <span aria-hidden="true">👁️</span> {t('level.memorize.title')}
             </h2>
             <div
               role="status"
@@ -677,7 +677,7 @@ export default function PracticeNormalScreen({
               />
             </div>
             <p style={styles.memorizeHint}>
-              Prem <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> per saltar.
+              {t('level.memorize.skip.before')} <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> {t('level.memorize.skip.after')}
             </p>
           </section>
         ) : (
@@ -694,7 +694,7 @@ export default function PracticeNormalScreen({
         )}
 
         {/* TAULER */}
-        <section aria-label="Tauler del laberint" style={styles.boardWrap}>
+        <section aria-label={t('level.aria.board')} style={styles.boardWrap}>
           <div style={styles.boardInner}>
             <MazeCanvas
               level={level}
@@ -714,17 +714,16 @@ export default function PracticeNormalScreen({
       <footer style={styles.footer}>
         {phase === "playing" ? (
           <p style={styles.tip}>
-            Utilitza les <kbd>Fletxes</kbd> o
+            {t('level.tip.move.before')} <kbd>{t('keys.arrows')}</kbd> {t('level.tip.move.middle')}
             <kbd> {formatKey(keyMoveUp)}</kbd>
             <kbd>{formatKey(keyMoveLeft)}</kbd>
             <kbd>{formatKey(keyMoveDown)}</kbd>
             <kbd>{formatKey(keyMoveRight)} </kbd>
-            per moure’t.
+            {t('level.tip.move.after')}
           </p>
         ) : phase === "memorize" ? (
           <p style={styles.tip}>
-            Memoritza el camí des de l&apos;inici (cercle) fins al final
-            (quadrat).
+            {t('level.tip.memorize')}
           </p>
         ) : null}
       </footer>

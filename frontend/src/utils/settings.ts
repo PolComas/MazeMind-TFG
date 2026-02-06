@@ -124,8 +124,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 // Temes predefinits
-export const PRESET_THEMES: Record<string, VisualSettings> = {
-  'Per Defecte': {
+export const PRESET_THEMES: Record<'default' | 'dark' | 'light' | 'high_contrast', VisualSettings> = {
+  default: {
     backgroundColor: ORIGINAL_PALETTE.bg,
     textColor: ORIGINAL_PALETTE.text,
     subtextColor: ORIGINAL_PALETTE.subtext,
@@ -148,7 +148,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     crashHelpColor: '#E11D48',
   },
   // Tema Fosc
-  'Fosc': {
+  dark: {
     backgroundColor:
       'radial-gradient(1200px 600px at 20% 0%, rgba(86,180,233,0.12), transparent 60%), linear-gradient(145deg, #0B1021 0%, #141A32 100%)',
     textColor: '#FFFFFF',
@@ -173,7 +173,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     crashHelpColor: '#E11D48',
   },
   // Tema Clar
-  'Clar': {
+  light: {
     backgroundColor:
       'linear-gradient(180deg, #F7FAFF 0%, #EAF1FF 100%)',
     textColor: '#0B1021',
@@ -198,7 +198,7 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     crashHelpColor: '#EF4444',
   },
   // Tema Alt Contrast
-  'Alt Contrast': {
+  high_contrast: {
     backgroundColor: '#000000',
     textColor: '#FFFFFF',
     subtextColor: '#FFFFFF',
@@ -222,6 +222,8 @@ export const PRESET_THEMES: Record<string, VisualSettings> = {
     crashHelpColor: '#FF3131',
   },
 };
+
+export type PresetThemeKey = keyof typeof PRESET_THEMES;
 
 // Carregar la configuració
 export function loadSettings(): AppSettings {

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { GameSettings } from '../../utils/settings';
 import { PALETTE } from '../palette';
 import KeybindingInput from './KeybindingInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: GameSettings;
@@ -47,6 +48,7 @@ const keybindingActions: (keyof GameSettings)[] = [
 ];
 
 export default function GameSettingsComponent({ settings, onChange }: Props) {
+  const { t } = useLanguage();
   // NOU: Lògica per detectar duplicats
   const duplicateActions = useMemo(() => {
     // 1. Creem un mapa per comptar quantes accions utilitzen cada tecla
@@ -74,29 +76,29 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
     <div style={styles.container}>
 
       {/* --- SECCIÓ DE SO --- */}
-      <h4 style={styles.title}>Configuració de So</h4>
+      <h4 style={styles.title}>{t('settings.game.audio.title')}</h4>
       <div style={styles.group}>
         <ToggleInput
-          label="Efectes de So (SFX)"
+          label={t('settings.game.audio.sfx')}
           checked={settings.soundEffects}
           onChange={(value: boolean) => onChange('soundEffects', value)}
         />
         {settings.soundEffects && (
           <SliderInput
-            label="Volum SFX"
+            label={t('settings.game.audio.sfxVolume')}
             value={settings.soundVolume}
             onChange={(value: number) => onChange('soundVolume', value)}
           />
         )}
 
         <ToggleInput
-          label="Música de Fons"
+          label={t('settings.game.audio.music')}
           checked={settings.backgroundMusic}
           onChange={(value: boolean) => onChange('backgroundMusic', value)}
         />
         {settings.backgroundMusic && (
           <SliderInput
-            label="Volum Música"
+            label={t('settings.game.audio.musicVolume')}
             value={settings.musicVolume}
             onChange={(value: number) => onChange('musicVolume', value)}
           />
@@ -104,85 +106,85 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
       </div>
 
       {/* --- SECCIÓ DE TECLES --- */}
-      <h4 style={styles.title}>Controls de Moviment (Lletres)</h4>
+      <h4 style={styles.title}>{t('settings.game.controls.move.title')}</h4>
       <div style={styles.keyGrid}>
         <KeybindingInput
-          label="Amunt"
+          label={t('settings.game.controls.move.up')}
           value={settings.keyMoveUp}
           onChange={(value: string) => onChange('keyMoveUp', value)}
           isError={duplicateActions.has('keyMoveUp')}
         />
         <KeybindingInput
-          label="Avall"
+          label={t('settings.game.controls.move.down')}
           value={settings.keyMoveDown}
           onChange={(value: string) => onChange('keyMoveDown', value)}
           isError={duplicateActions.has('keyMoveDown')}
         />
         <KeybindingInput
-          label="Esquerra"
+          label={t('settings.game.controls.move.left')}
           value={settings.keyMoveLeft}
           onChange={(value: string) => onChange('keyMoveLeft', value)}
           isError={duplicateActions.has('keyMoveLeft')}
         />
         <KeybindingInput
-          label="Dreta"
+          label={t('settings.game.controls.move.right')}
           value={settings.keyMoveRight}
           onChange={(value: string) => onChange('keyMoveRight', value)}
           isError={duplicateActions.has('keyMoveRight')}
         />
       </div>
-      <p style={styles.note}>Nota: Les tecles de fletxa (↑, ↓, ←, →) sempre funcionaran a més d'aquestes.</p>
+      <p style={styles.note}>{t('settings.game.controls.move.note')}</p>
 
-      <h4 style={styles.title}>Controls d'Ajuda</h4>
+      <h4 style={styles.title}>{t('settings.game.controls.help.title')}</h4>
       <div style={styles.keyGrid}>
         <KeybindingInput
-          label="Revelar Laberint"
+          label={t('settings.game.controls.help.reveal')}
           value={settings.keyHelpReveal}
           onChange={(value: string) => onChange('keyHelpReveal', value)}
           isError={duplicateActions.has('keyHelpReveal')}
         />
         <KeybindingInput
-          label="Mostrar Camí"
+          label={t('settings.game.controls.help.path')}
           value={settings.keyHelpPath}
           onChange={(value: string) => onChange('keyHelpPath', value)}
           isError={duplicateActions.has('keyHelpPath')}
         />
         <KeybindingInput
-          label="Ajuda Xoc"
+          label={t('settings.game.controls.help.crash')}
           value={settings.keyHelpCrash}
           onChange={(value: string) => onChange('keyHelpCrash', value)}
           isError={duplicateActions.has('keyHelpCrash')}
         />
         <KeybindingInput
-          label="Saltar memorització"
+          label={t('settings.game.controls.help.skip')}
           value={settings.keySkipMemorize}
           onChange={(value: string) => onChange('keySkipMemorize', value)}
           isError={duplicateActions.has('keySkipMemorize')}
         />
         <KeybindingInput
-          label="Tancar modals"
+          label={t('settings.game.controls.help.closeModal')}
           value={settings.keyCloseModal}
           onChange={(value: string) => onChange('keyCloseModal', value)}
           isError={duplicateActions.has('keyCloseModal')}
         />
       </div>
 
-      <h4 style={styles.title}>Dreceres Globals</h4>
+      <h4 style={styles.title}>{t('settings.game.controls.global.title')}</h4>
       <div style={styles.keyGrid}>
         <KeybindingInput
-          label="Obrir nivells"
+          label={t('settings.game.controls.global.levels')}
           value={settings.keyOpenLevels}
           onChange={(value: string) => onChange('keyOpenLevels', value)}
           isError={duplicateActions.has('keyOpenLevels')}
         />
         <KeybindingInput
-          label="Obrir configuració"
+          label={t('settings.game.controls.global.settings')}
           value={settings.keyOpenSettings}
           onChange={(value: string) => onChange('keyOpenSettings', value)}
           isError={duplicateActions.has('keyOpenSettings')}
         />
         <KeybindingInput
-          label="Tornar a inici"
+          label={t('settings.game.controls.global.home')}
           value={settings.keyOpenHome}
           onChange={(value: string) => onChange('keyOpenHome', value)}
           isError={duplicateActions.has('keyOpenHome')}
@@ -192,7 +194,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
       {/* Missatge d'error general */}
       {duplicateActions.size > 0 && (
         <p style={styles.errorText}>
-          Error: Hi ha tecles duplicades. Cada acció ha de tenir una tecla única.
+          {t('settings.game.controls.errorDuplicate')}
         </p>
       )}
     </div>

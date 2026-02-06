@@ -4,12 +4,14 @@ import type { VisualSettings } from '../../utils/settings';
 import { ArrowLeft, Dumbbell, Zap, Flame, Lock, Star, Clock } from 'lucide-react';
 import { PALETTE } from '../palette';
 import NetworkBackground from '../NetworkBackground';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
 };
 
 export default function LevelSelectPreview({ settings }: Props) {
+  const { t } = useLanguage();
   type Diff = 'easy' | 'normal' | 'hard';
   const [difficulty, setDifficulty] = useState<Diff>('easy');
 
@@ -107,8 +109,8 @@ export default function LevelSelectPreview({ settings }: Props) {
       />
       {/* Capçalera */}
       <div style={styles.headerPreview}>
-        <div style={styles.backBtnPreview}><ArrowLeft size={12} /> Inici</div>
-        <h1 style={styles.titlePreview}>Selecciona Nivell</h1>
+        <div style={styles.backBtnPreview}><ArrowLeft size={12} /> {t('common.home')}</div>
+        <h1 style={styles.titlePreview}>{t('levelSelect.title')}</h1>
         <div style={{ width: 40 }} />
       </div>
 
@@ -128,7 +130,7 @@ export default function LevelSelectPreview({ settings }: Props) {
             onClick={() => setDifficulty(d)}
             style={{ ...styles.diffTabPreview, color: difficulty === d ? settings.textColor : settings.subtextColor, background: 'transparent', border: 'none' }}
           >
-            {d === 'easy' ? <Dumbbell size={10} /> : d === 'normal' ? <Zap size={10} /> : <Flame size={10} />} {d === 'easy' ? 'Fàcil' : d === 'normal' ? 'Normal' : 'Difícil'}
+            {d === 'easy' ? <Dumbbell size={10} /> : d === 'normal' ? <Zap size={10} /> : <Flame size={10} />} {t(`difficulty.${d}`)}
           </button>
         ))}
       </div>
@@ -144,7 +146,7 @@ export default function LevelSelectPreview({ settings }: Props) {
             <Star size={10} fill={'none'} color={settings.subtextColor + '80'} />
           </div>
           <div style={styles.timePreview}><Clock size={10} /> 0:45</div>
-          <div style={{ ...styles.playBtnPreview, background: getDiffColor(difficulty) }} >Jugar</div>
+          <div style={{ ...styles.playBtnPreview, background: getDiffColor(difficulty) }} >{t('common.play')}</div>
         </div>
 
         {/* Card 2: Completat */}
@@ -156,7 +158,7 @@ export default function LevelSelectPreview({ settings }: Props) {
             <Star size={10} fill={'none'} color={'#FBBF24'} />
           </div>
           <div style={styles.timePreview}><Clock size={10} /> 1:12</div>
-          <div style={{ ...styles.playBtnPreview, background: getDiffColor(difficulty) }} >Jugar</div>
+          <div style={{ ...styles.playBtnPreview, background: getDiffColor(difficulty) }} >{t('common.play')}</div>
         </div>
 
         {/* Card 3: Bloquejat */}
@@ -175,7 +177,7 @@ export default function LevelSelectPreview({ settings }: Props) {
       {/* Footer */}
       <footer style={styles.footerPreview}>
         <div style={styles.practiceBtnPreview}>
-          <Dumbbell size={12} /> Mode Pràctica
+          <Dumbbell size={12} /> {t('levelSelect.practice')}
         </div>
       </footer>
     </div>

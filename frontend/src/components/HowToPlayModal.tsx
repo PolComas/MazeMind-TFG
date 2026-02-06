@@ -7,18 +7,12 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onStartTutorial: () => void;
-};
-
-// Helper per formatar tecles
-const formatKey = (key: string) => {
-  if (key === ' ') return 'Espai';
-  if (key.length === 1) return key.toUpperCase();
-  return key;
 };
 
 const createStyles = (visuals: VisualSettings) => {
@@ -139,9 +133,15 @@ const createStyles = (visuals: VisualSettings) => {
 
 export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props) {
   const { settings, getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const gameSettings = settings.game;
   const visualSettings = getVisualSettings('levelSelect');
   const { styles, colors } = useMemo(() => createStyles(visualSettings), [visualSettings]);
+  const formatKey = (key: string) => {
+    if (key === ' ') return t('keys.space');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -165,33 +165,34 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <button style={styles.closeButton} onClick={onClose} aria-label="Tancar">
+        <button style={styles.closeButton} onClick={onClose} aria-label={t('common.close')}>
           <X size={24} />
         </button>
         <div style={styles.header}>
           <Target size={28} color={colors.accentSecondary} />
-          <h2 style={styles.title}>Com Jugar a MazeMind</h2>
+          <h2 style={styles.title}>{t('howto.title')}</h2>
         </div>
         <div style={styles.body}>
           {/* Objectiu */}
           <section style={styles.section}>
             <div style={styles.card}>
-              <h3 style={{ ...styles.sectionTitle, color: colors.accentSecondary, marginBottom: '8px' }}><Trophy size={20} /> Objectiu</h3>
-              <p style={styles.cardText}>Entrena la teva memòria visoespacial navegant per laberints invisibles. Memoritza el camí, després troba la sortida sense veure les parets!</p>
+              <h3 style={{ ...styles.sectionTitle, color: colors.accentSecondary, marginBottom: '8px' }}><Trophy size={20} /> {t('howto.goal.title')}</h3>
+              <p style={styles.cardText}>{t('howto.goal.body')}</p>
             </div>
           </section>
 
           {/* Com jugar */}
           <section style={styles.section}>
-            <h3 style={{ ...styles.sectionTitle, color: colors.accentPrimary }}><Gamepad2 size={20} color={colors.accentPrimary} /> Com Jugar</h3>
+            <h3 style={{ ...styles.sectionTitle, color: colors.accentPrimary }}><Gamepad2 size={20} color={colors.accentPrimary} /> {t('howto.how.title')}</h3>
             <div style={styles.card}>
               <div style={styles.stepItem}>
                 <div style={styles.stepNumber}>1</div>
                 <div style={{ flex: 1 }}>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}> Fase de Memorització</h4>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}> {t('howto.step1.title')}</h4>
                   <p style={styles.cardText}>
-                    Veuràs el laberint complet durant uns segons. Memoritza el camí des de l'inici (cercle) fins a la sortida (quadrat).
-                    Pots saltar aquesta fase amb <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keySkipMemorize)}</kbd>.
+                    {t('howto.step1.body.before')}
+                    <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keySkipMemorize)}</kbd>
+                    {t('howto.step1.body.after')}
                   </p>
                 </div>
               </div>
@@ -200,8 +201,8 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <div style={styles.stepItem}>
                 <div style={styles.stepNumber}>2</div>
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Les Parets Desapareixen</h4>
-                  <p style={styles.cardText}>Quan acabi el temps, les parets es tornaran invisibles. Ara has de recordar el camí!</p>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.step2.title')}</h4>
+                  <p style={styles.cardText}>{t('howto.step2.body')}</p>
                 </div>
               </div>
             </div>
@@ -209,13 +210,14 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <div style={styles.stepItem}>
                 <div style={styles.stepNumber}>3</div>
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Navega fins la Sortida</h4>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.step3.title')}</h4>
                   <p style={styles.cardText}>
-                    Usa les Fletxes o les tecles {' '}
+                    {t('howto.step3.body.before')}{' '}
                     <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyMoveUp)}</kbd>{' '}
                     <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyMoveLeft)}</kbd>{' '}
                     <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyMoveDown)}</kbd>{' '}
-                    <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyMoveRight)}</kbd> per moure't.
+                    <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyMoveRight)}</kbd>{' '}
+                    {t('howto.step3.body.after')}
                   </p>
                 </div>
               </div>
@@ -224,28 +226,28 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
 
           {/* NOU: Secció de Controls */}
           <section style={styles.section}>
-            <h3 style={{ ...styles.sectionTitle, color: colors.successColor }}><Gamepad2 size={20} color={colors.successColor} /> Controls</h3>
+            <h3 style={{ ...styles.sectionTitle, color: colors.successColor }}><Gamepad2 size={20} color={colors.successColor} /> {t('howto.controls.title')}</h3>
             <div style={styles.card}>
               <div style={styles.controlsGrid}>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowUp size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveUp)}</kbd>
-                  <span>Amunt</span>
+                  <span>{t('howto.controls.up')}</span>
                 </div>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowDown size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveDown)}</kbd>
-                  <span>Avall</span>
+                  <span>{t('howto.controls.down')}</span>
                 </div>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowLeft size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveLeft)}</kbd>
-                  <span>Esquerra</span>
+                  <span>{t('howto.controls.left')}</span>
                 </div>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowRight size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveRight)}</kbd>
-                  <span>Dreta</span>
+                  <span>{t('howto.controls.right')}</span>
                 </div>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}>{formatKey(gameSettings.keySkipMemorize)}</kbd>
-                  <span>Saltar memorització</span>
+                  <span>{t('howto.controls.skip')}</span>
                 </div>
               </div>
             </div>
@@ -253,28 +255,28 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
 
           {/* Sistema d'estrelles */}
           <section style={styles.section}>
-            <h3 style={{ ...styles.sectionTitle, color: colors.warningColor }}><Star size={20} color={colors.warningColor} /> Sistema d'Estrelles</h3>
+            <h3 style={{ ...styles.sectionTitle, color: colors.warningColor }}><Star size={20} color={colors.warningColor} /> {t('howto.stars.title')}</h3>
             <div style={styles.card}>
-              <p style={styles.cardText}>Comences amb 1000 punts. Els punts disminueixen amb el temps i si uses ajudes. Les estrelles es basen en els punts finals:</p>
+              <p style={styles.cardText}>{t('howto.stars.body')}</p>
               <ul style={styles.list}>
-                <li>★★★: 800+ punts</li>
-                <li>★★☆: 400-799 punts</li>
-                <li>★☆☆: 1-399 punts</li>
+                <li>{t('howto.stars.line1')}</li>
+                <li>{t('howto.stars.line2')}</li>
+                <li>{t('howto.stars.line3')}</li>
               </ul>
             </div>
           </section>
 
           {/* Ajudes */}
           <section style={styles.section}>
-            <h3 style={{ ...styles.sectionTitle, color: colors.accentPrimary }}><Zap size={20} color={colors.accentPrimary} /> Ajudes Disponibles</h3>
+            <h3 style={{ ...styles.sectionTitle, color: colors.accentPrimary }}><Zap size={20} color={colors.accentPrimary} /> {t('howto.help.title')}</h3>
             <div style={styles.card}>
               <div style={styles.stepItem}>
                 <Eye size={20} color={colors.accentPrimary} style={{ flexShrink: 0 }} />
                 <div>
                   <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                    Revelar (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpReveal)}</kbd>)
+                    {t('howto.help.reveal.title')} (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpReveal)}</kbd>)
                   </h4>
-                  <p style={styles.cardText}>Mostra el laberint durant 0.5 segons. 3 usos per nivell. Cost: 50 punts.</p>
+                  <p style={styles.cardText}>{t('howto.help.reveal.body')}</p>
                 </div>
               </div>
             </div>
@@ -283,9 +285,9 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
                 <Footprints size={20} color={colors.successColor} style={{ flexShrink: 0 }} />
                 <div>
                   <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                    Mostrar Camí (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpPath)}</kbd>)
+                    {t('howto.help.path.title')} (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpPath)}</kbd>)
                   </h4>
-                  <p style={styles.cardText}>Mostra el camí que has recorregut. Activable/desactivable. Cost: +2 punts/segon mentre està activat.</p>
+                  <p style={styles.cardText}>{t('howto.help.path.body')}</p>
                 </div>
               </div>
             </div>
@@ -294,9 +296,9 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
                 <Skull size={20} color={colors.dangerColor} style={{ flexShrink: 0 }} />
                 <div>
                   <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                    Ajuda Xoc (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpCrash)}</kbd>)
+                    {t('howto.help.crash.title')} (<kbd style={styles.keyDisplay}>{formatKey(gameSettings.keyHelpCrash)}</kbd>)
                   </h4>
-                  <p style={styles.cardText}>Si xoques, mostra les parets properes. Activable/desactivable. Cost: 20 punts per xoc.</p>
+                  <p style={styles.cardText}>{t('howto.help.crash.body')}</p>
                 </div>
               </div>
             </div>
@@ -304,13 +306,13 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
 
           {/* Modes */}
           <section style={styles.section}>
-            <h3 style={styles.sectionTitle}><Layers size={20} /> Modes de Joc</h3>
+            <h3 style={styles.sectionTitle}><Layers size={20} /> {t('howto.modes.title')}</h3>
             <div style={styles.card}>
               <div style={styles.stepItem}>
                 <Target size={20} color={colors.accentPrimary} style={{ flexShrink: 0 }} />
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Clàssic</h4>
-                  <p style={styles.cardText}>Supera els nivells predefinits en dificultats Fàcil, Normal i Difícil. Guanya estrelles i desbloqueja el següent nivell.</p>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.modes.classic.title')}</h4>
+                  <p style={styles.cardText}>{t('howto.modes.classic.body')}</p>
                 </div>
               </div>
             </div>
@@ -318,8 +320,8 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <div style={styles.stepItem}>
                 <Dumbbell size={20} color={colors.successColor} style={{ flexShrink: 0 }} />
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Pràctica IA</h4>
-                  <p style={styles.cardText}>Entrena sense pressió. Juga laberints aleatoris adaptats al teu nivell a partir de la IA.</p>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.modes.ai.title')}</h4>
+                  <p style={styles.cardText}>{t('howto.modes.ai.body')}</p>
                 </div>
               </div>
             </div>
@@ -327,8 +329,8 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <div style={styles.stepItem}>
                 <TrendingUp size={20} color={colors.warningColor} style={{ flexShrink: 0 }} />
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Pràctica Score</h4>
-                  <p style={styles.cardText}>Juga laberints aleatoris que van pujant de dificultat i consegueix la puntuació més alta (mida, temps).</p>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.modes.score.title')}</h4>
+                  <p style={styles.cardText}>{t('howto.modes.score.body')}</p>
                 </div>
               </div>
             </div>
@@ -336,8 +338,8 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <div style={styles.stepItem}>
                 <Edit size={20} color={colors.accentSecondary} style={{ flexShrink: 0 }} />
                 <div>
-                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>Lliure / Creador</h4>
-                  <p style={styles.cardText}>Defineix la mida del laberint, el temps de memorització, mode de dificultat i juga al teu gust.</p>
+                  <h4 style={{ ...styles.cardTitle, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>{t('howto.modes.free.title')}</h4>
+                  <p style={styles.cardText}>{t('howto.modes.free.body')}</p>
                 </div>
               </div>
             </div>
@@ -345,12 +347,12 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
 
           {/* Consells */}
           <section style={styles.section}>
-            <h3 style={styles.sectionTitle}><Info size={20} /> Consells</h3>
+            <h3 style={styles.sectionTitle}><Info size={20} /> {t('howto.tips.title')}</h3>
             <div style={styles.card}>
               <ul style={styles.list}>
-                <li>Centra't en recordar els girs principals.</li>
-                <li>Visualitza mentalment el recorregut mentre memoritzes.</li>
-                <li>No tinguis por d'utilitzar les ajudes al principi.</li>
+                <li>{t('howto.tips.line1')}</li>
+                <li>{t('howto.tips.line2')}</li>
+                <li>{t('howto.tips.line3')}</li>
               </ul>
             </div>
           </section>
@@ -361,11 +363,11 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
               <GraduationCap size={32} color="#fff" />
             </div>
             <div style={styles.tutorialContent}>
-              <h3 style={{ ...styles.cardTitle, fontSize: '1.1rem', margin: 0 }}>Primera vegada jugant?</h3>
-              <p style={{ ...styles.cardText, fontSize: '0.9rem', margin: '4px 0 0 0' }}>Comença amb el següent tutorial guiat pas a pas i aprèn jugant.</p>
+              <h3 style={{ ...styles.cardTitle, fontSize: '1.1rem', margin: 0 }}>{t('howto.tutorial.title')}</h3>
+              <p style={{ ...styles.cardText, fontSize: '0.9rem', margin: '4px 0 0 0' }}>{t('howto.tutorial.body')}</p>
             </div>
             <button style={styles.tutorialButton} onClick={() => { onClose(); onStartTutorial(); }}>
-              <GraduationCap size={18} /> Començar Tutorial
+              <GraduationCap size={18} /> {t('howto.tutorial.action')}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   status: 'completed' | 'failed';
@@ -109,6 +110,7 @@ export default function PracticeCompletionModal({
 }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -139,13 +141,13 @@ export default function PracticeCompletionModal({
           {isCompleted ? <CheckCircle size={56} /> : <XCircle size={56} />}
         </div>
         <h2 id="modalTitle" style={styles.statusTitle(isCompleted)}>
-          {isCompleted ? 'Laberint Superat' : 'Derrota'}
+          {isCompleted ? t('practiceComplete.title.win') : t('practiceComplete.title.loss')}
         </h2>
 
         {/* Temps */}
         <div style={styles.results}>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Temps Final</span>
+            <span style={styles.resultLabel}>{t('practiceComplete.result.time')}</span>
             <span style={styles.resultValue}>{formatTime(time)}</span>
           </div>
         </div>
@@ -154,17 +156,17 @@ export default function PracticeCompletionModal({
         <div style={styles.actions}>
           {/* 1. Repetir mateix laberint */}
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetrySameMaze}>
-            <RefreshCcw size={18} /> Repetir Laberint
+            <RefreshCcw size={18} /> {t('practiceComplete.action.retrySame')}
           </button>
 
           {/* 2. Nou laberint */}
           <button onMouseEnter={() => audio.playHover()} style={styles.newMazeButton} onClick={onRetryNewMaze}>
-            <Bot size={18} /> Nou Laberint (Mateixos Paràmetres)
+            <Bot size={18} /> {t('practiceComplete.action.newMaze')}
           </button>
 
           {/* 3. Tornar */}
           <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBackToSettings}>
-            <ArrowLeft size={18} /> Canviar Paràmetres
+            <ArrowLeft size={18} /> {t('practiceComplete.action.change')}
           </button>
         </div>
       </div>

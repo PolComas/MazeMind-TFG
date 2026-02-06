@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { VisualSettings } from '../../utils/settings';
 import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
     settings: VisualSettings;
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export default function MultiplayerScreenSettings({ settings, onChange }: Props) {
+    const { t } = useLanguage();
     return (
         <div style={styles.container}>
             {/* Graella de Dues Columnes */}
@@ -18,7 +20,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
                 <div style={styles.column}>
                     {/* Text Principal */}
                     <ColorPickerWithTextInput
-                        label="Color de Text Principal"
+                        label={t('settings.multiplayer.textPrimary')}
                         value={settings.textColor}
                         onChange={(value) => onChange('textColor', value)}
                         inputId="multi-text-color"
@@ -26,7 +28,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
 
                     {/* Accent Principal */}
                     <ColorPickerWithTextInput
-                        label="Color d'Accent Principal"
+                        label={t('settings.multiplayer.accentPrimary')}
                         value={settings.accentColor1}
                         onChange={(value) => onChange('accentColor1', value)}
                         inputId="multi-accent1-color"
@@ -38,7 +40,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
                 <div style={styles.column}>
                     {/* Text Secundari */}
                     <ColorPickerWithTextInput
-                        label="Color de Text Secundari"
+                        label={t('settings.multiplayer.textSecondary')}
                         value={settings.subtextColor}
                         onChange={(value) => onChange('subtextColor', value)}
                         inputId="multi-subtext-color"
@@ -46,7 +48,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
 
                     {/* Accent Secundari */}
                     <ColorPickerWithTextInput
-                        label="Color d'Accent Secundari"
+                        label={t('settings.multiplayer.accentSecondary')}
                         value={settings.accentColor2}
                         onChange={(value) => onChange('accentColor2', value)}
                         inputId="multi-accent2-color"
@@ -55,7 +57,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
 
                 {/* Fons */}
                 <ColorPickerWithTextInput
-                    label="Color de Fons"
+                    label={t('settings.multiplayer.background')}
                     value={settings.backgroundColor}
                     onChange={(value) => onChange('backgroundColor', value)}
                     inputId="multi-bg-color"
@@ -63,7 +65,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
 
                 {/* Superfícies (Targetes) */}
                 <ColorPickerWithTextInput
-                    label="Color de les Targetes"
+                    label={t('settings.multiplayer.cards')}
                     value={settings.surfaceColor.startsWith('rgba') ? '#ffffff' : settings.surfaceColor}
                     onChange={(value) => onChange('surfaceColor', value)}
                     inputId="multi-surface-color"
@@ -71,7 +73,7 @@ export default function MultiplayerScreenSettings({ settings, onChange }: Props)
 
                 {/* Color de vora */}
                 <ColorPickerWithTextInput
-                    label="Color de Vora"
+                    label={t('settings.multiplayer.border')}
                     value={settings.borderColor}
                     onChange={(value) => onChange('borderColor', value)}
                     inputId="multi-border-color"

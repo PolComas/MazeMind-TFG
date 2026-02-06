@@ -4,6 +4,7 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   onNextLevel?: () => void;
@@ -77,6 +78,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 export default function PracticeIaCompletionModal({ onNextLevel, onBack }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -86,18 +88,18 @@ export default function PracticeIaCompletionModal({ onNextLevel, onBack }: Props
         <div style={styles.iconWrap}>
           <CheckCircle size={56} />
         </div>
-        <h2 style={styles.title}>Nivell adaptat superat</h2>
+        <h2 style={styles.title}>{t('practiceIaComplete.title')}</h2>
         <p style={styles.subtitle}>
-          Vols continuar amb un altre nivell ajustat al teu rendiment?
+          {t('practiceIaComplete.subtitle')}
         </p>
         <div style={styles.actions}>
           {onNextLevel && (
             <button onMouseEnter={() => audio.playHover()} style={styles.nextButton} onClick={onNextLevel}>
-              <Sparkles size={18} /> Seguir Jugant
+              <Sparkles size={18} /> {t('practiceIaComplete.action.next')}
             </button>
           )}
           <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBack}>
-            <ArrowLeft size={18} /> Tornar al menú
+            <ArrowLeft size={18} /> {t('practiceIaComplete.action.back')}
           </button>
         </div>
       </div>

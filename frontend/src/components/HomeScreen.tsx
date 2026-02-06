@@ -4,6 +4,7 @@ import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
 import NetworkBackground from './NetworkBackground';
 
@@ -20,34 +21,32 @@ type Props = {
 };
 
 export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClick, onLogout, onSettingsClick, progress }: Props) {
-  // Obtenir la configuració específica per home
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
+  const { t, language, setLanguage } = useLanguage();
 
-  // Calcular les estadístiques dinàmicament
   const playerStats = useMemo(() => {
     return [
       {
         icon: "🎯",
-        label: "Nivells Superats",
+        label: t('home.stats.completed'),
         value: getTotalCompletedLevels(progress)
       },
       {
         icon: "⚡️",
-        label: "Nivells Perfectes",
+        label: t('home.stats.perfect'),
         value: getTotalPerfectLevels(progress)
       },
       {
         icon: "🏆",
-        label: "Estrelles",
+        label: t('home.stats.stars'),
         value: getTotalStars(progress)
       },
     ];
-  }, [progress]);
+  }, [progress, t]);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Gestionar clic a botó usuari
   const handleUserInteraction = async () => {
     if (user) {
       if (isLoggingOut) return;
@@ -84,27 +83,49 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
     handleUserInteraction();
   };
 
-  // Estils dinàmics utilitzant 'screenSettings'
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
-    page: { // Omple tota la pantalla amb gradients i fons base, elements centrats
-      minHeight: "100svh", width: "100vw", margin: 0,
-      // background: screenSettings.backgroundColor, // Removed static background
+    page: {
+      minHeight: "100svh", width: "100%", margin: 0,
       color: screenSettings.textColor,
       display: "grid", placeItems: "center", padding: 24,
       boxSizing: "border-box",
       position: 'relative',
       isolation: 'isolate',
     },
-    userButton: { // Botó d'usuari a la cantonada superior dreta
+    headerUtils: {
       position: 'absolute', top: 'clamp(16px, 3vw, 24px)', right: 'clamp(16px, 3vw, 24px)',
+      display: 'flex', alignItems: 'center', gap: 16, zIndex: 10,
+    },
+    userButton: {
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
       color: screenSettings.subtextColor,
       borderRadius: '50%', width: '48px', height: '48px',
       display: 'grid', placeItems: 'center', cursor: 'pointer',
-      boxShadow: PALETTE.shadow, zIndex: 10, transition: 'background 0.2s ease',
+      boxShadow: PALETTE.shadow, transition: 'background 0.2s ease',
+      flexShrink: 0,
     },
-    // Contenidor principal centrat amb amplada màxima i gap
+    langSwitcher: {
+      display: 'flex', gap: 4, background: screenSettings.surfaceColor,
+      padding: '4px', borderRadius: 20,
+      border: `1px solid ${screenSettings.borderColor}`,
+      boxShadow: PALETTE.shadow,
+    },
+    langBtn: {
+      background: 'transparent',
+      border: 'none',
+      color: screenSettings.subtextColor,
+      fontSize: 12, fontWeight: 700,
+      padding: '6px 10px',
+      cursor: 'pointer',
+      borderRadius: 16,
+      transition: 'all 0.2s',
+    },
+    langBtnActive: {
+      background: screenSettings.accentColor1,
+      color: '#fff', // Always white for contrast on accent
+      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    },
     container: {
       width: "min(1100px, 100%)",
       display: "grid",
@@ -113,13 +134,12 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       gap: 24,
       paddingInline: "min(4vw, 40px)",
     },
-    logoSvg: { // SVG del logo amb mida fixa i filtre per fer-lo blanc
+    logoSvg: {
       width: 80,
       height: 80,
       filter: 'brightness(0) invert(1)',
     },
     logoWrap: {
-      // Gradient dinàmic segons la configuració visual
       background: `linear-gradient(135deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})`,
       borderRadius: 32,
       padding: 24,
@@ -130,7 +150,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       display: "grid",
       placeItems: "center",
     },
-    title: { // Títol principal amb font gran i ombra
+    title: {
       fontSize: "clamp(42px, 6vw, 68px)",
       fontWeight: 900,
       margin: 0,
@@ -138,14 +158,14 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       textShadow: "0 2px 0 rgba(0,0,0,.25)",
       color: screenSettings.textColor,
     },
-    subtitle: { // Subtítol amb font mitjana i color secundari
+    subtitle: {
       fontSize: "clamp(16px, 1.6vw, 20px)",
       margin: 0,
       maxWidth: 760,
       color: screenSettings.subtextColor,
       marginInline: "auto",
     },
-    statsGrid: { // Graella responsiva per les estadístiques
+    statsGrid: {
       listStyle: "none",
       padding: 0,
       margin: "8px 0 0 0",
@@ -154,7 +174,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       gap: 16,
       width: "80%",
     },
-    statCard: { // Targeta per cada estadística amb fons i ombra
+    statCard: {
       background: screenSettings.surfaceColor,
       border: `1px solid ${screenSettings.borderColor}`,
       borderRadius: 16,
@@ -168,14 +188,14 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
     statIcon: { fontSize: 22, lineHeight: 1 },
     statValue: { fontSize: 28, fontWeight: 800, letterSpacing: "0.02em", color: screenSettings.textColor },
     statLabel: { fontSize: 14, color: screenSettings.subtextColor },
-    actionsCol: { // Columna per als botons d'acció
+    actionsCol: {
       display: "grid",
       gridTemplateColumns: "1fr",
       gap: 12,
       width: "min(420px, 100%)",
       marginTop: 8,
     },
-    playBtn: { // Botó principal "Jugar" amb gradient i ombra
+    playBtn: {
       padding: "16px",
       borderRadius: 12,
       border: "2px solid transparent",
@@ -188,7 +208,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       transition: "transform .05s ease",
       outline: "3px solid transparent",
     },
-    multiplayerBtn: { // Botó Multijugador (Segon nivell d'importància)
+    multiplayerBtn: {
       padding: "16px",
       borderRadius: 12,
       border: "2px solid transparent",
@@ -200,9 +220,8 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       boxShadow: PALETTE.shadow,
       transition: "transform .05s ease",
       outline: "3px solid transparent",
-      // filter removed to keep text bright
     },
-    secondaryBtn: { // Botó secundari "Configuració" amb fons translúcid
+    secondaryBtn: {
       padding: "16px",
       borderRadius: 12,
       border: `2px solid ${screenSettings.borderColor}`,
@@ -219,6 +238,11 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       fontSize: 16,
       marginBottom: 8,
     },
+    footer: { // Added footer style
+      position: 'absolute', bottom: 16,
+      fontSize: 12, color: screenSettings.subtextColor, opacity: 0.6,
+      pointerEvents: 'none'
+    }
   }), [screenSettings]);
 
   return (
@@ -228,33 +252,44 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
         backgroundColor={screenSettings.backgroundColor}
       />
 
-      {/* Botó d'usuari */}
-      <button
-        style={styles.userButton}
-        onClick={handleUserInteractionWithSound}
-        disabled={isLoggingOut}
-        aria-busy={isLoggingOut ? 'true' : 'false'}
-        onMouseEnter={() => audio.playHover()}
-        aria-label={user ? `Compte de ${user.email}. Tancar sessió.` : "Iniciar sessió o registrar-se"}
-      >
-        {/* Icona condicional */}
-        {user ? <LogOut size={24} /> : <User size={24} />}
-      </button>
+      <div style={styles.headerUtils}>
+        {/* Language Switcher */}
+        <div style={styles.langSwitcher}>
+          {(['ca', 'es', 'en'] as const).map((lang) => (
+            <button
+              key={lang}
+              style={{ ...styles.langBtn, ...(language === lang ? styles.langBtnActive : {}) }}
+              onClick={() => { audio.playHover(); setLanguage(lang); }}
+            >
+              {lang.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* Botó d'usuari */}
+        <button
+          style={styles.userButton}
+          onClick={handleUserInteractionWithSound}
+          disabled={isLoggingOut}
+          aria-busy={isLoggingOut ? 'true' : 'false'}
+          onMouseEnter={() => audio.playHover()}
+          aria-label={user ? `Compte de ${user.email}. ${t('home.logout')}.` : t('home.login')}
+        >
+          {user ? <LogOut size={24} /> : <User size={24} />}
+        </button>
+      </div>
 
       <div style={styles.container} aria-labelledby="title">
-        {/* LOGO */}
-        <div style={styles.logoWrap} role="img" aria-label="Logotip de MazeMind">
+        <div style={styles.logoWrap} role="img" aria-label={t('home.logoAria')}>
           <Logo style={styles.logoSvg} />
         </div>
 
-        {/* Títol i subtítol*/}
-        <h1 id="title" style={styles.title}>MazeMind</h1>
+        <h1 id="title" style={styles.title}>{t('home.title')}</h1>
         <p style={styles.subtitle}>
-          Entrena la teva memòria visoespacial resolent laberints
+          {t('home.subtitle')}
         </p>
 
-        {/* Estadístiques */}
-        <ul style={styles.statsGrid} aria-label="Estadístiques de progrés">
+        <ul style={styles.statsGrid} aria-label={t('home.stats.aria')}>
           {playerStats.map(s => (
             <li key={s.label} style={styles.statCard}>
               <div aria-hidden="true" style={styles.statIcon}>{s.icon}</div>
@@ -264,8 +299,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
           ))}
         </ul>
 
-        {/* Navegació principal --> Play i Config */}
-        <nav id="actions" aria-label="Accions" style={styles.actionsCol}>
+        <nav id="actions" aria-label={t('home.actions.aria')} style={styles.actionsCol}>
           <button
             type="button"
             style={{
@@ -276,9 +310,9 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             onMouseEnter={() => audio.playHover()}
             onFocus={() => { setPlayFocused(true); audio.playHover(); }}
             onBlur={() => setPlayFocused(false)}
-            aria-label="Jugar a MazeMind"
+            aria-label={t('home.play')}
           >
-            <span aria-hidden="true">▶</span> Jugar
+            <span aria-hidden="true">▶</span> {t('home.play')}
           </button>
 
           <button
@@ -291,7 +325,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             onMouseEnter={() => audio.playHover()}
             onFocus={() => { setMultiFocused(true); audio.playHover(); }}
             onBlur={() => setMultiFocused(false)}
-            aria-label="Obrir multijugador"
+            aria-label={t('home.multiplayer')}
           >
             <svg
               aria-hidden="true"
@@ -304,7 +338,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
               <circle cx="9" cy="7" r="4" />
               <line x1="19" y1="8" x2="19" y2="14" />
               <line x1="22" y1="11" x2="16" y2="11" />
-            </svg>Multijugador
+            </svg>{t('home.multiplayer')}
           </button>
 
           <button
@@ -317,11 +351,15 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             onMouseEnter={() => audio.playHover()}
             onFocus={() => { setSettingsFocused(true); audio.playHover(); }}
             onBlur={() => setSettingsFocused(false)}
-            aria-label="Obrir configuració"
+            aria-label={t('home.settings')}
           >
-            <span aria-hidden="true">⚙</span> Configuració
+            <span aria-hidden="true">⚙</span> {t('home.settings')}
           </button>
         </nav>
+
+        <div style={styles.footer}>
+          {t('home.footer')}
+        </div>
       </div>
     </main>
   );

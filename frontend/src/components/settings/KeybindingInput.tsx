@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { PALETTE } from '../palette';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   label: string;
@@ -8,18 +9,19 @@ type Props = {
   isError?: boolean;
 };
 
-// Helper per formatar tecles
-const formatKey = (key: string) => {
-  if (key === ' ') return 'Espai';
-  if (key.toLowerCase() === 'escape') return 'Esc';
-  if (key.length === 1) return key.toUpperCase();
-  return key;
-};
-
 export default function KeybindingInput({ label, value, onChange, isError = false }: Props) {
   // Estat per saber si estem escoltant una nova tecla
   const [isListening, setIsListening] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const { t } = useLanguage();
+
+  // Helper per formatar tecles
+  const formatKey = useCallback((key: string) => {
+    if (key === ' ') return t('keys.space');
+    if (key.toLowerCase() === 'escape') return t('keys.escape');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  }, [t]);
 
   // Efecte per gestionar esdeveniments de teclat i clics fora del botó
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function KeybindingInput({ label, value, onChange, isError = fals
           ...(isError ? styles.buttonError : {}),
         }}
       >
-        {isListening ? 'Prement una tecla...' : formatKey(value)}
+        {isListening ? t('settings.keybinding.listening') : formatKey(value)}
       </button>
     </div>
   );

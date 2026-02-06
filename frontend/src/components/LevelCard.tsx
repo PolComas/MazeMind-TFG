@@ -3,6 +3,7 @@ import { PALETTE } from './palette';
 import { Dumbbell, Zap, Flame, Lock, Play, Star, Clock } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
+import { useLanguage } from '../context/LanguageContext';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -27,9 +28,10 @@ function formatTime(seconds: number | null): string | null {
 export default function LevelCard({ index, unlocked, difficulty, stars, bestTime, isRecommended = false, onPlay }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
+  const { t } = useLanguage();
   
   // Estil segons la dificultat
-  const difficultyLabel = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  const difficultyLabel = t(`difficulty.${difficulty}`);
   
   // Obtenir configuració visual
   const { getVisualSettings } = useSettings();
@@ -54,8 +56,8 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
   };
 
   // Creem etiquetes descriptives per a lectors de pantalla
-  const accessiblePlayLabel = `Jugar el nivell ${index} en dificultat ${difficultyLabel}`;
-  const accessibleLockedLabel = `Nivell ${index} (Bloquejat)`;
+  const accessiblePlayLabel = `${t('levelCard.playLabel.before')} ${index} ${t('levelCard.playLabel.after')} ${difficultyLabel}`;
+  const accessibleLockedLabel = `${t('common.level')} ${index} (${t('levelCard.locked')})`;
 
   // Mostrar les estrelles
   const renderStars = () => {
@@ -155,7 +157,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
         borderColor: unlocked ? difficultyStyles[difficulty].accent + '60' : screenSettings.borderColor,
         ...(!unlocked ? styles.cardLocked : {}),
       }}
-      aria-label={unlocked ? `Nivell ${index}` : accessibleLockedLabel}
+      aria-label={unlocked ? `${t('common.level')} ${index}` : accessibleLockedLabel}
       aria-disabled={!unlocked}
     >
       <div style={styles.cardInner}>
@@ -169,13 +171,13 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
         {unlocked ? (
           <>
             {/* Mostrar les estrelles reals */}
-            <div style={styles.starsContainer} aria-label={`Puntuació: ${stars} de 3 estrelles`}>
+            <div style={styles.starsContainer} aria-label={`${t('levelCard.starsLabel.before')} ${stars} ${t('levelCard.starsLabel.after')}`}>
               {renderStars()}
             </div> 
             
             {/* Mostrar el millor temps */}
             {formattedBestTime && (
-              <div style={styles.bestTime} aria-label={`Millor temps: ${formattedBestTime}`}>
+              <div style={styles.bestTime} aria-label={`${t('levelCard.bestTimeLabel')}: ${formattedBestTime}`}>
                 <Clock size={12} /> {formattedBestTime}
               </div>
             )}
@@ -186,7 +188,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
               onMouseEnter={() => audio.playHover()}
               aria-label={accessiblePlayLabel}
             >
-              <Play size={16} /> Jugar
+              <Play size={16} /> {t('common.play')}
             </button>
           </>
         ) : (

@@ -16,6 +16,7 @@ import { useUser } from '../context/UserContext';
 import { pushProgress } from '../lib/sync';
 import { analyzeLevel } from '../maze/maze_stats';
 import { recordAttemptAndUpdateSkill, recommendDdaTuning, type DdaTuning } from '../lib/dda';
+import { useLanguage } from '../context/LanguageContext';
 
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
@@ -30,13 +31,6 @@ const LIVES = 3;
 
 type Pos = { x: number; y: number };
 
-// Helper per formatar tecles
-const formatKey = (key: string) => {
-  if (key === ' ') return 'Espai';
-  if (key.length === 1) return key.toUpperCase();
-  return key;
-};
-
 const countRevisits = (path: Pos[]) => {
   const seen = new Set<string>();
   let revisits = 0;
@@ -46,13 +40,6 @@ const countRevisits = (path: Pos[]) => {
     else seen.add(key);
   }
   return revisits;
-};
-
-// Helper per als títols de dificultat
-const DIFF_LABEL: Record<string, string> = {
-  easy: 'Fàcil',
-  normal: 'Normal',
-  hard: 'Difícil',
 };
 
 export default function LevelScreen({
@@ -84,11 +71,18 @@ export default function LevelScreen({
 }) {
   const audio = useGameAudio();
   const { user } = useUser();
+  const { t } = useLanguage();
 
   // Obtenir configuració visual
   const { getVisualSettings, settings } = useSettings();
   const screenSettings = getVisualSettings('levelScreen');
   const { keyMoveUp, keyMoveDown, keyMoveLeft, keyMoveRight } = settings.game;
+
+  const formatKey = useCallback((key: string) => {
+    if (key === ' ') return t('keys.space');
+    if (key.length === 1) return key.toUpperCase();
+    return key;
+  }, [t]);
 
   const [ddaTuning, setDdaTuning] = useState<DdaTuning | null>(null);
   const defaultTuning = useMemo(() => ({
@@ -777,13 +771,13 @@ export default function LevelScreen({
   const title = useMemo(() => {
     if (isPracticeMode) {
       // level.number === 99 mode lliure
-      if (level.number === 99) return "Mode Lliure";
+      if (level.number === 99) return t('level.title.free');
       // Per als modes "IA" i "Normal"
-      return "Mode Pràctica";
+      return t('level.title.practice');
     }
     // Títol normal per a la campanya
-    return `Nivell ${level.number} - ${DIFF_LABEL[level.difficulty]}`;
-  }, [isPracticeMode, level.number, level.difficulty]);
+    return `${t('common.level')} ${level.number} - ${t(`difficulty.${level.difficulty}`)}`;
+  }, [isPracticeMode, level.number, level.difficulty, t]);
 
   return (
     <div style={styles.page}>
@@ -794,12 +788,12 @@ export default function LevelScreen({
       />
       {/* HEADER */}
       <header style={styles.headerRow}>
-        <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label="Tornar a la selecció de nivell">
-          <span aria-hidden="true">←</span> Tornar
+        <button type="button" onClick={onBackWithSound} onMouseEnter={() => audio.playHover()} style={styles.ghostBtn} aria-label={t('level.aria.backToSelect')}>
+          <span aria-hidden="true">←</span> {t('common.back')}
         </button>
         <h1 style={styles.title}>{title}</h1>
-        <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{ ...styles.ghostBtn, justifySelf: 'end' }} aria-label="Reintentar el nivell">
-          <span aria-hidden="true">↻</span> Reintentar
+        <button type="button" onClick={onRetryWithSound} onMouseEnter={() => audio.playHover()} style={{ ...styles.ghostBtn, justifySelf: 'end' }} aria-label={t('level.aria.retryLevel')}>
+          <span aria-hidden="true">↻</span> {t('common.retry')}
         </button>
       </header>
 
@@ -809,7 +803,7 @@ export default function LevelScreen({
         {phase === "memorize" ? (
           <section aria-labelledby="memorizeTitle" style={styles.memorizePanel}>
             <h2 id="memorizeTitle" style={styles.memorizeHeading}>
-              <span aria-hidden="true">👁️</span> Memoritza el Laberint!
+              <span aria-hidden="true">👁️</span> {t('level.memorize.title')}
             </h2>
             <div role="status" aria-live="polite" style={styles.memorizeCounter}>
               {remaining}
@@ -819,7 +813,7 @@ export default function LevelScreen({
             </div>
             {!isTutorialMode && (
               <p style={styles.memorizeHint}>
-                Prem <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> per saltar.
+                {t('level.memorize.skip.before')} <kbd>{formatKey(settings.game.keySkipMemorize)}</kbd> {t('level.memorize.skip.after')}
               </p>
             )}
           </section>
@@ -845,7 +839,7 @@ export default function LevelScreen({
 
 
         {/* TAULER DEL LABERINT */}
-        <section aria-label="Tauler del laberint" style={styles.boardWrap}>
+        <section aria-label={t('level.aria.board')} style={styles.boardWrap}>
           <div style={styles.boardInner}>
             <MazeCanvas
               level={level}
@@ -865,16 +859,16 @@ export default function LevelScreen({
       <footer style={styles.footer}>
         {phase === 'playing' ? (
           <p style={styles.tip}>
-            Utilitza les <kbd>Fletxes</kbd> o
+            {t('level.tip.move.before')} <kbd>{t('keys.arrows')}</kbd> {t('level.tip.move.middle')}
             <kbd> {formatKey(keyMoveUp)}</kbd>
             <kbd>{formatKey(keyMoveLeft)}</kbd>
             <kbd>{formatKey(keyMoveDown)}</kbd>
             <kbd>{formatKey(keyMoveRight)} </kbd>
-            per moure’t.
+            {t('level.tip.move.after')}
           </p>
         ) : phase === 'memorize' ? (
           <p style={styles.tip}>
-            Memoritza el camí des de l'inici (cercle) fins al final (quadrat).
+            {t('level.tip.memorize')}
           </p>
         ) : null}
       </footer>

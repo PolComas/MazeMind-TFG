@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import {
@@ -25,6 +26,8 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
   const audio = useGameAudio();
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('levelSelect');
+  const { t } = useLanguage();
+  const { t } = useLanguage();
 
   const [isPublic, setIsPublic] = useState(false);
   const [roundsCount, setRoundsCount] = useState(3);
@@ -44,8 +47,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
         const list = await listOpenMatches();
         if (mounted) setOpenMatches(list);
       } catch (e) {
-        // Silent error for now as per user request to not show "Unable to load open matches"
-        // if (mounted) setError('No s\'han pogut carregar les partides obertes.');
+        // Silent error to avoid noisy UI; can be enabled if needed.
       }
     };
 
@@ -59,7 +61,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
 
   const handleCreate = useCallback(async () => {
     if (!user) {
-      setError('Cal iniciar sessió per crear una partida.');
+      setError(t('multiplayer.needLogin'));
       return;
     }
     setBusy(true);
@@ -79,20 +81,20 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
       });
       onOpenMatch(match.id);
     } catch (e) {
-      setError('No s\'ha pogut crear la partida.');
+      setError(t('multiplayer.create.error'));
     } finally {
       setBusy(false);
     }
-  }, [user, isPublic, roundsCount, difficulty, size, memorizeTime, onOpenMatch]);
+  }, [user, isPublic, roundsCount, difficulty, size, memorizeTime, onOpenMatch, t]);
 
   const handleJoinByCode = useCallback(async () => {
     if (!user) {
-      setError('Cal iniciar sessió per unir-se.');
+      setError(t('multiplayer.needLogin'));
       return;
     }
     const code = joinCode.trim().toUpperCase();
     if (!code) {
-      setError('Introdueix un codi vàlid.');
+      setError(t('multiplayer.notFound'));
       return;
     }
     setBusy(true);
@@ -100,7 +102,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
     try {
       const match = await getMatchByCode(code);
       if (!match) {
-        setError('No s\'ha trobat cap partida amb aquest codi.');
+        setError(t('multiplayer.notFound'));
         return;
       }
       const players = await getPlayers(match.id);
@@ -109,17 +111,17 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
         return;
       }
       if (players.length >= 2) {
-        setError('La partida ja està plena.');
+        setError(t('multiplayer.open.full'));
         return;
       }
       await joinMatch(match.id, user.id, user.email?.split('@')[0] ?? null);
       onOpenMatch(match.id);
     } catch (e) {
-      setError('No s\'ha pogut unir a la partida.');
+      setError(t('multiplayer.join.error'));
     } finally {
       setBusy(false);
     }
-  }, [user, joinCode, onOpenMatch]);
+  }, [user, joinCode, onOpenMatch, t]);
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
@@ -282,11 +284,11 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
       {/* Header Grid: Back | Title | Spacer */}
       <div style={styles.header}>
         <button style={styles.ghost} onClick={onBack} onMouseEnter={() => audio.playHover()}>
-          ← Tornar
+          ← {t('common.back')}
         </button>
         <div style={styles.headerTitleCol}>
-          <h1 style={styles.title}>Multijugador</h1>
-          <p style={styles.subtitle}>Desafia als teus amics en temps real</p>
+          <h1 style={styles.title}>{t('multiplayer.title')}</h1>
+          <p style={styles.subtitle}>{t('multiplayer.subtitle')}</p>
         </div>
         <div style={{ width: 80 }}></div> {/* Spacer to balance Back button */}
       </div>
@@ -294,7 +296,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
       <div style={styles.grid}>
         {/* CREATE CARD */}
         <section style={styles.card}>
-          <h2 style={styles.cardHeader}>Crear partida</h2>
+          <h2 style={styles.cardHeader}>{t('multiplayer.create.title')}</h2>
 
           {/* Custom Switch */}
           <div style={styles.switchRow} onClick={() => setIsPublic(!isPublic)}>
@@ -302,14 +304,14 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
               <div style={styles.switchThumb} />
             </div>
             <div>
-              <div style={{ fontWeight: 700 }}>Partida pública</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Qualsevol usuari s'hi podrà unir</div>
+              <div style={{ fontWeight: 700 }}>{t('multiplayer.create.public')}</div>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>{t('multiplayer.create.publicHint')}</div>
             </div>
           </div>
 
           <div style={{ display: 'grid', gap: 24 }}>
             <div>
-              <span style={styles.label}>Rondes</span>
+              <span style={styles.label}>{t('multiplayer.create.rounds')}</span>
               <div style={styles.segmentGroup}>
                 {[3, 5, 7].map(r => (
                   <button
@@ -317,14 +319,14 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                     style={getSegmentStyle(roundsCount === r)}
                     onClick={() => setRoundsCount(r)}
                   >
-                    {r} Rondes
+                    {r} {t('multiplayer.rounds')}
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <span style={styles.label}>Dificultat</span>
+              <span style={styles.label}>{t('multiplayer.create.difficulty')}</span>
               <div style={styles.segmentGroup}>
                 {(['easy', 'normal', 'hard'] as const).map(d => (
                   <button
@@ -332,7 +334,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                     style={getSegmentStyle(difficulty === d)}
                     onClick={() => setDifficulty(d)}
                   >
-                    {d === 'easy' ? 'Fàcil' : d === 'normal' ? 'Normal' : 'Difícil'}
+                    {d === 'easy' ? t('difficulty.easy') : d === 'normal' ? t('difficulty.normal') : t('difficulty.hard')}
                   </button>
                 ))}
               </div>
@@ -341,24 +343,24 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
 
           <div style={{ marginTop: 'auto', paddingTop: 24 }}>
             <div style={{ marginBottom: 16, fontSize: 13, textAlign: 'center', opacity: 0.6 }}>
-              Mida: {size}x{size} · Memorització: {memorizeTime}s
+              {t('multiplayer.create.size')}: {size}x{size} · {t('multiplayer.create.memorize')}: {memorizeTime}s
             </div>
             <button style={styles.button} onClick={handleCreate} disabled={busy}>
-              Crear partida
+              {t('common.create')}
             </button>
           </div>
         </section>
 
         {/* JOIN CARD */}
         <section style={styles.card}>
-          <h2 style={styles.cardHeader}>Unir-se</h2>
+          <h2 style={styles.cardHeader}>{t('multiplayer.join.title')}</h2>
 
           {error && <div style={styles.error}>{error}</div>}
 
           <div style={{ display: 'flex', gap: 12 }}>
             <input
               style={styles.input}
-              placeholder="Codi de partida (ex: AB12)"
+              placeholder={t('multiplayer.join.code')}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
             />
@@ -368,7 +370,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <div style={styles.label}>Partides obertes</div>
+            <div style={styles.label}>{t('multiplayer.open.title')}</div>
 
             <div style={styles.list}>
               {openMatches.length === 0 && (
@@ -377,16 +379,16 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                   opacity: 0.5, fontStyle: 'italic', border: '2px dashed rgba(255,255,255,0.1)',
                   borderRadius: 16, margin: '8px 0'
                 }}>
-                  No hi ha partides obertes ara mateix.
+                  {t('multiplayer.open.empty')}
                 </div>
               )}
 
               {openMatches.map((m) => (
                 <div key={m.id} style={styles.matchRow}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{m.display_name ?? 'Anònim'}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{m.display_name ?? t('multiplayer.anonymous')}</div>
                     <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      Codi: <strong>{m.code}</strong> · {m.rounds_count} Rondes · {m.config?.difficulty}
+                      {t('multiplayer.code')}: <strong>{m.code}</strong> · {m.rounds_count} {t('multiplayer.rounds')} · {m.config?.difficulty}
                     </div>
                   </div>
                   <button
@@ -395,7 +397,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                       try {
                         setBusy(true);
                         if (!user) {
-                          setError('Cal iniciar sessió per unir-se.');
+                          setError(t('multiplayer.needLogin'));
                           return;
                         }
                         const players = await getPlayers(m.id);
@@ -404,19 +406,19 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                           return;
                         }
                         if (players.length >= 2) {
-                          setError('La partida ja està plena.');
+                          setError(t('multiplayer.open.full'));
                           return;
                         }
                         await joinMatch(m.id, user.id, user.email?.split('@')[0] ?? null);
                         onOpenMatch(m.id);
                       } catch (e) {
-                        setError("No s'ha pogut unir a la partida.");
+                        setError(t('multiplayer.join.error'));
                       } finally {
                         setBusy(false);
                       }
                     }}
                   >
-                    Unir-me
+                    {t('multiplayer.open.join')}
                   </button>
                 </div>
               ))}

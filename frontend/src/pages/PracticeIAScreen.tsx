@@ -6,6 +6,7 @@ import { recommendPracticeIaParams } from '../lib/dda';
 import type { GameProgress } from '../utils/progress';
 import NetworkBackground from '../components/NetworkBackground';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PracticeIAScreen({
   onBack,
@@ -16,6 +17,7 @@ export default function PracticeIAScreen({
 }) {
   const { user } = useUser();
   const { getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const screenSettings = getVisualSettings('levelSelect');
   const [level, setLevel] = useState<Level | null>(null);
   const [run, setRun] = useState(0);
@@ -39,7 +41,7 @@ export default function PracticeIAScreen({
     const retryTimer = retryCount === 0
       ? window.setTimeout(() => {
         if (resolved || cancelled) return;
-        setError('No s\'ha pogut carregar el mode IA. Reintentant...');
+        setError(t('practiceIa.error.retry'));
         setRetryCount((c) => c + 1);
       }, 10_000)
       : null;
@@ -59,7 +61,7 @@ export default function PracticeIAScreen({
         });
         fallback.id = `practice-ia-${seed}`;
         setLevel(fallback);
-        setError('No s\'ha pogut carregar el mode IA. S\'ha generat un nivell estàndard.');
+        setError(t('practiceIa.error.fallback'));
         markResolved();
       }, 5_000)
       : null;
@@ -70,7 +72,7 @@ export default function PracticeIAScreen({
         params = await recommendPracticeIaParams(user.id);
       } catch (err) {
         console.warn('No s\'ha pogut obtenir paràmetres IA, usant defaults', err);
-        setError('No s\'ha pogut carregar el mode IA. Es farà servir una configuració estàndard.');
+        setError(t('practiceIa.error.defaults'));
       }
 
       const seed = params?.seed ?? `${Date.now().toString(36)}-${run}`;
@@ -90,7 +92,7 @@ export default function PracticeIAScreen({
       if (fallbackTimer) window.clearTimeout(fallbackTimer);
     })().catch((err) => {
       console.error('Error generant nivell IA:', err);
-      setError('No s\'ha pogut generar el nivell IA.');
+      setError(t('practiceIa.error.generate'));
       setLevel(null);
     });
     return () => {
@@ -113,8 +115,8 @@ export default function PracticeIAScreen({
           opacity={0.4}
         />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <p>Per jugar el mode pràctica amb IA cal iniciar sessió o registrar-se.</p>
-          <button onClick={onBack}>Tornar</button>
+          <p>{t('practiceIa.authRequired')}</p>
+          <button onClick={onBack}>{t('common.back')}</button>
         </div>
       </div>
     );
@@ -129,7 +131,7 @@ export default function PracticeIAScreen({
           opacity={0.4}
         />
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <p>Carregant nivell adaptatiu...</p>
+          <p>{t('practiceIa.loading')}</p>
           {error && <p style={{ opacity: 0.8 }}>{error}</p>}
         </div>
       </div>

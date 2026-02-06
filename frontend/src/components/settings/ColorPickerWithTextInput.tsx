@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PALETTE } from '../palette';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   label: string; // Etiqueta per al control
@@ -12,6 +13,7 @@ type Props = {
 const isValidHex = (color: string): boolean => /^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(color);
 
 export default function ColorPickerWithTextInput({ label, value, onChange, inputId }: Props) {
+  const { t } = useLanguage();
   const [textValue, setTextValue] = useState(value);
   const [pickerValue, setPickerValue] = useState(() => 
     isValidHex(value) ? value : '#ffffff'
@@ -62,7 +64,7 @@ export default function ColorPickerWithTextInput({ label, value, onChange, input
           value={pickerValue}
           onChange={handlePickerChange}
           style={styles.colorInput}
-          aria-label={`${label} (selector visual)`}
+          aria-label={`${label} ${t('settings.colorPicker.visualSuffix')}`}
         />
         {/* Input de text */}
         <input
@@ -71,7 +73,7 @@ export default function ColorPickerWithTextInput({ label, value, onChange, input
           onChange={handleTextChange}
           onBlur={handleTextBlur}
           style={styles.textInput}
-          aria-label={`${label} (codi hexadecimal)`}
+          aria-label={`${label} ${t('settings.colorPicker.hexSuffix')}`}
           spellCheck="false"
         />
       </div>

@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { PALETTE } from '../components/palette';
-import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES } from '../utils/settings';
+import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES, type PresetThemeKey } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
 import NetworkBackground from '../components/NetworkBackground';
+import { useLanguage } from '../context/LanguageContext';
 
 import HomeScreenSettings from '../components/settings/HomeScreenSettings';
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
@@ -32,9 +33,17 @@ const keybindingActions: (keyof GameSettings)[] = [
   'keyOpenLevels', 'keyOpenSettings', 'keyOpenHome'
 ];
 
+const PRESET_LABELS: Record<PresetThemeKey, string> = {
+  default: 'settings.presets.default',
+  dark: 'settings.presets.dark',
+  light: 'settings.presets.light',
+  high_contrast: 'settings.presets.highContrast',
+};
+
 export default function SettingsScreen({ onBack }: Props) {
   // Obtenir so de joc
   const audio = useGameAudio();
+  const { t } = useLanguage();
 
   // Obtenir la configuració i la funció d'actualització del context
   const { settings: initialSettings, updateSettings: saveAndApplySettings } = useSettings();
@@ -191,7 +200,7 @@ export default function SettingsScreen({ onBack }: Props) {
   };
 
   // Funció per aplicar un tema predefinit
-  const applyPresetTheme = useCallback((themeName: keyof typeof PRESET_THEMES) => {
+  const applyPresetTheme = useCallback((themeName: PresetThemeKey) => {
     audio.playBtnSound();
     const themeSettings = PRESET_THEMES[themeName];
     if (!themeSettings) return;
@@ -217,10 +226,10 @@ export default function SettingsScreen({ onBack }: Props) {
       />
       {/* Capçalera */}
       <header style={styles.header}>
-        <button onClick={onBackWithSound} style={styles.backButton} aria-label="Tornar" onMouseEnter={() => audio.playHover()}>
-          <ArrowLeft size={20} /> Tornar
+        <button onClick={onBackWithSound} style={styles.backButton} aria-label={t('common.back')} onMouseEnter={() => audio.playHover()}>
+          <ArrowLeft size={20} /> {t('common.back')}
         </button>
-        <h1 style={styles.title}>Configuració i Accessibilitat</h1>
+        <h1 style={styles.title}>{t('settings.title')}</h1>
         <div style={{ width: 100 }} />
       </header>
 
@@ -229,16 +238,16 @@ export default function SettingsScreen({ onBack }: Props) {
         <div style={styles.accordionColumn}>
           {/* Temes Predefinits */}
           <section style={styles.presetsSection}>
-            <h3 style={styles.presetsTitle}>Temes Predefinits</h3>
+            <h3 style={styles.presetsTitle}>{t('settings.presets.title')}</h3>
             <div style={styles.presetsGrid}>
               {Object.keys(PRESET_THEMES).map(themeName => (
                 <button
                   key={themeName}
                   style={styles.presetButton}
-                  onClick={() => applyPresetTheme(themeName as keyof typeof PRESET_THEMES)}
+                  onClick={() => applyPresetTheme(themeName as PresetThemeKey)}
                   onMouseEnter={() => audio.playHover()}
                 >
-                  {themeName}
+                  {t(PRESET_LABELS[themeName as PresetThemeKey])}
                 </button>
               ))}
             </div>
@@ -252,7 +261,7 @@ export default function SettingsScreen({ onBack }: Props) {
               onClick={() => toggleSection('home')}
               aria-expanded={activeSection === 'home'}
             >
-              <span>🖼️ Pantalla d'Inici</span>
+              <span>🖼️ {t('settings.section.home')}</span>
               {activeSection === 'home' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {/* Contingut que es mostra si la secció està activa */}
@@ -273,7 +282,7 @@ export default function SettingsScreen({ onBack }: Props) {
               onClick={() => toggleSection('levelSelect')}
               aria-expanded={activeSection === 'levelSelect'}
             >
-              <span>🔢 Selecció de Nivell</span>
+              <span>🔢 {t('settings.section.levelSelect')}</span>
               {activeSection === 'levelSelect' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {activeSection === 'levelSelect' && (
@@ -293,7 +302,7 @@ export default function SettingsScreen({ onBack }: Props) {
               onClick={() => toggleSection('levelScreen')}
               aria-expanded={activeSection === 'levelScreen'}
             >
-              <span>🕹️ Pantalla de Joc</span>
+              <span>🕹️ {t('settings.section.levelScreen')}</span>
               {activeSection === 'levelScreen' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {activeSection === 'levelScreen' && (
@@ -313,7 +322,7 @@ export default function SettingsScreen({ onBack }: Props) {
               onClick={() => toggleSection('multiplayer')}
               aria-expanded={activeSection === 'multiplayer'}
             >
-              <span>👥 Multijugador</span>
+              <span>👥 {t('settings.section.multiplayer')}</span>
               {activeSection === 'multiplayer' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {activeSection === 'multiplayer' && (
@@ -333,7 +342,7 @@ export default function SettingsScreen({ onBack }: Props) {
               onClick={() => toggleSection('game')}
               aria-expanded={activeSection === 'game'}
             >
-              <span>🔊 Configuració de Joc</span>
+              <span>🔊 {t('settings.section.game')}</span>
               {activeSection === 'game' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
             {activeSection === 'game' && (
@@ -348,19 +357,19 @@ export default function SettingsScreen({ onBack }: Props) {
 
 
           <button onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>
-            <Save size={18} /> Desar Configuració
+            <Save size={18} /> {t('settings.save')}
           </button>
           {saveSuccess && (
             <div role="status" aria-live="polite" style={{ textAlign: 'center', color: '#059669', marginTop: 8, fontWeight: 700 }}>
-              Configuració seleccionada aplicada correctament!
+              {t('settings.saveSuccess')}
             </div>
           )}
         </div>
 
         {/* Columna Dreta: Previsualització */}
-        <aside style={styles.previewColumn} aria-label="Vista prèvia en temps real">
+        <aside style={styles.previewColumn} aria-label={t('settings.preview.aria')}>
           <div style={styles.previewHeader}>
-            <span>Vista Prèvia en Temps Real</span>
+            <span>{t('settings.preview.title')}</span>
           </div>
           <div style={styles.previewContent}>
             {previewSection === 'home' && (
@@ -385,7 +394,7 @@ export default function SettingsScreen({ onBack }: Props) {
 
             {!previewSection && (
               <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
-                {"Selecciona una secció per veure la previsualització."}
+                {t('settings.preview.empty')}
               </p>
             )}
           </div>
@@ -394,7 +403,7 @@ export default function SettingsScreen({ onBack }: Props) {
             {previewSection === 'levelScreen' || previewSection === 'game' ? (
               <LevelScreenLegend settings={currentSettings.visuals.levelScreen} />
             ) : (
-              <p>Pàgina sense llegenda</p>
+              <p>{t('settings.preview.noLegend')}</p>
             )}
           </div>
         </aside>
@@ -404,12 +413,12 @@ export default function SettingsScreen({ onBack }: Props) {
       {showUnsavedModal && (
         <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.66)', zIndex: 60 }}>
           <div style={{ width: 'min(560px, 92%)', background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: 20, boxShadow: PALETTE.shadow }} role="dialog" aria-modal="true">
-            <h3 style={{ margin: 0, marginBottom: 8 }}>Tens canvis no desats</h3>
-            <p style={{ marginTop: 0, color: PALETTE.subtext }}>Vols desar els canvis abans de sortir?</p>
+            <h3 style={{ margin: 0, marginBottom: 8 }}>{t('settings.unsaved.title')}</h3>
+            <p style={{ marginTop: 0, color: PALETTE.subtext }}>{t('settings.unsaved.body')}</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={() => setShowUnsavedModal(false)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>Cancel·lar</button>
-              <button onClick={handleDiscardAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>Descartar i sortir</button>
-              <button onClick={handleSaveAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: PALETTE.easyGreen, color: '#0A192F', fontWeight: 700 }}>Desar i sortir</button>
+              <button onClick={() => setShowUnsavedModal(false)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('common.cancel')}</button>
+              <button onClick={handleDiscardAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('settings.unsaved.discard')}</button>
+              <button onClick={handleSaveAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: PALETTE.easyGreen, color: '#0A192F', fontWeight: 700 }}>{t('settings.unsaved.saveExit')}</button>
             </div>
           </div>
         </div>

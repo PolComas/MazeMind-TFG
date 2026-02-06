@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, CheckCircle, Target, Eye, Gamepad2, Zap } from 'lucide-react';
 import { PALETTE } from './palette';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   step: number;
@@ -11,38 +12,39 @@ type Props = {
 // Passos del tutorial
 export const tutorialSteps = [
   {
-    title: "Benvingut al Tutorial!",
-    description: "Aprendrem junts com jugar a MazeMind. Prem 'Següent' per començar.",
+    titleKey: 'tutorial.step1.title',
+    descriptionKey: 'tutorial.step1.body',
     icon: Target,
   },
   {
-    title: "Memoritza el Laberint",
-    description: "Fixa't bé en el laberint. Les línies són parets que no pots travessar. Tu ets el cercle i el quadrat és la sortida.",
+    titleKey: 'tutorial.step2.title',
+    descriptionKey: 'tutorial.step2.body',
     icon: Eye,
   },
   {
-    title: "Prepara't!",
-    description: "En uns segons, les parets desapareixeran i hauràs de recordar el camí. Intenta visualitzar mentalment la ruta.",
+    titleKey: 'tutorial.step3.title',
+    descriptionKey: 'tutorial.step3.body',
     icon: Eye,
   },
   {
-    title: "Ara et toca!",
-    description: "Usa les Fletxes o les tecles WASD configurades per moure't. Les parets són invisibles però encara estan allà! Intenta arribar a la sortida.",
+    titleKey: 'tutorial.step4.title',
+    descriptionKey: 'tutorial.step4.body',
     icon: Gamepad2,
   },
   {
-    title: "Ajudes Disponibles",
-    description: "Si et perds, pots usar les ajudes del HUD: 'Revelar' (costa punts), 'Mostrar Camí' o 'Ajuda Xoc' (costen punts per temps/ús).",
+    titleKey: 'tutorial.step5.title',
+    descriptionKey: 'tutorial.step5.body',
     icon: Zap,
   },
   {
-    title: "Tutorial Completat!",
-    description: "Ja saps com jugar! Recorda que la pràctica fa el mestre. Prem 'Començar a Jugar!' per sortir del tutorial.",
+    titleKey: 'tutorial.step6.title',
+    descriptionKey: 'tutorial.step6.body',
     icon: CheckCircle,
   }
 ];
 
 export default function TutorialOverlay({ step, onNext, onSkip }: Props) {
+  const { t } = useLanguage();
   const currentStep = tutorialSteps[step] || tutorialSteps[0];
   const Icon = currentStep.icon;
   const isLastStep = step === tutorialSteps.length - 1;
@@ -89,9 +91,11 @@ export default function TutorialOverlay({ step, onNext, onSkip }: Props) {
             <Icon size={28} color="#fff" />
           </div>
           <div>
-            <div style={styles.stepCounter}>Pas {step + 1} de {tutorialSteps.length}</div>
-            <h2 style={styles.title}>{currentStep.title}</h2>
-            <p style={styles.description}>{currentStep.description}</p>
+            <div style={styles.stepCounter}>
+              {t('tutorial.stepCounter.before')} {step + 1} {t('tutorial.stepCounter.middle')} {tutorialSteps.length}
+            </div>
+            <h2 style={styles.title}>{t(currentStep.titleKey)}</h2>
+            <p style={styles.description}>{t(currentStep.descriptionKey)}</p>
           </div>
         </div>
 
@@ -100,9 +104,9 @@ export default function TutorialOverlay({ step, onNext, onSkip }: Props) {
         </div>
 
         <div style={styles.footer}>
-          <button style={styles.skipButton} onClick={onSkip}>Saltar Tutorial</button>
+          <button style={styles.skipButton} onClick={onSkip}>{t('tutorial.action.skip')}</button>
           <button style={styles.nextButton} onClick={onNext}>
-            {isLastStep ? 'Començar a Jugar!' : 'Següent'}
+            {isLastStep ? t('tutorial.action.start') : t('common.next')}
             {!isLastStep && <ArrowRight size={18} />}
           </button>
         </div>

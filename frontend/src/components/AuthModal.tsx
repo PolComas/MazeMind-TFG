@@ -6,6 +6,7 @@ import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // Props per al modal
 type Props = {
@@ -134,6 +135,7 @@ export default function AuthModal({ onClose }: Props) {
   const visualSettings = getVisualSettings('home');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
   const { user } = useUser();
+  const { t } = useLanguage();
 
   const onCloseWithSound = () => {
     audio.playFail();
@@ -212,7 +214,7 @@ export default function AuthModal({ onClose }: Props) {
     setError(null);
     setSuccessMessage(null);
     if (!email) {
-      setError('Introdueix el correu per enviar l’enllaç de restabliment.');
+      setError(t('auth.reset.prompt'));
       return;
     }
     setIsResetSending(true);
@@ -222,9 +224,9 @@ export default function AuthModal({ onClose }: Props) {
         redirectTo,
       });
       if (error) throw error;
-      setSuccessMessage('Si el correu existeix al sistema, t’hem enviat un enllaç per restablir la contrasenya.');
+      setSuccessMessage(t('auth.reset.success'));
     } catch (_e) {
-      setError('No s’ha pogut enviar el correu de restabliment. Torna-ho a provar.');
+      setError(t('auth.reset.error'));
     } finally {
       setIsResetSending(false);
     }
@@ -238,17 +240,17 @@ export default function AuthModal({ onClose }: Props) {
 
     // Validacions Bàsiques
     if (!email || !password) {
-      setError('El correu i la contrasenya són obligatoris.');
+      setError(t('auth.validation.required'));
       return;
     }
 
     if (password.length < 6) {
-      setError('La contrasenya ha de tenir com a mínim 6 caràcters.');
+      setError(t('auth.validation.passwordMin'));
       return;
     }
 
     if (isRegistering && password !== confirmPassword) {
-      setError('Les contrasenyes no coincideixen.');
+      setError(t('auth.validation.passwordMismatch'));
       return;
     }
 
@@ -270,24 +272,24 @@ export default function AuthModal({ onClose }: Props) {
         if (signUpError) {
           const msg = signUpError.message?.toLowerCase() ?? '';
           if (msg.includes('registered') || msg.includes('already')) {
-            setError('Aquest correu ja està registrat. Inicia sessió o recupera la contrasenya.');
+            setError(t('auth.error.emailExists'));
           } else if (msg.includes('rate') || msg.includes('too many')) {
-            setError('Has fet massa intents. Espera uns minuts i torna-ho a provar.');
+            setError(t('auth.rateLimit'));
           } else {
-            setError('No s’ha pogut completar el registre. Torna-ho a provar.');
+            setError(t('auth.error.signupFailed'));
           }
           return;
         }
 
         // Cas fantasma de Supabase: usuari ja existeix -> identities buides
         if (data?.user && Array.isArray((data.user as any).identities) && (data.user as any).identities.length === 0) {
-          setError('Aquest correu ja està registrat. Inicia sessió o recupera la contrasenya.');
+          setError(t('auth.error.emailExists'));
           return;
         }
 
         // Demanar verificació per correu
         if (!data.session) {
-          setSuccessMessage('Hem enviat un correu de verificació. Revisa la safata d\'entrada per completar el registre.');
+          setSuccessMessage(t('auth.verify.sent'));
           return;
         }
       } else {
@@ -298,7 +300,7 @@ export default function AuthModal({ onClose }: Props) {
       }
     } catch (apiError) {
       console.error('Error en autenticació Supabase:', apiError);
-      setError(apiError instanceof Error ? apiError.message : 'Ha ocorregut un error. Torna a intentar-ho.');
+      setError(apiError instanceof Error ? apiError.message : t('auth.error.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -308,13 +310,13 @@ export default function AuthModal({ onClose }: Props) {
     <div style={styles.overlay} onClick={onCloseWithSound} role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* Botó per tancar el modal */}
-        <button style={styles.closeButton} onClick={onCloseWithSound} aria-label="Tancar modal d'autenticació">
+        <button style={styles.closeButton} onClick={onCloseWithSound} aria-label={t('auth.modal.closeLabel')}>
           <X size={20} />
         </button>
 
         {/* Títol segons si és registre o inici de sessió */}
         <h2 id="auth-title" style={styles.title}>
-          {isRegistering ? 'Crear Compte' : 'Iniciar Sessió'}
+          {isRegistering ? t('auth.create.title') : t('auth.login.title')}
         </h2>
 
         {successMessage ? (
@@ -325,7 +327,7 @@ export default function AuthModal({ onClose }: Props) {
               type="button"
               onClick={onCloseWithSound}
             >
-              Entesos
+              {t('common.ok')}
             </button>
           </div>
         ) : (
@@ -335,11 +337,11 @@ export default function AuthModal({ onClose }: Props) {
 
             {/* Formulari */}
             <form onSubmit={handleSubmit} style={styles.form}>
-              <label htmlFor="email-input" style={styles.label}>Correu electrònic</label>
+              <label htmlFor="email-input" style={styles.label}>{t('auth.email')}</label>
               <input
                 id="email-input"
                 type="email"
-                placeholder="el.teu@correu.com"
+                placeholder={t('auth.email.placeholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={styles.input}
@@ -347,11 +349,11 @@ export default function AuthModal({ onClose }: Props) {
                 aria-required="true"
                 autoComplete="email"
               />
-              <label htmlFor="password-input" style={styles.label}>Contrasenya</label>
+              <label htmlFor="password-input" style={styles.label}>{t('auth.password')}</label>
               <input
                 id="password-input"
                 type="password"
-                placeholder="••••••••"
+                placeholder={t('auth.password.placeholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={styles.input}
@@ -362,11 +364,11 @@ export default function AuthModal({ onClose }: Props) {
               />
               {isRegistering && (
                 <>
-                  <label htmlFor="password2-input" style={styles.label}>Repeteix la contrasenya</label>
+                  <label htmlFor="password2-input" style={styles.label}>{t('auth.passwordRepeat')}</label>
                   <input
                     id="password2-input"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth.password.placeholder')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     style={styles.input}
@@ -384,10 +386,10 @@ export default function AuthModal({ onClose }: Props) {
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? 'Enviant...'
+                  ? t('common.sending')
                   : isRegistering
-                    ? 'Registrar-se'
-                    : 'Entrar'}
+                    ? t('auth.signup')
+                    : t('auth.signin')}
               </button>
 
               {!isRegistering && (
@@ -397,7 +399,7 @@ export default function AuthModal({ onClose }: Props) {
                   style={styles.toggleButton}
                   disabled={isSubmitting || isResetSending}
                 >
-                  {isResetSending ? 'Enviant...' : 'He oblidat la contrasenya'}
+                  {isResetSending ? t('common.sending') : t('auth.reset.cta')}
                 </button>
               )}
             </form>
@@ -414,8 +416,8 @@ export default function AuthModal({ onClose }: Props) {
               disabled={isSubmitting}
             >
               {isRegistering
-                ? 'Ja tens compte? Inicia sessió'
-                : 'No tens compte? Registra\'t'}
+                ? t('auth.haveAccount')
+                : t('auth.needAccount')}
             </button>
           </>
         )}

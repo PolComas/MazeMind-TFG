@@ -4,6 +4,7 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   onRetry: () => void;
@@ -104,6 +105,7 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 export default function GameOverModal({ onRetry, onBack, score, bestScore, isPracticeScoreMode, }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
   const roundedScore = typeof score === 'number' ? Math.round(score) : undefined;
@@ -135,19 +137,19 @@ export default function GameOverModal({ onRetry, onBack, score, bestScore, isPra
         </div>
 
         <h2 id="modalTitle" style={styles.title}>
-          {isPracticeScoreMode ? "Game Over" : "Has Perdut!"}
+          {isPracticeScoreMode ? t('gameover.title.practice') : t('gameover.title.standard')}
         </h2>
 
-        <p style={styles.subtitle}>T'has quedat sense vides.</p>
+        <p style={styles.subtitle}>{t('gameover.subtitle.noLives')}</p>
 
         {typeof roundedScore === 'number' && typeof roundedBest === 'number' && (
           <div style={styles.results}>
             <div style={styles.resultItem}>
-              <span style={styles.resultLabel}>Score Actual</span>
+              <span style={styles.resultLabel}>{t('gameover.score.current')}</span>
               <span style={styles.resultValue}>{roundedScore}</span>
             </div>
             <div style={styles.resultItem}>
-              <span style={styles.resultLabel}>Millor score</span>
+              <span style={styles.resultLabel}>{t('gameover.score.best')}</span>
               <span style={styles.resultValue}>{roundedBest}</span>
             </div>
           </div>
@@ -156,10 +158,10 @@ export default function GameOverModal({ onRetry, onBack, score, bestScore, isPra
         {/* Botons */}
         <div style={styles.actions}>
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onRetry}>
-            <RefreshCcw size={18} /> Tornar a Intentar
+            <RefreshCcw size={18} /> {t('gameover.action.retry')}
           </button>
           <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBack}>
-            <ArrowLeft size={18} /> Tornar als Nivells
+            <ArrowLeft size={18} /> {t('gameover.action.back')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import type { MultiplayerMatch, MultiplayerPlayer } from '../../lib/multiplayer';
 import NetworkBackground from '../NetworkBackground';
 import { useSettings } from '../../context/SettingsContext';
@@ -12,6 +13,7 @@ type LobbyScreenProps = {
 };
 
 export default function LobbyScreen({ match, players, currentUserId, onLeave }: LobbyScreenProps) {
+    const { t } = useLanguage();
     const { getVisualSettings } = useSettings();
     const screenSettings = getVisualSettings('levelSelect');
     const me = players.find((p) => p.user_id === currentUserId);
@@ -135,12 +137,12 @@ export default function LobbyScreen({ match, players, currentUserId, onLeave }: 
                 backgroundColor={screenSettings.backgroundColor}
             />
             <div style={styles.header}>
-                <h1 style={styles.title}>Multijugador</h1>
-                <div style={styles.subtitle}>Esperant jugadors...</div>
+                <h1 style={styles.title}>{t('multiplayer.title')}</h1>
+                <div style={styles.subtitle}>{t('multiplayer.waiting')}</div>
             </div>
 
             <div style={styles.codeBox}>
-                <span style={styles.codeLabel}>Codi de sala</span>
+                <span style={styles.codeLabel}>{t('multiplayer.code')}</span>
                 <span style={styles.codeValue}>{match.code}</span>
             </div>
 
@@ -150,10 +152,10 @@ export default function LobbyScreen({ match, players, currentUserId, onLeave }: 
                     <div style={styles.avatar}>
                         {me?.display_name?.[0]?.toUpperCase() ?? me?.user_id?.slice(0, 1)?.toUpperCase() ?? '?'}
                     </div>
-                    <div style={styles.playerName}>{me?.display_name ?? 'Tu'}</div>
+                    <div style={styles.playerName}>{me?.display_name ?? t('multiplayer.you')}</div>
                 </div>
 
-                <div style={styles.vsBadge}>VS</div>
+                <div style={styles.vsBadge}>{t('multiplayer.vs')}</div>
 
                 <div style={{ ...styles.playerCard, ...(opponent ? {} : { opacity: 0.6 }) }}>
                     {opponent ? (
@@ -161,25 +163,25 @@ export default function LobbyScreen({ match, players, currentUserId, onLeave }: 
                             <div style={{ ...styles.avatar, background: 'linear-gradient(135deg, #f43f5e 0%, #f97316 100%)', boxShadow: '0 0 20px rgba(244, 63, 94, 0.4)' }}>
                                 {opponent.display_name?.[0]?.toUpperCase() ?? '?'}
                             </div>
-                            <div style={styles.playerName}>{opponent.display_name ?? 'Rival'}</div>
+                            <div style={styles.playerName}>{opponent.display_name ?? t('multiplayer.opponent')}</div>
                         </>
                     ) : (
                         <>
                             <div style={{ ...styles.avatar, ...styles.avatarEmpty }}>
                                 ?
                             </div>
-                            <div style={styles.playerName}>Esperant...</div>
+                            <div style={styles.playerName}>{t('common.waiting')}</div>
                         </>
                     )}
                 </div>
             </div>
 
             <div style={{ textAlign: 'center', opacity: 0.6, fontSize: 14 }}>
-                Mode: {match.config.difficulty.toUpperCase()} • {match.rounds_count} Rondes
+                {t('multiplayer.mode')}: {t(`difficulty.${match.config.difficulty}`)} • {match.rounds_count} {t('multiplayer.rounds')}
             </div>
 
             <button style={styles.button} onClick={onLeave}>
-                Cancel·lar
+                {t('common.cancel')}
             </button>
         </div>
     );

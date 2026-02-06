@@ -13,6 +13,7 @@ import PracticeNormalScreen from './pages/PracticeNormalScreen';
 //import MazeGeneratorScreen from './pages/MazeGeneratorScreen';
 import { useUser } from './context/UserContext';
 import { useSettings } from './context/SettingsContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { getCloudSnapshot } from './lib/sync';
 import PracticeIAScreen from './pages/PracticeIAScreen';
 import MultiplayerScreen from './pages/MultiplayerScreen';
@@ -533,15 +534,15 @@ export default function App() {
       break;
 
     case 'practice-ia': {
-    screen = (
-      <PracticeIAScreen
-        key={navKey}
-        onBack={() => go('/levels')}
-        progress={progress}
-      />
-    );
-    break;
-  }
+      screen = (
+        <PracticeIAScreen
+          key={navKey}
+          onBack={() => go('/levels')}
+          progress={progress}
+        />
+      );
+      break;
+    }
 
     case 'multiplayer': {
       screen = (
@@ -627,8 +628,8 @@ export default function App() {
   }
 
   return (
-    <>
+    <LanguageProvider>
       {screen}
-    </>
+    </LanguageProvider>
   );
 }

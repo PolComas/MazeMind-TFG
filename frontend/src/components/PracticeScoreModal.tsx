@@ -4,6 +4,7 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   levelNumber: number;
@@ -76,6 +77,7 @@ export default function PracticeScoreModal({
 }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
+  const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
 
@@ -103,17 +105,17 @@ export default function PracticeScoreModal({
           <CheckCircle size={56} />
         </div>
         <h2 id="modalTitle" style={styles.title}>
-          Nivell {levelNumber + 1} Superat!
+          {t('practiceScore.title.before')} {levelNumber + 1} {t('practiceScore.title.after')}
         </h2>
 
         {/* Resultats */}
         <div style={styles.results}>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Punts Aconseguits</span>
+            <span style={styles.resultLabel}>{t('practiceScore.result.pointsGained')}</span>
             <span style={styles.resultValue}>+{Math.round(pointsGained)}</span>
           </div>
           <div style={styles.resultItem}>
-            <span style={styles.resultLabel}>Puntuació Total</span>
+            <span style={styles.resultLabel}>{t('practiceScore.result.total')}</span>
             <span style={styles.resultValue}>{Math.round(totalScore)}</span>
           </div>
         </div>
@@ -121,10 +123,10 @@ export default function PracticeScoreModal({
         {/* Botons */}
         <div style={styles.actions}>
           <button onMouseEnter={() => audio.playHover()} style={styles.retryButton} onClick={onNextLevel}>
-            Següent Nivell <ArrowRight size={18} />
+            {t('practiceScore.action.next')} <ArrowRight size={18} />
           </button>
           <button onMouseEnter={() => audio.playHover()} style={styles.backButton} onClick={onBack}>
-            <ArrowLeft size={18} /> Tornar al Menú
+            <ArrowLeft size={18} /> {t('practiceScore.action.back')}
           </button>
         </div>
       </div>

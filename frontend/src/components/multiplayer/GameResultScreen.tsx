@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { MultiplayerPlayer } from '../../lib/multiplayer';
 import NetworkBackground from '../NetworkBackground';
 import { useSettings } from '../../context/SettingsContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 type GameResultScreenProps = {
     players: MultiplayerPlayer[];
@@ -12,6 +13,7 @@ type GameResultScreenProps = {
 export default function GameResultScreen({ players, currentUserId, onExit }: GameResultScreenProps) {
     const { getVisualSettings } = useSettings();
     const screenSettings = getVisualSettings('levelSelect');
+    const { t } = useLanguage();
 
     // Sort by points descending
     const sortedPlayers = [...players].sort((a, b) => b.total_points - a.total_points);
@@ -125,14 +127,14 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
                 <div style={styles.header}>
                     <span style={styles.emoji}>{isTie ? '🤝' : isMeWinner ? '🏆' : '💀'}</span>
                     <h1 style={styles.title}>
-                        {isTie ? 'EMPAT!' : isMeWinner ? 'VICTÒRIA!' : 'DERROTA'}
+                        {isTie ? t('multiplayer.result.tie') : isMeWinner ? t('multiplayer.result.win') : t('multiplayer.result.loss')}
                     </h1>
                     <div style={styles.subtitle}>
                         {isTie
-                            ? 'Ha estat molt renyit!'
+                            ? t('multiplayer.result.tieSubtitle')
                             : isMeWinner
-                                ? 'Felicitats, has dominat el laberint!'
-                                : 'Ho faràs millor la propera vegada!'}
+                                ? t('multiplayer.result.winSubtitle')
+                                : t('multiplayer.result.lossSubtitle')}
                     </div>
                 </div>
 
@@ -140,7 +142,9 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
                     {sortedPlayers.map((p, i) => (
                         <div key={p.user_id} style={styles.row}>
                             <span style={styles.rank}>#{i + 1}</span>
-                            <span style={styles.name}>{p.display_name || 'Juegador/a'} {p.user_id === currentUserId && '(Tu)'}</span>
+                            <span style={styles.name}>
+                                {p.display_name || t('multiplayer.result.player')} {p.user_id === currentUserId && t('multiplayer.result.youSuffix')}
+                            </span>
                             <span style={styles.score}>{p.total_points} pts</span>
                         </div>
                     ))}
@@ -152,7 +156,7 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
                     onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
                     onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                 >
-                    Tornar al Menú
+                    {t('multiplayer.result.back')}
                 </button>
             </div>
         </div>

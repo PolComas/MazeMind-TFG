@@ -1,11 +1,13 @@
 import React from 'react';
 import type { VisualSettings } from '../../utils/settings';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
 };
 
 export default function LevelScreenLegend({ settings }: Props) {
+  const { t } = useLanguage();
   const styles: Record<string, React.CSSProperties> = {
     container: { 
       width: '100%', 
@@ -45,7 +47,7 @@ export default function LevelScreenLegend({ settings }: Props) {
 
   return (
     <div style={styles.container}>
-      <h4 style={styles.title}>Llegenda</h4>
+      <h4 style={styles.title}>{t('levelLegend.title')}</h4>
       <ul style={styles.list}>
         
         {/* 1. Parets del laberint */}
@@ -55,7 +57,7 @@ export default function LevelScreenLegend({ settings }: Props) {
             background: settings.mazePathColor,
             border: `${Math.max(2, (settings.mazeWallThickness || 3) / 1.5)}px solid ${settings.mazeWallColor}`,
           }} />
-          <span>Parets del laberint</span>
+          <span>{t('levelLegend.walls')}</span>
         </li>
         
         {/* 2. Tu (jugador) */}
@@ -65,7 +67,7 @@ export default function LevelScreenLegend({ settings }: Props) {
             backgroundColor: settings.mazePlayerColor,
             borderRadius: '50%', // Rodó
           }} />
-          <span>Tu (jugador)</span>
+          <span>{t('levelLegend.player')}</span>
         </li>
 
         {/* 3. Sortida del laberint */}
@@ -74,7 +76,7 @@ export default function LevelScreenLegend({ settings }: Props) {
             ...styles.swatch,
             backgroundColor: settings.mazeExitColor,
           }} />
-          <span>Sortida del laberint</span>
+          <span>{t('levelLegend.exit')}</span>
         </li>
         
         {/* 4. Fons/camí del laberint */}
@@ -83,7 +85,7 @@ export default function LevelScreenLegend({ settings }: Props) {
             ...styles.swatch,
             backgroundColor: settings.mazePathColor,
           }} />
-          <span>Fons/camí del laberint</span>
+          <span>{t('levelLegend.path')}</span>
         </li>
       </ul>
     </div>

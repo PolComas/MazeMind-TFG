@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import NetworkBackground from '../components/NetworkBackground';
+import { useLanguage } from '../context/LanguageContext';
 
 export type CustomLevelConfig = {
   width: number;
@@ -21,6 +22,7 @@ const clamp = (val: number, min: number, max: number) => {
 
 export default function FreeModeScreen({ onBack, onStartGame }: Props) {
   const { getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const screenSettings = getVisualSettings('levelSelect');
 
   const difficultyColors = useMemo(() => ({
@@ -114,17 +116,17 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
       />
       <div style={styles.container}>
         <header style={styles.header}>
-          <button style={styles.backBtn} onClick={onBack} aria-label="Tornar a selecció de nivell">
-            <span aria-hidden="true">←</span> Tornar
+          <button style={styles.backBtn} onClick={onBack} aria-label={t('level.aria.backToSelect')}>
+            <span aria-hidden="true">←</span> {t('common.back')}
           </button>
-          <h1 style={styles.title}>Mode Lliure</h1>
+          <h1 style={styles.title}>{t('freeMode.title')}</h1>
           <div style={{ width: 100 }} />
         </header>
 
         {/* Formulari mida i temps */}
         <div style={styles.form}>
           <div>
-            <label style={styles.label} htmlFor="width">Amplada (Min: 5, Max: 25)</label>
+            <label style={styles.label} htmlFor="width">{t('freeMode.widthLabel')}</label>
             {(() => {
               const parsed = parseInt(width, 10);
               const valid = !Number.isNaN(parsed) && parsed >= 5 && parsed <= 25;
@@ -142,7 +144,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
                   />
                   {showError && (
                     <div id="width-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
-                      Amplada invàlida — ha de ser entre 5 i 25.
+                      {t('freeMode.widthError')}
                     </div>
                   )}
                 </>
@@ -150,7 +152,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
             })()}
           </div>
           <div>
-            <label style={styles.label} htmlFor="height">Alçada (Min: 5, Max: 25)</label>
+            <label style={styles.label} htmlFor="height">{t('freeMode.heightLabel')}</label>
             {(() => {
               const parsed = parseInt(height, 10);
               const valid = !Number.isNaN(parsed) && parsed >= 5 && parsed <= 25;
@@ -168,7 +170,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
                   />
                   {showError && (
                     <div id="height-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
-                      Alçada invàlida — ha de ser entre 5 i 25.
+                      {t('freeMode.heightError')}
                     </div>
                   )}
                 </>
@@ -176,7 +178,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
             })()}
           </div>
           <div>
-            <label style={styles.label} htmlFor="time">Temps de Memorització (Min: 3, Max: 60)</label>
+            <label style={styles.label} htmlFor="time">{t('freeMode.timeLabel')}</label>
             {(() => {
               const parsed = parseInt(time, 10);
               const valid = !Number.isNaN(parsed) && parsed >= 3 && parsed <= 60;
@@ -194,7 +196,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
                   />
                   {showError && (
                     <div id="time-error" style={{ marginTop: 6, color: '#ef4444', fontSize: 13 }}>
-                      Temps invàlid — ha de ser entre 3 i 60 segons.
+                      {t('freeMode.timeError')}
                     </div>
                   )}
                 </>
@@ -203,26 +205,26 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
           </div>
           {/* Selector de dificultat (vides) */}
           <div>
-            <label style={styles.label} htmlFor="difficulty">Dificultat</label>
+            <label style={styles.label} htmlFor="difficulty">{t('freeMode.difficultyLabel')}</label>
             <select
               id="difficulty" style={styles.select}
               value={difficulty} onChange={(e) => setDifficulty(e.target.value as 'normal' | 'hard')}
             >
-              <option value="normal">Normal (Sense vides)</option>
-              <option value="hard">Difícil (Amb vides)</option>
+              <option value="normal">{t('freeMode.difficulty.normal')}</option>
+              <option value="hard">{t('freeMode.difficulty.hard')}</option>
             </select>
           </div>
 
           {/* Input per a Seed */}
           <div>
-            <label style={styles.label} htmlFor="seed">Seed (Opcional - Repta als teus amics!)</label>
+            <label style={styles.label} htmlFor="seed">{t('freeMode.seedLabel')}</label>
             <input
               style={styles.input}
               type="text"
               id="seed"
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
-              placeholder="Ex: REPTEDIARI"
+              placeholder={t('freeMode.seedPlaceholder')}
             />
           </div>
 
@@ -240,9 +242,9 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
                 onClick={handleStart}
                 disabled={!allValid}
                 aria-disabled={!allValid}
-                title={allValid ? 'Jugar' : 'Corregeix valors invàlids abans de jugar'}
+                title={allValid ? t('common.play') : t('freeMode.playDisabled')}
               >
-                Jugar
+                {t('common.play')}
               </button>
             );
           })()}

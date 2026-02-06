@@ -5,6 +5,7 @@ import { generateLevel, type Diff, type Level } from '../maze/maze_generator';
 import { analyzeLevel, type MazeAnalysis, getTurnPositions } from '../maze/maze_stats';
 import { useSettings } from '../context/SettingsContext';
 import { PALETTE } from '../components/palette';
+import { useLanguage } from '../context/LanguageContext';
 
 type FormState = {
   width: number;
@@ -34,6 +35,7 @@ const cleanLevel = (level: Level) => ({
 
 export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) {
   const { getVisualSettings } = useSettings();
+  const { t } = useLanguage();
   const visuals = getVisualSettings('levelSelect');
 
   const [form, setForm] = useState<FormState>({
@@ -79,15 +81,15 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
   };
 
   const stats = [
-    { label: 'Mida', value: `${analysis.width} x ${analysis.height} (${analysis.totalCells} cel·les)` },
-    { label: 'Camí òptim', value: `${analysis.optimalPathLength} passos` },
-    { label: 'Nº de girs', value: analysis.optimalPathTurns },
+    { label: t('mazeLab.stats.size'), value: `${analysis.width} x ${analysis.height} (${analysis.totalCells} ${t('mazeLab.stats.cells')})` },
+    { label: t('mazeLab.stats.optimalPath'), value: `${analysis.optimalPathLength} ${t('mazeLab.stats.steps')}` },
+    { label: t('mazeLab.stats.turns'), value: analysis.optimalPathTurns },
     {
-      label: 'Cruïlles',
-      value: `${analysis.intersections} (${(analysis.intersectionDensity * 100).toFixed(1)}% densitat)`,
+      label: t('mazeLab.stats.intersections'),
+      value: `${analysis.intersections} (${(analysis.intersectionDensity * 100).toFixed(1)}% ${t('mazeLab.stats.density')})`,
     },
-    { label: 'Culs de sac', value: analysis.deadEnds },
-    { label: 'Path_cells', value: `${analysis.pathCells.length} cel·les` },
+    { label: t('mazeLab.stats.deadEnds'), value: analysis.deadEnds },
+    { label: t('mazeLab.stats.pathCells'), value: `${analysis.pathCells.length} ${t('mazeLab.stats.cells')}` },
   ];
 
   const styles = useMemo(() => ({
@@ -202,15 +204,15 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
       <div style={styles.container}>
         <header style={styles.header}>
           <button style={styles.backBtn} onClick={onBack}>
-            ← Tornar
+            ← {t('common.back')}
           </button>
-          <h1 style={styles.title}>Laboratori de Laberints (Temporal)</h1>
+          <h1 style={styles.title}>{t('mazeLab.title')}</h1>
           <div style={styles.actions}>
             <button style={styles.primaryBtn} onClick={regenerate}>
-              Generar nou laberint
+              {t('mazeLab.generate')}
             </button>
             <button style={{ ...styles.primaryBtn, background: PALETTE.normalYellow, color: '#0B1021' }} onClick={handleDownload}>
-              Descarregar JSON
+              {t('mazeLab.download')}
             </button>
           </div>
         </header>
@@ -218,7 +220,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
         <section style={styles.surface}>
           <div style={styles.formRow}>
             <label style={styles.label}>
-              Amplada
+              {t('mazeLab.form.width')}
               <input
                 style={styles.input}
                 type="number"
@@ -229,7 +231,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
               />
             </label>
             <label style={styles.label}>
-              Alçada
+              {t('mazeLab.form.height')}
               <input
                 style={styles.input}
                 type="number"
@@ -240,19 +242,19 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
               />
             </label>
             <label style={styles.label}>
-              Dificultat
+              {t('mazeLab.form.difficulty')}
               <select
                 style={styles.input}
                 value={form.difficulty}
                 onChange={(e) => handleChange('difficulty', e.target.value as Diff)}
               >
-                <option value="easy">Fàcil</option>
-                <option value="normal">Normal</option>
-                <option value="hard">Difícil</option>
+                <option value="easy">{t('difficulty.easy')}</option>
+                <option value="normal">{t('difficulty.normal')}</option>
+                <option value="hard">{t('difficulty.hard')}</option>
               </select>
             </label>
             <label style={styles.label}>
-              Temps memòria (s)
+              {t('mazeLab.form.memorize')}
               <input
                 style={styles.input}
                 type="number"
@@ -263,7 +265,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
               />
             </label>
             <label style={styles.label}>
-              Nº nivell (per ID)
+              {t('mazeLab.form.levelNumber')}
               <input
                 style={styles.input}
                 type="number"
@@ -297,7 +299,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
           </div>
 
           <div style={{ ...styles.surface, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 18 }}>Estadístiques</h2>
+            <h2 style={{ margin: 0, fontSize: 18 }}>{t('mazeLab.stats.title')}</h2>
             <div style={styles.statGrid}>
               {stats.map((s) => (
                 <div key={s.label} style={styles.statCard}>
@@ -308,7 +310,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
             </div>
             <div>
               <div style={{ fontSize: 12, color: visuals.subtextColor, marginBottom: 4 }}>
-                Path_cells (start → exit)
+                {t('mazeLab.pathCellsLabel')}
               </div>
               <div style={styles.pathPreview}>
                 {analysis.pathCells.map((p) => `(${p.x},${p.y})`).join(' → ')}
@@ -316,7 +318,7 @@ export default function MazeGeneratorScreen({ onBack }: { onBack: () => void }) 
             </div>
             <div>
               <div style={{ fontSize: 12, color: visuals.subtextColor, marginBottom: 4 }}>
-                Posicions dels girs ({turnPositions.length} girs)
+                {t('mazeLab.turnPositions')} ({turnPositions.length} {t('mazeLab.stats.turnsShort')})
               </div>
               <div style={styles.pathPreview}>
                 {turnPositions.map((p) => `(${p.x},${p.y})`).join(' → ')}

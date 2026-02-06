@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { VisualSettings } from '../../utils/settings'; 
 import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Props = {
   settings: VisualSettings;
@@ -24,6 +25,7 @@ const NumberInput = ({ label, value, onChange, inputId, min, max, step }: any) =
 );
 
 export default function LevelScreenSettings({ settings, onChange }: Props) {
+  const { t } = useLanguage();
   // Nota: 'backgroundColor' en aquesta pantalla no és un gradient, 
   // però ho mantenim per consistència amb els temes.
   const [bgColor, setBgColor] = useState(settings.backgroundColor);
@@ -47,19 +49,19 @@ export default function LevelScreenSettings({ settings, onChange }: Props) {
       <div style={styles.grid}>
         <div style={styles.column}>
           <ColorPickerWithTextInput
-            label="Color de Fons"
+            label={t('settings.levelScreen.background')}
             value={bgColor}
             onChange={handleBgColorChange}
             inputId="levelscreen-bg-color"
           />
           <ColorPickerWithTextInput
-            label="Color de Text Principal"
+            label={t('settings.levelScreen.textPrimary')}
             value={settings.textColor}
             onChange={(value) => onChange('textColor', value)}
             inputId="levelscreen-text-color"
           />
           <ColorPickerWithTextInput
-            label="Color de Text Secundari"
+            label={t('settings.levelScreen.textSecondary')}
             value={settings.subtextColor}
             onChange={(value) => onChange('subtextColor', value)}
             inputId="levelscreen-subtext-color"
@@ -67,13 +69,13 @@ export default function LevelScreenSettings({ settings, onChange }: Props) {
         </div>
         <div style={styles.column}>
           <ColorPickerWithTextInput
-            label="Color de Targetes (HUD)"
+            label={t('settings.levelScreen.cards')}
             value={settings.surfaceColor} 
             onChange={(value) => onChange('surfaceColor', value)}
             inputId="levelscreen-surface-color"
           />
           <ColorPickerWithTextInput
-            label="Color de Vores"
+            label={t('settings.levelScreen.border')}
             value={settings.borderColor}
             onChange={(value) => onChange('borderColor', value)}
             inputId="levelscreen-border-color"
@@ -83,15 +85,15 @@ export default function LevelScreenSettings({ settings, onChange }: Props) {
 
       {/* --- Secció 2: Panell "Memoritzar" --- */}
       <div style={styles.gradientGroup}>
-          <label style={styles.label}>Gradient Panell "Memoritzar"</label>
+          <label style={styles.label}>{t('settings.levelScreen.memorizeGradient')}</label>
           <ColorPickerWithTextInput
-            label="Accent 1"
+            label={t('settings.levelScreen.accent1')}
             value={settings.accentColor1}
             onChange={(value) => onChange('accentColor1', value)}
             inputId="levelscreen-accent1-color"
           />
           <ColorPickerWithTextInput
-            label="Accent 2"
+            label={t('settings.levelScreen.accent2')}
             value={settings.accentColor2}
             onChange={(value) => onChange('accentColor2', value)}
             inputId="levelscreen-accent2-color"
@@ -101,43 +103,43 @@ export default function LevelScreenSettings({ settings, onChange }: Props) {
       {/* --- Secció 3: Colors del Laberint --- */}
       <div style={styles.mazeGroup}>
         <ColorPickerWithTextInput
-          label="Color Camí (Fons Laberint)"
+          label={t('settings.levelScreen.mazePath')}
           value={settings.mazePathColor || ''}
           onChange={(value) => onChange('mazePathColor', value)}
           inputId="levelscreen-maze-path"
         />
         <ColorPickerWithTextInput
-          label="Color Parets"
+          label={t('settings.levelScreen.mazeWalls')}
           value={settings.mazeWallColor || ''}
           onChange={(value) => onChange('mazeWallColor', value)}
           inputId="levelscreen-maze-wall"
         />
         <ColorPickerWithTextInput
-          label="Color Jugador"
+          label={t('settings.levelScreen.mazePlayer')}
           value={settings.mazePlayerColor || ''}
           onChange={(value) => onChange('mazePlayerColor', value)}
           inputId="levelscreen-maze-player"
         />
         <ColorPickerWithTextInput
-          label="Color Sortida"
+          label={t('settings.levelScreen.mazeExit')}
           value={settings.mazeExitColor || ''}
           onChange={(value) => onChange('mazeExitColor', value)}
           inputId="levelscreen-maze-exit"
         />
         <ColorPickerWithTextInput
-          label="Color Camí Recorregut"
+          label={t('settings.levelScreen.mazePathHelp')}
           value={settings.playerPathColor || ''}
           onChange={(value) => onChange('playerPathColor', value)}
           inputId="levelscreen-maze-path-help"
         />
         <ColorPickerWithTextInput
-          label="Color Ajuda Xoc"
+          label={t('settings.levelScreen.mazeCrashHelp')}
           value={settings.crashHelpColor || ''}
           onChange={(value) => onChange('crashHelpColor', value)}
           inputId="levelscreen-maze-crash-help"
         />
         <NumberInput
-          label="Gruix de la Paret (px)"
+          label={t('settings.levelScreen.wallThickness')}
           value={settings.mazeWallThickness || 3}
           onChange={(value: number) => onChange('mazeWallThickness', value)}
           inputId="levelscreen-maze-thickness"
