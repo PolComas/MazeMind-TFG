@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import type { VisualSettings } from '../../utils/settings';
-import { PALETTE } from '../palette';
 import ColorPickerWithTextInput from './ColorPickerWithTextInput';
 import { useLanguage } from '../../context/LanguageContext';
 

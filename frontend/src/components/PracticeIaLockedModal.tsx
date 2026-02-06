@@ -12,7 +12,6 @@ type Props = {
 };
 
 const buildStyles = (visuals: VisualSettings): Record<string, React.CSSProperties> => {
-  const overlayColor = applyAlpha(visuals.textColor, 0.7);
   const panelBackground = applyAlpha(visuals.surfaceColor, 0.95);
   const accentGradient = `linear-gradient(90deg, ${visuals.accentColor1}, ${visuals.accentColor2})`;
 

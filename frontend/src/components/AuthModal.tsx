@@ -16,7 +16,6 @@ type Props = {
 const buildStyles = (visuals: VisualSettings) => {
   const accentGradient = `linear-gradient(90deg, ${visuals.accentColor1}, ${visuals.accentColor2})`;
   const inputBackground = applyAlpha(visuals.textColor, 0.08);
-  const overlayColor = applyAlpha(visuals.textColor, 0.75);
   const errorBackground = applyAlpha(visuals.hardColor, 0.15);
   const errorBorder = applyAlpha(visuals.hardColor, 0.3);
   const successBackground = applyAlpha(visuals.accentColor1, 0.18);

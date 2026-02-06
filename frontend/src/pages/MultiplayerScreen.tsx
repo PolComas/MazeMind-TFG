@@ -27,7 +27,6 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('levelSelect');
   const { t } = useLanguage();
-  const { t } = useLanguage();
 
   const [isPublic, setIsPublic] = useState(false);
   const [roundsCount, setRoundsCount] = useState(3);

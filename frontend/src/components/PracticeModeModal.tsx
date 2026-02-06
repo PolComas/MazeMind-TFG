@@ -16,7 +16,6 @@ type Props = {
 };
 
 const buildStyles = (visuals: VisualSettings): Record<string, React.CSSProperties> => {
-  const overlayColor = applyAlpha(visuals.textColor, 0.7);
   const cardBackground = applyAlpha(visuals.textColor, 0.06);
 
   return {

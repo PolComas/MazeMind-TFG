@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { type Language, type TranslationKey, TRANSLATIONS } from '../utils/translations';
 import { useUser } from './UserContext';
 import { fetchCloudLanguage, upsertCloudLanguage } from '../lib/cloudSettings';
