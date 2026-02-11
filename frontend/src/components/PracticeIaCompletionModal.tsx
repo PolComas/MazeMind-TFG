@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 type Props = {
   onNextLevel?: () => void;
@@ -81,10 +82,13 @@ export default function PracticeIaCompletionModal({ onNextLevel, onBack }: Props
   const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(true, modalRef);
 
   return (
     <div style={styles.overlay}>
-      <div style={styles.modalContent} role="dialog" aria-modal="true">
+      <div ref={modalRef} style={styles.modalContent} role="dialog" aria-modal="true">
         <div style={styles.iconWrap}>
           <CheckCircle size={56} />
         </div>

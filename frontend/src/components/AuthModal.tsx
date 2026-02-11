@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
@@ -7,6 +7,7 @@ import { applyAlpha } from '../utils/color';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 // Props per al modal
 type Props = {
@@ -176,6 +177,9 @@ export default function AuthModal({ onClose }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isResetSending, setIsResetSending] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(true, modalRef);
 
   // Estat per canviar entre els modes Iniciar Sessió / Registrar-se
   const [isRegistering, setIsRegistering] = useState(false);
@@ -307,7 +311,7 @@ export default function AuthModal({ onClose }: Props) {
 
   return (
     <div style={styles.overlay} onClick={onCloseWithSound} role="dialog" aria-modal="true" aria-labelledby="auth-title">
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         {/* Botó per tancar el modal */}
         <button style={styles.closeButton} onClick={onCloseWithSound} aria-label={t('auth.modal.closeLabel')}>
           <X size={20} />

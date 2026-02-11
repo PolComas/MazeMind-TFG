@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { RefreshCcw, ArrowLeft, Bot, CheckCircle, XCircle } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 type Props = {
   status: 'completed' | 'failed';
@@ -113,6 +114,9 @@ export default function PracticeCompletionModal({
   const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(true, modalRef);
 
   const isCompleted = status === 'completed';
 
@@ -134,7 +138,7 @@ export default function PracticeCompletionModal({
 
   return (
     <div style={styles.overlay}>
-      <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div ref={modalRef} style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
 
         {/* Icona i Títol Canviant */}
         <div style={styles.statusIcon(isCompleted)}>

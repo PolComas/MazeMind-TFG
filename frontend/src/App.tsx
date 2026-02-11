@@ -363,7 +363,7 @@ export default function App() {
     }
 
     if (pathOnly === '/auth/reset') {
-      return { type: 'auth-reset' };
+      return isRecoverySession ? { type: 'auth-reset' } : { type: 'home' };
     }
 
     if (pathOnly === '/auth/callback') {

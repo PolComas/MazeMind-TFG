@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   X, Target, Trophy, Gamepad2, Star, Zap, Eye, Footprints, Skull,
   Dumbbell, Layers, Edit, GraduationCap, Info, ArrowUp, ArrowDown, ArrowLeft,
@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 type Props = {
   open: boolean;
@@ -137,6 +138,8 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
   const gameSettings = settings.game;
   const visualSettings = getVisualSettings('levelSelect');
   const { styles, colors } = useMemo(() => createStyles(visualSettings), [visualSettings]);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(open, modalRef);
   const formatKey = (key: string) => {
     if (key === ' ') return t('keys.space');
     if (key.length === 1) return key.toUpperCase();
@@ -164,7 +167,7 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
 
   return (
     <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <button style={styles.closeButton} onClick={onClose} aria-label={t('common.close')}>
           <X size={24} />
         </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, BrainCircuit, TrendingUp, Edit } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { loadPracticeBestScore } from '../utils/practiceProgress';
@@ -6,6 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 type Props = {
   open: boolean;
@@ -47,12 +48,17 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
       borderRadius: '12px', padding: '20px',
       display: 'flex', alignItems: 'center', gap: '16px',
       cursor: 'pointer', transition: 'all 0.2s ease',
+      width: '100%',
+      textAlign: 'left',
+      color: visuals.textColor,
+      font: 'inherit',
+      appearance: 'none',
     },
     cardIcon: {
       width: '48px', height: '48px', borderRadius: '50%',
       display: 'grid', placeItems: 'center', flexShrink: 0,
     },
-    cardTitle: { fontWeight: 600, fontSize: '1.1rem', margin: 0 },
+    cardTitle: { fontWeight: 600, fontSize: '1.1rem', margin: 0, color: visuals.textColor },
     cardText: { fontSize: '0.9rem', color: visuals.subtextColor, margin: '4px 0 0 0' },
     bestScoreText: { fontSize: '0.8rem', opacity: 0.9 },
   };
@@ -64,6 +70,9 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
   const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelSelect');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(open, modalRef);
 
   const [bestScore, setBestScore] = useState(0);
 
@@ -100,7 +109,7 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
 
   return (
     <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <button style={styles.closeButton} onClick={onClose} aria-label={t('common.close')}>
           <X size={24} />
         </button>
@@ -109,7 +118,12 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
         </div>
         <div style={styles.body}>
           {/* Opció 1: Pràctica IA */}
-          <div style={styles.card} onClick={() => handleSelect(onStartIA)} onMouseEnter={() => audio.playHover()}>
+          <button
+            type="button"
+            style={styles.card}
+            onClick={() => handleSelect(onStartIA)}
+            onMouseEnter={() => audio.playHover()}
+          >
             <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.accentColor2, 0.2) }}>
               <BrainCircuit size={24} color={visualSettings.accentColor2} />
             </div>
@@ -117,10 +131,15 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
               <h3 style={styles.cardTitle}>{t('practice.mode.ai.title')}</h3>
               <p style={styles.cardText}>{t('practice.mode.ai.desc')}</p>
             </div>
-          </div>
+          </button>
 
           {/* Opció 2: Pràctica Normal/Score */}
-          <div style={styles.card} onClick={() => handleSelect(onStartNormal)} onMouseEnter={() => audio.playHover()}>
+          <button
+            type="button"
+            style={styles.card}
+            onClick={() => handleSelect(onStartNormal)}
+            onMouseEnter={() => audio.playHover()}
+          >
             <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.normalColor, 0.2) }}>
               <TrendingUp size={24} color={visualSettings.normalColor} />
             </div>
@@ -134,10 +153,15 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
                 </span>
               </p>
             </div>
-          </div>
+          </button>
 
           {/* Opció 3: Mode Lliure */}
-          <div style={styles.card} onClick={() => handleSelect(onStartFree)} onMouseEnter={() => audio.playHover()}>
+          <button
+            type="button"
+            style={styles.card}
+            onClick={() => handleSelect(onStartFree)}
+            onMouseEnter={() => audio.playHover()}
+          >
             <div style={{ ...styles.cardIcon, background: applyAlpha(visualSettings.easyColor, 0.2) }}>
               <Edit size={24} color={visualSettings.easyColor} />
             </div>
@@ -145,7 +169,7 @@ export default function PracticeModeModal({ open, onClose, onStartIA, onStartNor
               <h3 style={styles.cardTitle}>{t('practice.mode.free.title')}</h3>
               <p style={styles.cardText}>{t('practice.mode.free.desc')}</p>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </div>

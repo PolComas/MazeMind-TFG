@@ -1,11 +1,12 @@
 // src/components/CompletionModal.tsx
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { RefreshCcw, ArrowLeft, ArrowRight } from 'lucide-react'; // Icones pels botons
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 // Props que rep el modal
 type Props = {
@@ -124,6 +125,9 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
   const { t } = useLanguage();
   const visualSettings = getVisualSettings('levelScreen');
   const styles = useMemo(() => buildStyles(visualSettings), [visualSettings]);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(true, modalRef);
 
   useEffect(() => {
     const closeKey = (settings.game.keyCloseModal || '').toLowerCase();
@@ -145,7 +149,7 @@ export default function CompletionModal({ levelNumber, stars, time, points, onNe
     // Fons semitransparent que cobreix tota la pantalla
     <div style={styles.overlay}>
       {/* El contingut del modal */}
-      <div style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div ref={modalRef} style={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <h2 id="modalTitle" style={styles.title}>
           {t('completion.title.before')} {levelNumber} {t('completion.title.after')}
         </h2>

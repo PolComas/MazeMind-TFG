@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Lock, LogIn } from 'lucide-react';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 type Props = {
   open: boolean;
@@ -99,12 +100,15 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
 export default function PracticeIaLockedModal({ open, onClose, onLogin, visuals }: Props) {
   const styles = useMemo(() => buildStyles(visuals), [visuals]);
   const { t } = useLanguage();
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(open, modalRef);
 
   if (!open) return null;
 
   return (
     <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.panel} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} style={styles.panel} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <div style={styles.iconWrap}>
             <Lock size={20} />

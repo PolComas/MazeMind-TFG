@@ -4,6 +4,7 @@ import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
+import NetworkBackground from '../components/NetworkBackground';
 
 const buildStyles = (v: VisualSettings) => {
   const cardBg = v.surfaceColor;
@@ -31,7 +32,8 @@ const buildStyles = (v: VisualSettings) => {
 export default function ResetPasswordScreen({ onDone }: { onDone?: () => void }) {
   const { getVisualSettings } = useSettings();
   const { t } = useLanguage();
-  const styles = useMemo(() => buildStyles(getVisualSettings('home')), [getVisualSettings]);
+  const screenSettings = getVisualSettings('home');
+  const styles = useMemo(() => buildStyles(screenSettings), [screenSettings]);
   const [p1, setP1] = useState('');
   const [p2, setP2] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,7 +85,11 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
   };
 
   return (
-    <div style={styles.wrap}>
+    <div style={{ ...styles.wrap, position: 'relative', isolation: 'isolate' }}>
+      <NetworkBackground
+        primaryColor={screenSettings.accentColor1}
+        backgroundColor={screenSettings.backgroundColor}
+      />
       <form style={styles.card} onSubmit={submit}>
         <h2 style={styles.title}>{t('resetPassword.title')}</h2>
         {error && <div style={styles.error}>{error}</div>}
