@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { User, LogOut } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { User, LogOut, Trash2 } from 'lucide-react';
 import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
@@ -7,6 +7,8 @@ import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
 import NetworkBackground from './NetworkBackground';
+import { applyAlpha } from '../utils/color';
+import { getAggregatedSkillForMode } from '../lib/dda';
 
 type UserType = { id: string; email: string; };
 
@@ -16,11 +18,12 @@ type Props = {
   onMultiplayer: () => void;
   onUserClick: () => void;
   onLogout: () => Promise<void> | void;
+  onDeleteAccount: () => Promise<void> | void;
   onSettingsClick: () => void;
   progress: GameProgress;
 };
 
-export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClick, onLogout, onSettingsClick, progress }: Props) {
+export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClick, onLogout, onDeleteAccount, onSettingsClick, progress }: Props) {
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
   const { t, language, setLanguage } = useLanguage();
@@ -46,14 +49,41 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
   }, [progress, t]);
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showUserPanel, setShowUserPanel] = useState(false);
+  const [skillMu, setSkillMu] = useState<number | null>(null);
+  const [skillLoading, setSkillLoading] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const handleUserInteraction = async () => {
+  const handleUserButton = () => {
     if (user) {
-      if (isLoggingOut) return;
-      setIsLoggingOut(true);
-      try { await onLogout(); } finally { setIsLoggingOut(false); }
-    } else {
-      onUserClick();
+      setShowUserPanel((prev) => !prev);
+      return;
+    }
+    onUserClick();
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await onLogout();
+    } finally {
+      setIsLoggingOut(false);
+      setShowUserPanel(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    const ok = window.confirm(t('home.deleteConfirm'));
+    if (!ok) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteAccount();
+    } finally {
+      setIsDeleting(false);
+      setShowUserPanel(false);
     }
   };
 
@@ -80,8 +110,54 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
 
   const handleUserInteractionWithSound = () => {
     audio.playFail();
-    handleUserInteraction();
+    handleUserButton();
   };
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSkillMu(null);
+      return;
+    }
+    let canceled = false;
+    const loadSkill = async () => {
+      setSkillLoading(true);
+      try {
+        const skill =
+          (await getAggregatedSkillForMode(user.id, 'practice_ia')) ??
+          (await getAggregatedSkillForMode(user.id, 'campaign'));
+        if (canceled) return;
+        const mu = typeof skill?.skill_mu === 'number' ? skill.skill_mu : null;
+        setSkillMu(mu);
+      } catch {
+        if (!canceled) setSkillMu(null);
+      } finally {
+        if (!canceled) setSkillLoading(false);
+      }
+    };
+    void loadSkill();
+    return () => {
+      canceled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!showUserPanel) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (!userMenuRef.current) return;
+      if (!userMenuRef.current.contains(e.target as Node)) {
+        setShowUserPanel(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowUserPanel(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showUserPanel]);
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
@@ -104,6 +180,82 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       display: 'grid', placeItems: 'center', cursor: 'pointer',
       boxShadow: PALETTE.shadow, transition: 'background 0.2s ease',
       flexShrink: 0,
+    },
+    userMenuWrap: {
+      position: 'relative',
+      display: 'grid',
+      placeItems: 'center',
+    },
+    userPanel: {
+      position: 'absolute',
+      top: 'calc(100% + 12px)',
+      right: 0,
+      minWidth: 260,
+      background: screenSettings.surfaceColor,
+      border: `1px solid ${screenSettings.borderColor}`,
+      borderRadius: 16,
+      padding: 16,
+      boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
+      display: 'grid',
+      gap: 12,
+      zIndex: 20,
+    },
+    userPanelTitle: {
+      fontSize: 11,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      color: screenSettings.subtextColor,
+      fontWeight: 700,
+    },
+    userPanelEmail: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: screenSettings.textColor,
+      wordBreak: 'break-all',
+    },
+    userPanelRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    userPanelLabel: {
+      fontSize: 12,
+      color: screenSettings.subtextColor,
+    },
+    userPanelBadge: {
+      padding: '4px 10px',
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 700,
+      background: applyAlpha(screenSettings.accentColor1, 0.18),
+      color: screenSettings.accentColor1,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+      whiteSpace: 'nowrap',
+    },
+    userPanelActions: {
+      display: 'grid',
+      gap: 8,
+    },
+    userPanelBtn: {
+      borderRadius: 10,
+      border: `1px solid ${screenSettings.borderColor}`,
+      background: 'transparent',
+      color: screenSettings.textColor,
+      fontWeight: 700,
+      padding: '8px 12px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    userPanelBtnDanger: {
+      border: `1px solid ${applyAlpha(screenSettings.hardColor, 0.45)}`,
+      color: screenSettings.hardColor,
+      background: applyAlpha(screenSettings.hardColor, 0.08),
     },
     langSwitcher: {
       display: 'flex', gap: 4, background: screenSettings.surfaceColor,
@@ -238,12 +390,20 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       fontSize: 16,
       marginBottom: 8,
     },
-    footer: { // Added footer style
+    footer: {
       position: 'absolute', bottom: 16,
       fontSize: 12, color: screenSettings.subtextColor, opacity: 0.6,
       pointerEvents: 'none'
     }
   }), [screenSettings]);
+
+  const skillLabel = useMemo(() => {
+    if (skillMu === null || Number.isNaN(skillMu)) return t('home.skill.unknown');
+    if (skillMu < 0.4) return t('home.skill.low');
+    if (skillMu < 0.7) return t('home.skill.mid');
+    return t('home.skill.high');
+  }, [skillMu, t]);
+  const skillPercent = skillMu === null ? null : Math.round(skillMu * 100);
 
   return (
     <main role="main" style={styles.page}>
@@ -267,16 +427,59 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
         </div>
 
         {/* Botó d'usuari */}
-        <button
-          style={styles.userButton}
-          onClick={handleUserInteractionWithSound}
-          disabled={isLoggingOut}
-          aria-busy={isLoggingOut ? 'true' : 'false'}
-          onMouseEnter={() => audio.playHover()}
-          aria-label={user ? `Compte de ${user.email}. ${t('home.logout')}.` : t('home.login')}
-        >
-          {user ? <LogOut size={24} /> : <User size={24} />}
-        </button>
+        <div style={styles.userMenuWrap} ref={userMenuRef}>
+          <button
+            style={styles.userButton}
+            onClick={handleUserInteractionWithSound}
+            disabled={isLoggingOut || isDeleting}
+            aria-busy={isLoggingOut ? 'true' : 'false'}
+            onMouseEnter={() => audio.playHover()}
+            aria-label={user ? `Compte de ${user.email}.` : t('home.login')}
+            aria-expanded={showUserPanel}
+            aria-controls="home-user-panel"
+            aria-haspopup={user ? 'dialog' : undefined}
+          >
+            {user ? <LogOut size={24} /> : <User size={24} />}
+          </button>
+
+          {user && showUserPanel && (
+            <div id="home-user-panel" role="dialog" aria-label={t('home.profile')} style={styles.userPanel}>
+              <div>
+                <div style={styles.userPanelTitle}>{t('home.profile')}</div>
+                <div style={styles.userPanelEmail}>{user.email}</div>
+              </div>
+
+              <div style={styles.userPanelRow}>
+                <span style={styles.userPanelLabel}>{t('home.skillLabel')}</span>
+                <span style={styles.userPanelBadge}>
+                  {skillLoading ? t('home.skill.loading') : skillLabel}
+                  {!skillLoading && skillPercent !== null ? ` · ${skillPercent}%` : ''}
+                </span>
+              </div>
+
+              <div style={styles.userPanelActions}>
+                <button
+                  type="button"
+                  style={styles.userPanelBtn}
+                  onClick={handleLogout}
+                  onMouseEnter={() => audio.playHover()}
+                  disabled={isLoggingOut}
+                >
+                  <LogOut size={16} /> {t('home.logout')}
+                </button>
+                <button
+                  type="button"
+                  style={{ ...styles.userPanelBtn, ...styles.userPanelBtnDanger }}
+                  onClick={handleDelete}
+                  onMouseEnter={() => audio.playHover()}
+                  disabled={isDeleting}
+                >
+                  <Trash2 size={16} /> {t('home.deleteAccount')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={styles.container} aria-labelledby="title">

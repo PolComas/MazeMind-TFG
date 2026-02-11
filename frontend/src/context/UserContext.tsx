@@ -12,6 +12,7 @@ type UserContextValue = {
   user: AuthUser | null;
   setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   isRecoverySession: boolean;
 };
 
@@ -111,6 +112,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.warn('signOut failed, continuing with local cleanup', e);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!user?.id) return;
+    try {
+      await supabase.rpc('delete_user');
+    } catch (error) {
+      console.error('Error deleting user account:', error);
+      throw error;
+    } finally {
+      setUser(null);
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem(USER_STORAGE_KEY);
+        }
+      } catch {}
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {}
     }
   };
 
@@ -222,8 +243,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<UserContextValue>(
-    () => ({ user, setUser, logout, isRecoverySession }),
-    [user, isRecoverySession]
+    () => ({ user, setUser, logout, deleteAccount, isRecoverySession }),
+    [user, setUser, logout, deleteAccount, isRecoverySession]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

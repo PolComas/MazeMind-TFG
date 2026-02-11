@@ -172,7 +172,7 @@ type Route =
   | { type: 'auth-reset' };
 
 export default function App() {
-  const { user, logout } = useUser();
+  const { user, logout, deleteAccount } = useUser();
   const { settings } = useSettings();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -281,28 +281,42 @@ export default function App() {
     void hydrate();
   }, [user]);
 
+  const clearLocalSession = () => {
+    if (typeof window !== 'undefined') {
+      const keysToClear = [
+        'mazeMindProgress',
+        'mazeMindPracticeBestScore',
+        'mazeMindPracticeStats',
+      ];
+      keysToClear.forEach((key) => {
+        try {
+          window.localStorage.removeItem(key);
+        } catch (storageError) {
+          console.warn(`No s'ha pogut eliminar la clau ${key} de localStorage`, storageError);
+        }
+      });
+    }
+    setProgress(loadProgress());
+    setShowAuthModal(false);
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error('Error en tancar sessió:', error);
     } finally {
-      if (typeof window !== 'undefined') {
-        const keysToClear = [
-          'mazeMindProgress',
-          'mazeMindPracticeBestScore',
-          'mazeMindPracticeStats',
-        ];
-        keysToClear.forEach((key) => {
-          try {
-            window.localStorage.removeItem(key);
-          } catch (storageError) {
-            console.warn(`No s'ha pogut eliminar la clau ${key} de localStorage`, storageError);
-          }
-        });
-      }
-      setProgress(loadProgress());
-      setShowAuthModal(false);
+      clearLocalSession();
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount();
+    } catch (error) {
+      console.error('Error eliminant el compte:', error);
+    } finally {
+      clearLocalSession();
     }
   };
 
@@ -458,6 +472,7 @@ export default function App() {
         onMultiplayer={() => go('/multiplayer')}
         onUserClick={() => setShowAuthModal(true)}
         onLogout={handleLogoutRequest}
+        onDeleteAccount={handleDeleteAccount}
         onSettingsClick={() => go('/settings')}
       />
       {showAuthModal && (

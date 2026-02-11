@@ -13,15 +13,15 @@ type Props = {
 
 const previewLevel = previewLevelData as Level;
 
-const previewPlayerPos = { x: 2, y: 2 };
+const previewPlayerPos = { x: 4, y: 2 };
 const previewPath = [
   { x: 0, y: 0 }, // Inici
   { x: 1, y: 0 }, // dreta
-  { x: 1, y: 1 }, // baix
-  { x: 0, y: 1 }, // esquerra
-  { x: 0, y: 2 }, // baix
-  { x: 1, y: 2 }, // dreta
-  { x: 2, y: 2 }, // dreta
+  { x: 2, y: 0 }, // dreta
+  { x: 2, y: 1 }, // baix
+  { x: 3, y: 1 }, // dreta
+  { x: 4, y: 1 }, // dreta
+  { x: 4, y: 2 }, // esquerra
 ];
 export default function LevelScreenPreview({ settings }: Props) {
   const { t } = useLanguage();
