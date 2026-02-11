@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,22 +10,44 @@ import GameResultScreen from '../components/multiplayer/GameResultScreen';
 import {
   advanceRoundIfCurrent,
   deleteMatch,
+  getAllRoundResults,
   getMatch,
   getPlayers,
   getRoundResults,
   recordRoundResult,
+  setPlayerStatus,
   setMatchStatus,
-  updatePlayerTotals,
 } from '../lib/multiplayer';
-import type { MultiplayerMatch, MultiplayerPlayer } from '../lib/multiplayer';
+import type { MultiplayerMatch, MultiplayerPlayer, RoundResult } from '../lib/multiplayer';
 
 type RoundOutcome = {
   winnerId: string | null;
   reason: string;
 };
 
-const computeWinner = (results: Array<{ user_id: string; completed: boolean; time_seconds: number; finished_at: string }>): RoundOutcome => {
-  if (results.length < 2) return { winnerId: null, reason: 'pending' };
+type ScoreRow = {
+  user_id: string;
+  display_name: string | null;
+  rounds_won: number;
+  total_time: number;
+  total_points: number;
+};
+
+const ROUND_TIMEOUT_MS = 90_000;
+const ROUND_ADVANCE_DELAY_MS = 3500;
+
+const computeWinner = (
+  results: Array<{ user_id: string; completed: boolean; time_seconds: number; finished_at: string; points: number }>,
+  options?: { allowSingle?: boolean }
+): RoundOutcome => {
+  if (results.length === 0) return { winnerId: null, reason: 'pending' };
+  if (results.length === 1) {
+    if (!options?.allowSingle) return { winnerId: null, reason: 'pending' };
+    const only = results[0];
+    if (!only.completed) return { winnerId: null, reason: 'timeout' };
+    return { winnerId: only.user_id, reason: 'timeout' };
+  }
+
   const [a, b] = results;
 
   if (a.completed && !b.completed) return { winnerId: a.user_id, reason: 'completed' };
@@ -33,14 +55,8 @@ const computeWinner = (results: Array<{ user_id: string; completed: boolean; tim
   // If neither completed, logic might vary, but let's say tie or no winner yet
   if (!a.completed && !b.completed) return { winnerId: null, reason: 'no-completions' };
 
-  if (a.time_seconds < b.time_seconds) return { winnerId: a.user_id, reason: 'time' };
-  if (b.time_seconds < a.time_seconds) return { winnerId: b.user_id, reason: 'time' };
-
-  const aTime = new Date(a.finished_at).getTime();
-  const bTime = new Date(b.finished_at).getTime();
-  if (aTime < bTime) return { winnerId: a.user_id, reason: 'finish' };
-  if (bTime < aTime) return { winnerId: b.user_id, reason: 'finish' };
-
+  if (a.points > b.points) return { winnerId: a.user_id, reason: 'points' };
+  if (b.points > a.points) return { winnerId: b.user_id, reason: 'points' };
   return { winnerId: null, reason: 'tie' };
 };
 
@@ -52,16 +68,26 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
 
   const [match, setMatch] = useState<MultiplayerMatch | null>(null);
   const [players, setPlayers] = useState<MultiplayerPlayer[]>([]);
-  const [roundResults, setRoundResults] = useState<any[]>([]);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [roundResultsRound, setRoundResultsRound] = useState<number>(0);
+  const [allResults, setAllResults] = useState<RoundResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolvedRounds, setResolvedRounds] = useState<Record<number, boolean>>({});
   const [cleanupQueued, setCleanupQueued] = useState(false);
+  const [forcedOutcome, setForcedOutcome] = useState<(RoundOutcome & { round: number }) | null>(null);
+  const [forfeitWinnerId, setForfeitWinnerId] = useState<string | null>(null);
+
+  const lastRoundRef = useRef<number>(0);
+  const roundTimeoutRef = useRef<number | null>(null);
 
   // Poll logic
   useEffect(() => {
     setResolvedRounds({});
     setCleanupQueued(false);
+    setForcedOutcome(null);
+    setForfeitWinnerId(null);
+    lastRoundRef.current = 0;
   }, [matchId]);
 
   const pollMatch = useCallback(async () => {
@@ -74,16 +100,32 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     const p = await getPlayers(matchId);
     setPlayers(p);
 
-    // Auto-start if waiting and 2 players
-    if (m.status === 'waiting' && p.length >= 2) {
+    if (lastRoundRef.current !== m.current_round) {
+      setRoundResults([]);
+      setRoundResultsRound(0);
+      setForcedOutcome(null);
+      lastRoundRef.current = m.current_round;
+    }
+
+    // Auto-start if waiting and 2 players (host only)
+    const activePlayers = p.filter((player) => player.status === 'joined');
+    if (m.status === 'waiting' && activePlayers.length >= 2 && user?.id === m.host_id) {
       await setMatchStatus(matchId, 'active', 1);
     }
 
     if (m.status === 'active' && m.current_round > 0) {
       const res = await getRoundResults(matchId, m.current_round);
       setRoundResults(res);
+      setRoundResultsRound(m.current_round);
     }
-  }, [matchId]);
+
+    if (m.status !== 'waiting') {
+      const resAll = await getAllRoundResults(matchId);
+      setAllResults(resAll);
+    } else {
+      setAllResults([]);
+    }
+  }, [matchId, t, user?.id]);
 
   useEffect(() => {
     let mounted = true;
@@ -122,69 +164,134 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     });
   }, [match, currentRound, seeds]);
 
-  const me = user?.id ? players.find((p) => p.user_id === user.id) : null;
-  const other = user?.id ? players.find((p) => p.user_id !== user.id) : null;
+  const activePlayers = useMemo(() => players.filter((p) => p.status === 'joined'), [players]);
+  const other = user?.id ? activePlayers.find((p) => p.user_id !== user.id) : null;
+  const isHost = !!(user?.id && match?.host_id && user.id === match.host_id);
+
+  const completedRounds = useMemo(() => {
+    if (!match) return 0;
+    if (match.status === 'finished') return Math.max(0, match.current_round ?? 0);
+    return Math.max(0, (match.current_round ?? 0) - 1);
+  }, [match]);
+
+  const scoreRows = useMemo<ScoreRow[]>(() => {
+    const rows = new Map<string, ScoreRow>();
+    players.forEach((p) => {
+      rows.set(p.user_id, {
+        user_id: p.user_id,
+        display_name: p.display_name,
+        rounds_won: 0,
+        total_time: 0,
+        total_points: 0,
+      });
+    });
+
+    if (!match || completedRounds <= 0) {
+      return Array.from(rows.values());
+    }
+
+    const resultsByRound = new Map<number, RoundResult[]>();
+    for (const r of allResults) {
+      if (r.round_index > completedRounds) continue;
+      const list = resultsByRound.get(r.round_index) ?? [];
+      list.push(r);
+      resultsByRound.set(r.round_index, list);
+
+      const row = rows.get(r.user_id);
+      if (row) {
+        row.total_time += r.time_seconds;
+        row.total_points += r.points;
+      }
+    }
+
+    for (const list of resultsByRound.values()) {
+      const outcome = computeWinner(list, { allowSingle: true });
+      if (outcome.winnerId) {
+        const row = rows.get(outcome.winnerId);
+        if (row) row.rounds_won += 1;
+      }
+    }
+
+    return Array.from(rows.values());
+  }, [players, allResults, match, completedRounds]);
 
   const handleLeave = useCallback(async () => {
-    if (match && user?.id === match.host_id && match.status === 'waiting') {
+    if (!match || !user) {
+      onBack();
+      return;
+    }
+
+    if (match.status === 'waiting' && user.id === match.host_id) {
       try {
         await deleteMatch(match.id);
       } catch (err) {
         console.warn('No s\'ha pogut cancel·lar la partida:', err);
       }
+      onBack();
+      return;
+    }
+
+    try {
+      await setPlayerStatus(match.id, user.id, 'left');
+    } catch (err) {
+      console.warn('No s\'ha pogut marcar la sortida del jugador:', err);
     }
     onBack();
   }, [match, user, onBack]);
 
-  const handleGameEnd = useCallback(async (result: { completed: boolean; timeSeconds: number; points: number }) => {
-    if (!user || !match) return;
-    if (currentRound <= 0) return;
+  const handleGameEnd = useCallback(async (result: { completed: boolean; timeSeconds: number; points: number }, roundIndex: number) => {
+    if (!user) return;
+    if (roundIndex <= 0) return;
 
     try {
       await recordRoundResult({
-        match_id: match.id,
-        round_index: currentRound,
+        match_id: matchId,
+        round_index: roundIndex,
         user_id: user.id,
         completed: result.completed,
         time_seconds: result.timeSeconds,
         points: result.points,
         finished_at: new Date().toISOString(),
       });
-
-      const meRow = players.find((p) => p.user_id === user.id);
-      if (meRow) {
-        await updatePlayerTotals(match.id, user.id, {
-          points: (meRow.total_points ?? 0) + result.points,
-          time: (meRow.total_time ?? 0) + result.timeSeconds,
-          roundsWon: meRow.rounds_won ?? 0,
-        });
-      }
     } catch (e) {
       console.error('Error guardant resultats del round', e);
     }
-  }, [user, match, currentRound, players]);
+  }, [user, matchId]);
+
+  const handleRoundTimeout = useCallback(async () => {
+    if (!isHost) return;
+    if (currentRound <= 0) return;
+    try {
+      const latest = await getMatch(matchId);
+      if (!latest || latest.status !== 'active' || latest.current_round !== currentRound) return;
+
+      const results = await getRoundResults(matchId, currentRound);
+      if (results.length >= 2) return;
+
+      const outcome = computeWinner(results, { allowSingle: true });
+      setForcedOutcome({ ...outcome, round: currentRound });
+      setResolvedRounds((prev) => ({ ...prev, [currentRound]: true }));
+
+      const isLast = currentRound >= (latest.rounds_count ?? 3);
+      if (isLast) {
+        await advanceRoundIfCurrent(matchId, currentRound, currentRound, 'finished');
+      } else {
+        await advanceRoundIfCurrent(matchId, currentRound, currentRound + 1);
+      }
+    } catch (err) {
+      console.warn('No s\'ha pogut resoldre el round per timeout:', err);
+    }
+  }, [isHost, matchId, currentRound]);
 
   // Handle round completion logic
   useEffect(() => {
+    if (!isHost) return;
     if (!match || currentRound <= 0) return;
+    if (roundResultsRound !== currentRound) return;
     if (roundResults.length < 2) return;
     if (resolvedRounds[currentRound]) return;
 
-    const outcome = computeWinner(roundResults);
-    if (outcome.winnerId) {
-      const winner = players.find((p) => p.user_id === outcome.winnerId);
-      if (winner) {
-        updatePlayerTotals(match.id, winner.user_id, {
-          points: winner.total_points ?? 0,
-          time: winner.total_time ?? 0,
-          roundsWon: (winner.rounds_won ?? 0) + 1,
-        }).catch(() => { });
-      }
-    }
-
     const isLast = currentRound >= (match.rounds_count ?? 3);
-    // Delay slightly to let UI show
-    const NEXT_DELAY = 4000;
 
     setTimeout(() => {
       if (isLast) {
@@ -192,10 +299,34 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
       } else {
         advanceRoundIfCurrent(match.id, currentRound, currentRound + 1).catch(() => { });
       }
-    }, NEXT_DELAY);
+    }, ROUND_ADVANCE_DELAY_MS);
 
     setResolvedRounds((prev) => ({ ...prev, [currentRound]: true }));
-  }, [roundResults, match, currentRound, players, resolvedRounds]);
+  }, [isHost, roundResults, roundResultsRound, match?.id, match?.rounds_count, currentRound, resolvedRounds]);
+
+  useEffect(() => {
+    if (!isHost) return;
+    if (!match || match.status !== 'active' || currentRound <= 0) return;
+    if (roundTimeoutRef.current) window.clearTimeout(roundTimeoutRef.current);
+    roundTimeoutRef.current = window.setTimeout(() => {
+      handleRoundTimeout();
+    }, ROUND_TIMEOUT_MS);
+    return () => {
+      if (roundTimeoutRef.current) window.clearTimeout(roundTimeoutRef.current);
+    };
+  }, [isHost, match?.id, match?.status, currentRound, handleRoundTimeout]);
+
+  useEffect(() => {
+    if (!match || match.status !== 'active' || !user) return;
+    const opponentLeft = players.find((p) => p.user_id !== user.id && p.status === 'left');
+    if (!opponentLeft) return;
+    if (forfeitWinnerId) return;
+
+    setForfeitWinnerId(user.id);
+    setMatchStatus(match.id, 'finished', match.current_round).catch((err) => {
+      console.warn('No s\'ha pogut finalitzar la partida per abandonament:', err);
+    });
+  }, [match, players, user, forfeitWinnerId]);
 
   // Clean up finished match
   useEffect(() => {
@@ -236,7 +367,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     return (
       <LobbyScreen
         match={match}
-        players={players}
+        players={activePlayers}
         currentUserId={user.id}
         onLeave={handleLeave}
       />
@@ -247,7 +378,8 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
   if (match.status === 'finished') {
     return (
       <GameResultScreen
-        players={players}
+        scoreRows={scoreRows}
+        forfeitWinnerId={forfeitWinnerId}
         currentUserId={user.id}
         onExit={handleLeave}
       />
@@ -256,9 +388,13 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
 
   // 3. Active Gameplay
   // Calculate round outcome if available
-  const outcome = roundResults.length >= 2 ? computeWinner(roundResults) : null;
+  const baseOutcome = roundResults.length >= 2 ? computeWinner(roundResults) : null;
+  const outcome = forcedOutcome && forcedOutcome.round === currentRound ? forcedOutcome : baseOutcome;
   const myResult = roundResults.find(r => r.user_id === user.id);
   const oppResult = roundResults.find(r => r.user_id !== user.id);
+  const myScore = scoreRows.find((row) => row.user_id === user.id);
+
+  const roundIndex = currentRound;
 
   return (
     <div style={{ position: 'relative', height: '100svh', background: screenSettings.backgroundColor, overflow: 'hidden' }}>
@@ -271,7 +407,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
           {t('multiplayer.roundLabel')} {match.current_round} / {match.rounds_count}
         </div>
         <div style={{ background: 'rgba(0,0,0,0.5)', padding: '6px 12px', borderRadius: 20, color: 'white', fontWeight: 'bold', backdropFilter: 'blur(4px)' }}>
-          {me?.total_points ?? 0} pts
+          {t('multiplayer.pointsLabel')}: {myScore?.total_points ?? 0}
         </div>
       </div>
 
@@ -288,7 +424,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
           progress={{ levels: {}, highestUnlocked: { easy: 1, normal: 1, hard: 1 } }}
           telemetryMode="other"
           suppressModals={true}
-          onGameEnd={handleGameEnd}
+          onGameEnd={(result) => handleGameEnd(result, roundIndex)}
         />
       ) : (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -297,7 +433,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
       )}
 
       {/* Overlay for Round Result */}
-      {outcome && outcome.winnerId !== null && (
+      {outcome && outcome.reason !== 'pending' && (
         <RoundResultOverlay
           winnerId={outcome.winnerId}
           myId={user.id}
@@ -308,24 +444,43 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
         />
       )}
 
-      {/* Simple "Waiting for opponent" toast if I finished but they haven't */}
-      {myResult && !outcome && (
+      {/* Waiting modal when I finished but opponent hasn't */}
+      {myResult && (!outcome || outcome.reason === 'pending') && (
         <div style={{
           position: 'absolute',
-          bottom: 40,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.8)',
-          padding: '12px 24px',
-          borderRadius: 30,
-          color: 'white',
-          fontWeight: 600,
-          zIndex: 40,
-          animation: 'fadeIn 0.3s'
+          inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 80,
         }}>
-          ⏳ {t('multiplayer.waitOpponent')}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 20,
+            padding: '24px 32px',
+            minWidth: 280,
+            maxWidth: '90%',
+            textAlign: 'center',
+            color: 'white',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+              {t('multiplayer.waitOpponentTitle')}
+            </div>
+            <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 16 }}>
+              {t('multiplayer.waitOpponentSubtitle')}
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <div className="spinner" style={{ width: 18, height: 18, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+              <span style={{ fontSize: 14 }}>{t('multiplayer.waitOpponent')}</span>
+            </div>
+          </div>
         </div>
       )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

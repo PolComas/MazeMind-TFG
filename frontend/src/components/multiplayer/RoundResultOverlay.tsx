@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 
 type RoundResultOverlayProps = {
@@ -106,12 +106,17 @@ export default function RoundResultOverlay({
     }), [show, isWin, isTie]);
 
     const getReasonText = () => {
+        if (reason === 'points') return t('multiplayer.roundReasonPoints');
         if (reason === 'time') return t('multiplayer.roundReasonTime');
         if (reason === 'completed') return t('multiplayer.roundReasonCompleted');
         if (reason === 'finish') return t('multiplayer.roundReasonFinish');
+        if (reason === 'timeout') return t('multiplayer.roundReasonTimeout');
         if (isTie) return t('multiplayer.roundReasonTie');
         return t('multiplayer.roundReasonLoss');
     };
+
+    const myPoints = myStats ? myStats.points : 0;
+    const oppPoints = opponentStats ? opponentStats.points : 0;
 
     return (
         <div style={styles.overlay}>
@@ -123,17 +128,17 @@ export default function RoundResultOverlay({
                     <div style={styles.statBox}>
                         <span style={styles.statLabel}>{t('multiplayer.you')}</span>
                         <span style={{ ...styles.statValue, color: isWin ? '#4ade80' : undefined }}>
-                            {myStats?.time.toFixed(1)}s
+                            {myPoints}
                         </span>
-                        <span style={styles.statSub}>+{myStats?.points} pts</span>
+                        <span style={styles.statSub}>{t('hud.pointsShort')}</span>
                     </div>
 
                     <div style={styles.statBox}>
                         <span style={styles.statLabel}>{opponentName}</span>
                         <span style={{ ...styles.statValue, color: !isWin && !isTie ? '#f43f5e' : undefined }}>
-                            {opponentStats?.time.toFixed(1)}s
+                            {oppPoints}
                         </span>
-                        <span style={styles.statSub}>+{opponentStats?.points} pts</span>
+                        <span style={styles.statSub}>{t('hud.pointsShort')}</span>
                     </div>
                 </div>
 

@@ -138,6 +138,16 @@ export async function getMatchByCode(code: string): Promise<MultiplayerMatch | n
   return data as MultiplayerMatch | null;
 }
 
+export async function joinMatchByCode(code: string, displayName?: string | null): Promise<MultiplayerMatch> {
+  const { data, error } = await supabase.rpc('join_match_by_code', {
+    p_code: code.toUpperCase(),
+    p_display_name: displayName ?? null,
+  });
+
+  if (error) throw error;
+  return data as MultiplayerMatch;
+}
+
 export async function getPlayers(matchId: string): Promise<MultiplayerPlayer[]> {
   const { data, error } = await supabase
     .from('multiplayer_players')
@@ -152,7 +162,7 @@ export async function getPlayers(matchId: string): Promise<MultiplayerPlayer[]> 
 export async function joinMatch(matchId: string, userId: string, displayName?: string | null): Promise<void> {
   const { error } = await supabase
     .from('multiplayer_players')
-    .insert({
+    .upsert({
       match_id: matchId,
       user_id: userId,
       display_name: displayName ?? null,
@@ -161,7 +171,17 @@ export async function joinMatch(matchId: string, userId: string, displayName?: s
       total_time: 0,
       rounds_won: 0,
       status: 'joined',
-    });
+    }, { onConflict: 'match_id,user_id' });
+
+  if (error) throw error;
+}
+
+export async function setPlayerStatus(matchId: string, userId: string, status: MultiplayerPlayer['status']): Promise<void> {
+  const { error } = await supabase
+    .from('multiplayer_players')
+    .update({ status })
+    .eq('match_id', matchId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }
@@ -206,6 +226,17 @@ export async function getRoundResults(matchId: string, roundIndex: number): Prom
     .select('*')
     .eq('match_id', matchId)
     .eq('round_index', roundIndex);
+
+  if (error) throw error;
+  return (data ?? []) as RoundResult[];
+}
+
+export async function getAllRoundResults(matchId: string): Promise<RoundResult[]> {
+  const { data, error } = await supabase
+    .from('multiplayer_round_results')
+    .select('*')
+    .eq('match_id', matchId)
+    .order('round_index', { ascending: true });
 
   if (error) throw error;
   return (data ?? []) as RoundResult[];

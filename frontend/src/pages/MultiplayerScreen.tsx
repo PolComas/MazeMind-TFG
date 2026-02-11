@@ -5,9 +5,9 @@ import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import {
   createMatch,
-  getMatchByCode,
   getPlayers,
   joinMatch,
+  joinMatchByCode,
   listOpenMatches,
   type MultiplayerMatch,
 } from '../lib/multiplayer';
@@ -99,24 +99,19 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
     setBusy(true);
     setError(null);
     try {
-      const match = await getMatchByCode(code);
-      if (!match) {
-        setError(t('multiplayer.notFound'));
-        return;
-      }
-      const players = await getPlayers(match.id);
-      if (players.find((p) => p.user_id === user.id)) {
-        onOpenMatch(match.id);
-        return;
-      }
-      if (players.length >= 2) {
-        setError(t('multiplayer.open.full'));
-        return;
-      }
-      await joinMatch(match.id, user.id, user.email?.split('@')[0] ?? null);
+      const match = await joinMatchByCode(code, user.email?.split('@')[0] ?? null);
       onOpenMatch(match.id);
-    } catch (e) {
-      setError(t('multiplayer.join.error'));
+    } catch (e: any) {
+      const message = typeof e?.message === 'string' ? e.message : '';
+      if (message.includes('match_not_found')) {
+        setError(t('multiplayer.notFound'));
+      } else if (message.includes('match_full')) {
+        setError(t('multiplayer.open.full'));
+      } else if (message.includes('match_not_waiting')) {
+        setError(t('multiplayer.matchNotWaiting'));
+      } else {
+        setError(t('multiplayer.join.error'));
+      }
     } finally {
       setBusy(false);
     }
@@ -400,11 +395,16 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                           return;
                         }
                         const players = await getPlayers(m.id);
-                        if (players.find((p) => p.user_id === user.id)) {
+                        const activePlayers = players.filter((p) => p.status === 'joined');
+                        const existing = players.find((p) => p.user_id === user.id);
+                        if (existing) {
+                          if (existing.status !== 'joined') {
+                            await joinMatch(m.id, user.id, user.email?.split('@')[0] ?? null);
+                          }
                           onOpenMatch(m.id);
                           return;
                         }
-                        if (players.length >= 2) {
+                        if (activePlayers.length >= 2) {
                           setError(t('multiplayer.open.full'));
                           return;
                         }
@@ -416,6 +416,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
                         setBusy(false);
                       }
                     }}
+                    disabled={busy}
                   >
                     {t('multiplayer.open.join')}
                   </button>

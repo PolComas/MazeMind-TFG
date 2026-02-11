@@ -1,25 +1,38 @@
-import React, { useMemo } from 'react';
-import type { MultiplayerPlayer } from '../../lib/multiplayer';
+import { useMemo } from 'react';
 import NetworkBackground from '../NetworkBackground';
 import { useSettings } from '../../context/SettingsContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { applyAlpha } from '../../utils/color';
 
 type GameResultScreenProps = {
-    players: MultiplayerPlayer[];
+    scoreRows: Array<{
+        user_id: string;
+        display_name: string | null;
+        rounds_won: number;
+        total_time: number;
+        total_points: number;
+    }>;
     currentUserId: string;
+    forfeitWinnerId?: string | null;
     onExit: () => void;
 };
 
-export default function GameResultScreen({ players, currentUserId, onExit }: GameResultScreenProps) {
+export default function GameResultScreen({ scoreRows, currentUserId, forfeitWinnerId, onExit }: GameResultScreenProps) {
     const { getVisualSettings } = useSettings();
     const screenSettings = getVisualSettings('levelSelect');
     const { t } = useLanguage();
 
-    // Sort by points descending
-    const sortedPlayers = [...players].sort((a, b) => b.total_points - a.total_points);
-    const winner = sortedPlayers[0];
-    const isMeWinner = winner?.user_id === currentUserId;
-    const isTie = sortedPlayers.length > 1 && sortedPlayers[0].total_points === sortedPlayers[1].total_points;
+    const sortedPlayers = [...scoreRows].sort((a, b) => {
+        if (b.total_points !== a.total_points) return b.total_points - a.total_points;
+        return 0;
+    });
+
+    const isTie = !forfeitWinnerId
+        && sortedPlayers.length > 1
+        && sortedPlayers[0].total_points === sortedPlayers[1].total_points;
+
+    const winnerId = isTie ? null : (forfeitWinnerId ?? sortedPlayers[0]?.user_id ?? null);
+    const isMeWinner = winnerId === currentUserId;
 
     const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
         container: {
@@ -73,9 +86,9 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
         },
         scoreboard: {
             width: '100%',
-            background: 'rgba(255,255,255,0.05)',
+            background: applyAlpha(screenSettings.surfaceColor, 0.92),
             borderRadius: 16,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: `1px solid ${applyAlpha(screenSettings.borderColor, 0.7)}`,
             overflow: 'hidden',
         },
         row: {
@@ -83,12 +96,13 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '16px 24px',
-            borderBottom: '1px solid rgba(255,255,255,0.05)',
+            borderBottom: `1px solid ${applyAlpha(screenSettings.borderColor, 0.6)}`,
+            background: applyAlpha(screenSettings.textColor, 0.06),
         },
         rank: {
             fontWeight: 'bold',
             width: 30,
-            color: '#fbbf24',
+            color: screenSettings.accentColor1,
         },
         name: {
             flex: 1,
@@ -96,13 +110,17 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
         },
         score: {
             fontWeight: 'bold',
-            fontSize: 20,
+            fontSize: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 4,
         },
         button: {
             padding: '16px 48px',
             borderRadius: 12,
-            background: 'white',
-            color: 'black',
+            background: screenSettings.textColor,
+            color: screenSettings.backgroundColor,
             border: 'none',
             fontSize: 18,
             fontWeight: 700,
@@ -110,7 +128,7 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
             boxShadow: '0 4px 20px rgba(255,255,255,0.2)',
             transition: 'transform 0.2s',
         }
-    }), [isMeWinner, isTie]);
+    }), [isMeWinner, isTie, screenSettings]);
 
     return (
         <div style={styles.container}>
@@ -130,24 +148,40 @@ export default function GameResultScreen({ players, currentUserId, onExit }: Gam
                         {isTie ? t('multiplayer.result.tie') : isMeWinner ? t('multiplayer.result.win') : t('multiplayer.result.loss')}
                     </h1>
                     <div style={styles.subtitle}>
-                        {isTie
-                            ? t('multiplayer.result.tieSubtitle')
-                            : isMeWinner
-                                ? t('multiplayer.result.winSubtitle')
-                                : t('multiplayer.result.lossSubtitle')}
+                        {forfeitWinnerId
+                            ? t('multiplayer.result.forfeitSubtitle')
+                            : isTie
+                                ? t('multiplayer.result.tieSubtitle')
+                                : isMeWinner
+                                    ? t('multiplayer.result.winSubtitle')
+                                    : t('multiplayer.result.lossSubtitle')}
                     </div>
                 </div>
 
                 <div style={styles.scoreboard}>
-                    {sortedPlayers.map((p, i) => (
-                        <div key={p.user_id} style={styles.row}>
+                    {sortedPlayers.map((p, i) => {
+                        const isWinner = !isTie && p.user_id === winnerId;
+                        const rowStyle: React.CSSProperties = isWinner
+                            ? {
+                                ...styles.row,
+                                background: `linear-gradient(90deg, ${applyAlpha(screenSettings.accentColor1, 0.35)}, ${applyAlpha(screenSettings.accentColor2, 0.25)})`,
+                                borderLeft: `4px solid ${screenSettings.accentColor1}`,
+                              }
+                            : {
+                                ...styles.row,
+                                background: applyAlpha(screenSettings.textColor, 0.08),
+                              };
+                        return (
+                        <div key={p.user_id} style={rowStyle}>
                             <span style={styles.rank}>#{i + 1}</span>
                             <span style={styles.name}>
                                 {p.display_name || t('multiplayer.result.player')} {p.user_id === currentUserId && t('multiplayer.result.youSuffix')}
                             </span>
-                            <span style={styles.score}>{p.total_points} pts</span>
+                            <span style={styles.score}>
+                                <span>{t('multiplayer.result.totalPoints')}: {p.total_points} {t('hud.pointsShort')}</span>
+                            </span>
                         </div>
-                    ))}
+                    )})}
                 </div>
 
                 <button
