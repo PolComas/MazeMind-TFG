@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { PALETTE } from '../components/palette';
 import { type AppSettings, type VisualSettings, type ScreenSettings, PRESET_THEMES, type PresetThemeKey } from '../utils/settings';
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
@@ -6,6 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
 import NetworkBackground from '../components/NetworkBackground';
 import { useLanguage } from '../context/LanguageContext';
+import { useFocusTrap } from '../utils/focusTrap';
 
 import HomeScreenSettings from '../components/settings/HomeScreenSettings';
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
@@ -59,6 +60,9 @@ export default function SettingsScreen({ onBack }: Props) {
 
   // Mostrar modal si l'usuari intenta sortir amb canvis no desats
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const unsavedModalRef = useRef<HTMLDivElement | null>(null);
+
+  useFocusTrap(showUnsavedModal, unsavedModalRef);
 
   // Indicador si hi ha canvis entre l'estat original i l'estat local
   const isDirty = useMemo(() => {
@@ -412,7 +416,7 @@ export default function SettingsScreen({ onBack }: Props) {
       {/* Modal d'avís per canvis no desats */}
       {showUnsavedModal && (
         <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.66)', zIndex: 60 }}>
-          <div style={{ width: 'min(560px, 92%)', background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: 20, boxShadow: PALETTE.shadow }} role="dialog" aria-modal="true">
+          <div ref={unsavedModalRef} style={{ width: 'min(560px, 92%)', background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: 20, boxShadow: PALETTE.shadow }} role="dialog" aria-modal="true">
             <h3 style={{ margin: 0, marginBottom: 8 }}>{t('settings.unsaved.title')}</h3>
             <p style={{ marginTop: 0, color: PALETTE.subtext }}>{t('settings.unsaved.body')}</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>

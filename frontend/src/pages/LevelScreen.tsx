@@ -840,7 +840,17 @@ export default function LevelScreen({
 
         {/* TAULER DEL LABERINT */}
         <section aria-label={t('level.aria.board')} style={styles.boardWrap}>
-          <div style={styles.boardInner}>
+          <div
+            style={{
+              ...styles.boardInner,
+              maxWidth: phase === 'memorize'
+                ? 'min(100%, calc(100svh - 420px))'
+                : 'min(100%, calc(100svh - 300px))',
+              maxHeight: phase === 'memorize'
+                ? 'min(100%, calc(100svh - 420px))'
+                : 'min(100%, calc(100svh - 300px))',
+            }}
+          >
             <MazeCanvas
               level={level}
               phase={phase}
