@@ -172,7 +172,7 @@ type Route =
   | { type: 'auth-reset' };
 
 export default function App() {
-  const { user, logout, deleteAccount } = useUser();
+  const { user, logout, deleteAccount, isRecoverySession } = useUser();
   const { settings } = useSettings();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -366,6 +366,10 @@ export default function App() {
       return { type: 'auth-reset' };
     }
 
+    if (pathOnly === '/auth/callback') {
+      return isRecoverySession ? { type: 'auth-reset' } : { type: 'home' };
+    }
+
     if (pathOnly.startsWith('/level/custom')) {
       const params = new URLSearchParams(search);
 
@@ -390,7 +394,7 @@ export default function App() {
     }
 
     return { type: 'unknown', path: relativePath };
-  }, [relativePath]);
+  }, [relativePath, isRecoverySession]);
 
 
   useEffect(() => {
@@ -485,7 +489,9 @@ export default function App() {
 
   let screen: ReactElement;
 
-  switch (route.type) {
+  if (isRecoverySession) {
+    screen = <ResetPasswordScreen onDone={() => go('/')} />;
+  } else switch (route.type) {
     case 'settings':
       screen = <SettingsScreen onBack={() => go('/')} />;
       break;
