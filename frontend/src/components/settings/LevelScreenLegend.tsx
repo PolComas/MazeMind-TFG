@@ -47,7 +47,7 @@ export default function LevelScreenLegend({ settings }: Props) {
 
   return (
     <div style={styles.container}>
-      <h4 style={styles.title}>{t('levelLegend.title')}</h4>
+      <h3 style={styles.title}>{t('levelLegend.title')}</h3>
       <ul style={styles.list}>
         
         {/* 1. Parets del laberint */}

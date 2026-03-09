@@ -201,25 +201,25 @@ export const PRESET_THEMES: Record<'default' | 'dark' | 'light' | 'high_contrast
   high_contrast: {
     backgroundColor: '#000000',
     textColor: '#FFFFFF',
-    subtextColor: '#FFFFFF',
+    subtextColor: '#F5F5F5',
     surfaceColor: '#000000',
     borderColor: '#FFFFFF',
     // Accents
-    accentColor1: '#2563eb',
-    accentColor2: '#2563eb',
+    accentColor1: '#0A5FFF',
+    accentColor2: '#0A5FFF',
     // Dificultats
-    easyColor: '#39FF14',
-    normalColor: '#FFFF00',
-    hardColor: '#FF3131',
+    easyColor: '#00FF66',
+    normalColor: '#FFD400',
+    hardColor: '#FF2D2D',
     // Laberint
-    mazePathColor: '#383838ff',
+    mazePathColor: '#000000',
     mazeWallColor: '#FFFFFF',
-    mazePlayerColor: '#2563eb',
-    mazeExitColor: '#2563eb',
+    mazePlayerColor: '#00E5FF',
+    mazeExitColor: '#FFD400',
     mazeWallThickness: 4,
     // Colors d'ajuda
-    playerPathColor: '#39FF14',
-    crashHelpColor: '#FF3131',
+    playerPathColor: '#00FF66',
+    crashHelpColor: '#FF2D2D',
   },
 };
 

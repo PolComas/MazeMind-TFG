@@ -391,8 +391,16 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       marginBottom: 8,
     },
     footer: {
-      position: 'absolute', bottom: 16,
-      fontSize: 12, color: screenSettings.subtextColor, opacity: 0.6,
+      position: 'absolute',
+      bottom: 16,
+      fontSize: 12,
+      fontWeight: 700,
+      color: screenSettings.textColor,
+      background: applyAlpha(screenSettings.backgroundColor, 0.78),
+      border: `1px solid ${applyAlpha(screenSettings.borderColor, 0.9)}`,
+      borderRadius: 999,
+      padding: '6px 12px',
+      boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
       pointerEvents: 'none'
     }
   }), [screenSettings]);
@@ -417,9 +425,11 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
         <div style={styles.langSwitcher}>
           {(['ca', 'es', 'en'] as const).map((lang) => (
             <button
+              type="button"
               key={lang}
               style={{ ...styles.langBtn, ...(language === lang ? styles.langBtnActive : {}) }}
               onClick={() => { audio.playHover(); setLanguage(lang); }}
+              aria-label={`Idioma ${lang.toUpperCase()}`}
             >
               {lang.toUpperCase()}
             </button>
@@ -429,6 +439,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
         {/* Botó d'usuari */}
         <div style={styles.userMenuWrap} ref={userMenuRef}>
           <button
+            type="button"
             style={styles.userButton}
             onClick={handleUserInteractionWithSound}
             disabled={isLoggingOut || isDeleting}

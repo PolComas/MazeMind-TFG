@@ -11,6 +11,7 @@ import PracticeModeModal from './PracticeModeModal';
 import PracticeIaLockedModal from './PracticeIaLockedModal';
 import NetworkBackground from './NetworkBackground';
 import { useLanguage } from '../context/LanguageContext';
+import { applyAlpha, pickReadableTextColor } from '../utils/color';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -58,6 +59,11 @@ export default function LevelSelect({
     normal: screenSettings.normalColor,
     hard: screenSettings.hardColor,
   }), [screenSettings]);
+  const difficultyTextColors = useMemo<Record<Diff, string>>(() => ({
+    easy: pickReadableTextColor(screenSettings.easyColor),
+    normal: pickReadableTextColor(screenSettings.normalColor),
+    hard: pickReadableTextColor(screenSettings.hardColor),
+  }), [screenSettings.easyColor, screenSettings.normalColor, screenSettings.hardColor]);
 
   const difficulty = selectedDifficulty;
 
@@ -144,7 +150,10 @@ export default function LevelSelect({
       gap: 16,
     },
     title: { // Títol de la pàgina amb font responsiva
-      margin: 0, fontSize: 'clamp(24px, 5vw, 32px)'
+      margin: 0,
+      fontSize: 'clamp(24px, 5vw, 32px)',
+      color: screenSettings.textColor,
+      textShadow: '0 1px 1px rgba(0,0,0,0.35)',
     },
     backBtn: { // Botó per tornar enrere amb estil de superfície
       padding: '10px 14px',
@@ -172,7 +181,7 @@ export default function LevelSelect({
       borderRadius: 999,
       border: 'none',
       background: 'transparent',
-      color: screenSettings.subtextColor,
+      color: screenSettings.textColor,
       fontWeight: 600,
       cursor: 'pointer',
       transition: 'color 0.3s ease',
@@ -237,7 +246,7 @@ export default function LevelSelect({
         />
         <div style={styles.container}>
           <header style={styles.header}>
-            <button style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label={t('levelSelect.aria.backHome')}>
+            <button type="button" style={styles.backBtn} onMouseEnter={() => audio.playHover()} onClick={onBackWithSound} aria-label={t('levelSelect.aria.backHome')}>
               <span aria-hidden="true">←</span> {t('common.home')}
             </button>
             <div style={{ textAlign: 'center' }}>
@@ -248,18 +257,21 @@ export default function LevelSelect({
           </header>
 
           {/* Barra de selecció de dificultat */}
-          <div role="tablist" aria-label={t('levelSelect.difficultySelector')} style={styles.diffBarContainer} ref={diffBarRef} >
+          <div role="group" aria-label={t('levelSelect.difficultySelector')} style={styles.diffBarContainer} ref={diffBarRef} >
             <div style={{ ...styles.diffIndicator, ...indicatorStyle }} />
 
             {(['easy', 'normal', 'hard'] as Diff[]).map(d => (
               <button
+                type="button"
                 key={d}
-                role="tab"
                 onClick={() => { audio.playSlide(); onDifficultyChange(d); }}
-                aria-selected={difficulty === d}
+                aria-pressed={difficulty === d}
+                aria-label={t(`difficulty.${d}`)}
                 style={{
                   ...styles.diffTab,
-                  color: difficulty === d ? screenSettings.textColor : screenSettings.subtextColor,
+                  color: difficulty === d
+                    ? difficultyTextColors[d]
+                    : applyAlpha(screenSettings.textColor, 0.92),
                 }}
               >
                 {difficultyIcons[d]}
@@ -292,14 +304,14 @@ export default function LevelSelect({
 
           {/* Peu de pàgina amb botó de mode pràctica */}
           <footer style={styles.footer}>
-            <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick}>
+            <button type="button" style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={onPracticeClick} aria-label={t('levelSelect.practice')}>
               <Dumbbell size={18} style={{ marginBottom: -1 }} /> {t('levelSelect.practice')}
             </button>
 
             <div style={{ width: 12 }} />
 
             {/* Botó "Com Jugar" */}
-            <button style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={() => { audio.playBtnSound(); setShowHowToPlay(true); }}>
+            <button type="button" style={styles.practiceBtn} onMouseEnter={() => audio.playHover()} onClick={() => { audio.playBtnSound(); setShowHowToPlay(true); }} aria-label={t('levelSelect.howToPlay')}>
               <CircleQuestionMarkIcon size={18} style={{ marginBottom: -2 }} /> {t('levelSelect.howToPlay')}
             </button>
 

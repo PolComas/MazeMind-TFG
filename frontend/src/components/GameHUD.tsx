@@ -176,9 +176,11 @@ export default function GameHUD({
       {/* CARD 3: AJUDES */}
       <div style={{ ...styles.card, ...styles.helpsCard }}>
         <button
+          type="button"
           style={styles.helpButton}
           onClick={onRevealHelp}
           disabled={revealCharges === 0}
+          aria-label={`${t('hud.help.reveal')} (${revealCharges})`}
           title={`${t('hud.help.reveal')} (${formatKey(gameSettings.keyHelpReveal)}) | ${t('hud.cost')}: ${revealCost} ${t('hud.pointsShort')}`}
         >
           <Eye size={18} />
@@ -187,8 +189,10 @@ export default function GameHUD({
         </button>
 
         <button
+          type="button"
           style={{ ...styles.helpButton, ...(isPathHelpActive ? styles.helpActive : {}) }}
           onClick={onTogglePathHelp}
+          aria-label={t('hud.help.path')}
           title={`${t('hud.help.path')} (${formatKey(gameSettings.keyHelpPath)}) | ${t('hud.cost')}: -${pathHelpLoss} ${t('hud.pointsShort')}/${t('hud.perSecondShort')}`}
         >
           <Footprints size={18} />
@@ -198,8 +202,10 @@ export default function GameHUD({
 
         {difficulty !== 'hard' && (
           <button
+            type="button"
             style={{ ...styles.helpButton, ...(isCrashHelpActive ? styles.helpActive : {}) }}
             onClick={onToggleCrashHelp}
+            aria-label={t('hud.help.crash')}
             title={`${t('hud.help.crash')} (${formatKey(gameSettings.keyHelpCrash)}) | ${t('hud.cost')}: -${crashHelpLoss} ${t('hud.pointsShort')}`}
           >
             <Skull size={18} />

@@ -14,8 +14,10 @@ const ToggleInput = ({ label, checked, onChange }: any) => (
   <label style={styles.toggleContainer}>
     <span style={styles.toggleLabel}>{label}</span>
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
       style={{ ...styles.toggleSwitch, ...(checked ? styles.toggleOn : styles.toggleOff) }}
     >
@@ -76,7 +78,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
     <div style={styles.container}>
 
       {/* --- SECCIÓ DE SO --- */}
-      <h4 style={styles.title}>{t('settings.game.audio.title')}</h4>
+      <h3 style={styles.title}>{t('settings.game.audio.title')}</h3>
       <div style={styles.group}>
         <ToggleInput
           label={t('settings.game.audio.sfx')}
@@ -106,7 +108,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
       </div>
 
       {/* --- SECCIÓ DE TECLES --- */}
-      <h4 style={styles.title}>{t('settings.game.controls.move.title')}</h4>
+      <h3 style={styles.title}>{t('settings.game.controls.move.title')}</h3>
       <div style={styles.keyGrid}>
         <KeybindingInput
           label={t('settings.game.controls.move.up')}
@@ -135,7 +137,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
       </div>
       <p style={styles.note}>{t('settings.game.controls.move.note')}</p>
 
-      <h4 style={styles.title}>{t('settings.game.controls.help.title')}</h4>
+      <h3 style={styles.title}>{t('settings.game.controls.help.title')}</h3>
       <div style={styles.keyGrid}>
         <KeybindingInput
           label={t('settings.game.controls.help.reveal')}
@@ -169,7 +171,7 @@ export default function GameSettingsComponent({ settings, onChange }: Props) {
         />
       </div>
 
-      <h4 style={styles.title}>{t('settings.game.controls.global.title')}</h4>
+      <h3 style={styles.title}>{t('settings.game.controls.global.title')}</h3>
       <div style={styles.keyGrid}>
         <KeybindingInput
           label={t('settings.game.controls.global.levels')}

@@ -190,7 +190,19 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
     label: { fontWeight: 600, fontSize: 13, color: screenSettings.subtextColor, marginBottom: 6, display: 'block' },
 
     // Custom Toggle Switch
-    switchRow: { display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', userSelect: 'none' },
+    switchRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      cursor: 'pointer',
+      userSelect: 'none',
+      width: '100%',
+      textAlign: 'left',
+      border: 'none',
+      background: 'transparent',
+      padding: 0,
+      color: screenSettings.textColor,
+    },
     switchTrack: {
       width: 44, height: 24, borderRadius: 999,
       background: isPublic ? `linear-gradient(90deg, ${screenSettings.accentColor1}, ${screenSettings.accentColor2})` : 'rgba(255,255,255,0.1)',
@@ -293,7 +305,14 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
           <h2 style={styles.cardHeader}>{t('multiplayer.create.title')}</h2>
 
           {/* Custom Switch */}
-          <div style={styles.switchRow} onClick={() => setIsPublic(!isPublic)}>
+          <button
+            type="button"
+            style={styles.switchRow}
+            onClick={() => setIsPublic(!isPublic)}
+            role="switch"
+            aria-checked={isPublic}
+            aria-label={t('multiplayer.create.public')}
+          >
             <div style={styles.switchTrack}>
               <div style={styles.switchThumb} />
             </div>
@@ -301,7 +320,7 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
               <div style={{ fontWeight: 700 }}>{t('multiplayer.create.public')}</div>
               <div style={{ fontSize: 12, opacity: 0.7 }}>{t('multiplayer.create.publicHint')}</div>
             </div>
-          </div>
+          </button>
 
           <div style={{ display: 'grid', gap: 24 }}>
             <div>
@@ -358,7 +377,13 @@ export default function MultiplayerScreen({ onBack, onOpenMatch }: { onBack: () 
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
             />
-            <button style={{ ...styles.button, width: 'auto' }} onClick={handleJoinByCode} disabled={busy}>
+            <button
+              type="button"
+              style={{ ...styles.button, width: 'auto' }}
+              onClick={handleJoinByCode}
+              disabled={busy}
+              aria-label={`${t('multiplayer.join.title')}: ${t('multiplayer.join.code')}`}
+            >
               →
             </button>
           </div>

@@ -105,13 +105,13 @@ export default function LevelScreenPreview({ settings }: Props) {
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.headerBtn}><ArrowLeft size={10} /> {t('home.levels')}</div>
-        <h1 style={styles.headerTitle}>{t('common.level')} {previewLevel.number}</h1>
+        <div style={styles.headerTitle}>{t('common.level')} {previewLevel.number}</div>
         <div style={styles.headerBtn}><RefreshCw size={10} /> {t('common.retry')}</div>
       </div>
 
       {/* Panell Memoritzar */}
       <div style={styles.memorizePanel}>
-        <h2 style={styles.memorizeTitle}>👁️ {t('level.memorize.title')}</h2>
+        <div style={styles.memorizeTitle}>👁️ {t('level.memorize.title')}</div>
         <div style={styles.memorizeTime}>{previewLevel.memorizeTime}</div>
       </div>
 

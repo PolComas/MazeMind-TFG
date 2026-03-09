@@ -4,6 +4,7 @@ import { Dumbbell, Zap, Flame, Lock, Play, Star, Clock } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
 import { useLanguage } from '../context/LanguageContext';
+import { applyAlpha, pickReadableTextColor } from '../utils/color';
 
 type Diff = 'easy' | 'normal' | 'hard';
 
@@ -54,6 +55,11 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       badgeBg: `${screenSettings.hardColor}26`
     },
   };
+  const difficultyTextColor: Record<Diff, string> = {
+    easy: pickReadableTextColor(difficultyStyles.easy.accent),
+    normal: pickReadableTextColor(difficultyStyles.normal.accent),
+    hard: pickReadableTextColor(difficultyStyles.hard.accent),
+  };
 
   // Creem etiquetes descriptives per a lectors de pantalla
   const accessiblePlayLabel = `${t('levelCard.playLabel.before')} ${index} ${t('levelCard.playLabel.after')} ${difficultyLabel}`;
@@ -68,7 +74,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
           key={i} 
           size={12} 
           fill={i < stars ? PALETTE.normalYellow : 'none'} 
-          color={i < stars ? PALETTE.normalYellow : PALETTE.subtext + '80'} 
+          color={i < stars ? PALETTE.normalYellow : applyAlpha(screenSettings.textColor, 0.35)} 
         />
       );
     }
@@ -92,7 +98,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
     cardLocked: { // Estils per a la targeta bloquejada: fons fosc i opacitat reduïda
       borderColor: screenSettings.borderColor,
       boxShadow: 'none',
-      opacity: 0.6,
+      opacity: 0.86,
     },
     cardInner: { // Contenidor interior amb gradient i flexbox vertical
       flexGrow: 1,
@@ -115,7 +121,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       fontSize: 32, fontWeight: 800, color: screenSettings.textColor 
     },
     stars: { // Estrelles decoratives amb color secundari
-      color: screenSettings.subtextColor, fontSize: 12 
+      color: applyAlpha(screenSettings.textColor, 0.75), fontSize: 12 
     },
     starsContainer: { // Contenidor per a les estrelles
       display: 'flex',
@@ -127,7 +133,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
       alignItems: 'center',
       gap: '4px',
       fontSize: 11,
-      color: screenSettings.subtextColor,
+      color: applyAlpha(screenSettings.textColor, 0.82),
       margin: '0 0 8px 0', 
     },
     playBtnBase: { // Botó "Jugar" amb gradient i transició
@@ -151,6 +157,7 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
 
   return (
     <div
+      role="group"
       style={{
         ...styles.cardBase,
         ...(isRecommended ? { boxShadow: PALETTE.shadow, borderWidth: 2 } : {}),
@@ -158,7 +165,6 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
         ...(!unlocked ? styles.cardLocked : {}),
       }}
       aria-label={unlocked ? `${t('common.level')} ${index}` : accessibleLockedLabel}
-      aria-disabled={!unlocked}
     >
       <div style={styles.cardInner}>
         {/* Insígnia amb icona i fons específics de la dificultat */}
@@ -171,19 +177,24 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
         {unlocked ? (
           <>
             {/* Mostrar les estrelles reals */}
-            <div style={styles.starsContainer} aria-label={`${t('levelCard.starsLabel.before')} ${stars} ${t('levelCard.starsLabel.after')}`}>
+            <div style={styles.starsContainer}>
               {renderStars()}
             </div> 
             
             {/* Mostrar el millor temps */}
             {formattedBestTime && (
-              <div style={styles.bestTime} aria-label={`${t('levelCard.bestTimeLabel')}: ${formattedBestTime}`}>
+              <div style={styles.bestTime}>
                 <Clock size={12} /> {formattedBestTime}
               </div>
             )}
             
             <button 
-              style={{ ...styles.playBtnBase, background: difficultyStyles[difficulty].accent, color: PALETTE.bg }} 
+              type="button"
+              style={{
+                ...styles.playBtnBase,
+                background: difficultyStyles[difficulty].accent,
+                color: difficultyTextColor[difficulty],
+              }} 
               onClick={onPlay}
               onMouseEnter={() => audio.playHover()}
               aria-label={accessiblePlayLabel}

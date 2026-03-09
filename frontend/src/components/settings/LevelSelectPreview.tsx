@@ -110,7 +110,7 @@ export default function LevelSelectPreview({ settings }: Props) {
       {/* Capçalera */}
       <div style={styles.headerPreview}>
         <div style={styles.backBtnPreview}><ArrowLeft size={12} /> {t('common.home')}</div>
-        <h1 style={styles.titlePreview}>{t('levelSelect.title')}</h1>
+        <div style={styles.titlePreview}>{t('levelSelect.title')}</div>
         <div style={{ width: 40 }} />
       </div>
 

@@ -230,7 +230,7 @@ export default function SettingsScreen({ onBack }: Props) {
       />
       {/* Capçalera */}
       <header style={styles.header}>
-        <button onClick={onBackWithSound} style={styles.backButton} aria-label={t('common.back')} onMouseEnter={() => audio.playHover()}>
+        <button type="button" onClick={onBackWithSound} style={styles.backButton} aria-label={t('common.back')} onMouseEnter={() => audio.playHover()}>
           <ArrowLeft size={20} /> {t('common.back')}
         </button>
         <h1 style={styles.title}>{t('settings.title')}</h1>
@@ -242,10 +242,11 @@ export default function SettingsScreen({ onBack }: Props) {
         <div style={styles.accordionColumn}>
           {/* Temes Predefinits */}
           <section style={styles.presetsSection}>
-            <h3 style={styles.presetsTitle}>{t('settings.presets.title')}</h3>
+            <h2 style={styles.presetsTitle}>{t('settings.presets.title')}</h2>
             <div style={styles.presetsGrid}>
               {Object.keys(PRESET_THEMES).map(themeName => (
                 <button
+                  type="button"
                   key={themeName}
                   style={styles.presetButton}
                   onClick={() => applyPresetTheme(themeName as PresetThemeKey)}
@@ -261,6 +262,7 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* Secció HomeScreen */}
           <div style={styles.accordionItem}>
             <button
+              type="button"
               style={styles.accordionHeader}
               onClick={() => toggleSection('home')}
               aria-expanded={activeSection === 'home'}
@@ -282,6 +284,7 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* Secció LevelSelect */}
           <div style={styles.accordionItem}>
             <button
+              type="button"
               style={styles.accordionHeader}
               onClick={() => toggleSection('levelSelect')}
               aria-expanded={activeSection === 'levelSelect'}
@@ -302,6 +305,7 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* Secció LevelScreen */}
           <div style={styles.accordionItem}>
             <button
+              type="button"
               style={styles.accordionHeader}
               onClick={() => toggleSection('levelScreen')}
               aria-expanded={activeSection === 'levelScreen'}
@@ -322,6 +326,7 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* Secció Multiplayer */}
           <div style={styles.accordionItem}>
             <button
+              type="button"
               style={styles.accordionHeader}
               onClick={() => toggleSection('multiplayer')}
               aria-expanded={activeSection === 'multiplayer'}
@@ -342,6 +347,7 @@ export default function SettingsScreen({ onBack }: Props) {
           {/* Secció Configuració de Joc */}
           <div style={styles.accordionItem}>
             <button
+              type="button"
               style={styles.accordionHeader}
               onClick={() => toggleSection('game')}
               aria-expanded={activeSection === 'game'}
@@ -360,7 +366,7 @@ export default function SettingsScreen({ onBack }: Props) {
           </div>
 
 
-          <button onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>
+          <button type="button" onClick={handleSave} style={styles.saveButton} onMouseEnter={() => audio.playHover()}>
             <Save size={18} /> {t('settings.save')}
           </button>
           {saveSuccess && (
@@ -417,12 +423,12 @@ export default function SettingsScreen({ onBack }: Props) {
       {showUnsavedModal && (
         <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.66)', zIndex: 60 }}>
           <div ref={unsavedModalRef} style={{ width: 'min(560px, 92%)', background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: 20, boxShadow: PALETTE.shadow }} role="dialog" aria-modal="true">
-            <h3 style={{ margin: 0, marginBottom: 8 }}>{t('settings.unsaved.title')}</h3>
+            <h2 style={{ margin: 0, marginBottom: 8, fontSize: '1.125rem' }}>{t('settings.unsaved.title')}</h2>
             <p style={{ marginTop: 0, color: PALETTE.subtext }}>{t('settings.unsaved.body')}</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button onClick={() => setShowUnsavedModal(false)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('common.cancel')}</button>
-              <button onClick={handleDiscardAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('settings.unsaved.discard')}</button>
-              <button onClick={handleSaveAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: PALETTE.easyGreen, color: '#0A192F', fontWeight: 700 }}>{t('settings.unsaved.saveExit')}</button>
+              <button type="button" aria-label={t('common.cancel')} onClick={() => setShowUnsavedModal(false)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('common.cancel')}</button>
+              <button type="button" aria-label={t('settings.unsaved.discard')} onClick={handleDiscardAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${PALETTE.borderColor}`, background: 'transparent', color: PALETTE.text }}>{t('settings.unsaved.discard')}</button>
+              <button type="button" aria-label={t('settings.unsaved.saveExit')} onClick={handleSaveAndExit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: PALETTE.easyGreen, color: '#0A192F', fontWeight: 700 }}>{t('settings.unsaved.saveExit')}</button>
             </div>
           </div>
         </div>

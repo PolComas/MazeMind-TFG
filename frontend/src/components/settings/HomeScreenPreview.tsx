@@ -118,7 +118,7 @@ export default function HomeScreenPreview({ settings }: Props) {
       </div>
 
       {/* Títol i Subtítol */}
-      <h1 style={styles.titlePreview}>{t('home.title')}</h1>
+      <div style={styles.titlePreview}>{t('home.title')}</div>
       <p style={styles.subtitlePreview}>
         {t('home.subtitle')}
       </p>

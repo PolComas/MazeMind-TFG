@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
-import { applyAlpha } from '../utils/color';
+import { applyAlpha, ensureContrastColor, getContrastRatio, pickReadableTextColor } from '../utils/color';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,6 +21,21 @@ const buildStyles = (visuals: VisualSettings) => {
   const errorBorder = applyAlpha(visuals.hardColor, 0.3);
   const successBackground = applyAlpha(visuals.accentColor1, 0.18);
   const successBorder = applyAlpha(visuals.accentColor1, 0.35);
+  const surfaceText = ensureContrastColor(visuals.textColor, visuals.surfaceColor, 4.5, '#FFFFFF');
+  const surfaceSubtext = ensureContrastColor(visuals.subtextColor, visuals.surfaceColor, 4.5, surfaceText);
+  const linkColor = ensureContrastColor(visuals.accentColor2, visuals.surfaceColor, 4.5, surfaceText);
+  const whiteMin = Math.min(
+    getContrastRatio('#FFFFFF', visuals.accentColor1),
+    getContrastRatio('#FFFFFF', visuals.accentColor2),
+  );
+  const darkCandidate = pickReadableTextColor(visuals.accentColor1, { light: '#FFFFFF', dark: '#0B1021' });
+  const darkMin = Math.min(
+    getContrastRatio(darkCandidate, visuals.accentColor1),
+    getContrastRatio(darkCandidate, visuals.accentColor2),
+  );
+  const submitTextColor = whiteMin >= darkMin ? '#FFFFFF' : darkCandidate;
+  const errorTextColor = ensureContrastColor(visuals.hardColor, errorBackground, 4.5, surfaceText);
+  const successTextColor = ensureContrastColor(visuals.accentColor1, successBackground, 4.5, surfaceText);
 
   return {
     overlay: {
@@ -36,7 +51,7 @@ const buildStyles = (visuals: VisualSettings) => {
       border: `1px solid ${visuals.borderColor}`,
       borderRadius: '1rem',
       padding: '2rem',
-      color: visuals.textColor,
+      color: surfaceText,
       width: 'min(400px, 95vw)',
       boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
       position: 'relative',
@@ -46,7 +61,7 @@ const buildStyles = (visuals: VisualSettings) => {
     closeButton: {
       position: 'absolute', top: '0.75rem', right: '0.75rem',
       background: 'none', border: 'none',
-      color: visuals.subtextColor,
+      color: surfaceSubtext,
       cursor: 'pointer',
       padding: '0.25rem',
       lineHeight: 0,
@@ -57,7 +72,7 @@ const buildStyles = (visuals: VisualSettings) => {
       fontWeight: 700,
       margin: 0,
       textAlign: 'center',
-      color: visuals.textColor,
+      color: surfaceText,
     },
     form: {
       display: 'flex', flexDirection: 'column',
@@ -65,7 +80,7 @@ const buildStyles = (visuals: VisualSettings) => {
     },
     label: {
       fontSize: '0.875rem',
-      color: visuals.subtextColor,
+      color: surfaceSubtext,
       marginBottom: '-0.75rem',
       marginLeft: '0.25rem',
       textAlign: 'left',
@@ -75,7 +90,7 @@ const buildStyles = (visuals: VisualSettings) => {
       borderRadius: '0.5rem',
       border: `1px solid ${visuals.borderColor}`,
       background: inputBackground,
-      color: visuals.textColor,
+      color: surfaceText,
       fontSize: '1rem',
       outline: 'none',
     },
@@ -84,7 +99,7 @@ const buildStyles = (visuals: VisualSettings) => {
       borderRadius: '0.5rem',
       border: 'none',
       background: accentGradient,
-      color: '#fff',
+      color: submitTextColor,
       fontSize: '1rem',
       fontWeight: 600,
       cursor: 'pointer',
@@ -93,7 +108,7 @@ const buildStyles = (visuals: VisualSettings) => {
     },
     toggleButton: {
       background: 'none', border: 'none',
-      color: visuals.accentColor2,
+      color: linkColor,
       fontSize: '0.875rem',
       cursor: 'pointer',
       textDecoration: 'underline',
@@ -101,7 +116,7 @@ const buildStyles = (visuals: VisualSettings) => {
       alignSelf: 'center',
     },
     errorMessage: {
-      color: visuals.hardColor,
+      color: errorTextColor,
       background: errorBackground,
       border: `1px solid ${errorBorder}`,
       borderRadius: '0.5rem',
@@ -111,7 +126,7 @@ const buildStyles = (visuals: VisualSettings) => {
       margin: '-0.5rem 0 0.5rem 0',
     },
     successMessage: {
-      color: visuals.accentColor1,
+      color: successTextColor,
       background: successBackground,
       border: `1px solid ${successBorder}`,
       borderRadius: '0.5rem',

@@ -68,7 +68,10 @@ export default function KeybindingInput({ label, value, onChange, isError = fals
       <label style={styles.label}>{label}</label>
       <button
         ref={buttonRef}
+        type="button"
         onClick={() => setIsListening(true)}
+        aria-label={label}
+        aria-pressed={isListening}
         style={{
           ...styles.button,
           ...(isListening ? styles.buttonListening : {}),
