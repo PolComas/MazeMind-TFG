@@ -10,7 +10,7 @@ import NetworkBackground from './NetworkBackground';
 import { applyAlpha } from '../utils/color';
 import { getAggregatedSkillForMode } from '../lib/dda';
 
-type UserType = { id: string; email: string; };
+type UserType = { id: string; email: string; displayName: string; isGuest: boolean; };
 
 type Props = {
   user: UserType | null;
@@ -114,8 +114,9 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
   };
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.id || user.isGuest) {
       setSkillMu(null);
+      setSkillLoading(false);
       return;
     }
     let canceled = false;
@@ -138,7 +139,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
     return () => {
       canceled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   useEffect(() => {
     if (!showUserPanel) return;
@@ -158,6 +159,10 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       document.removeEventListener('keydown', handleKey);
     };
   }, [showUserPanel]);
+
+  const userIdentityText = user?.isGuest
+    ? t('home.guestAccount')
+    : (user?.email || user?.displayName || '');
 
   const styles = useMemo<Record<string, React.CSSProperties>>(() => ({
     page: {
@@ -445,7 +450,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             disabled={isLoggingOut || isDeleting}
             aria-busy={isLoggingOut ? 'true' : 'false'}
             onMouseEnter={() => audio.playHover()}
-            aria-label={user ? `Compte de ${user.email}.` : t('home.login')}
+            aria-label={user ? `${t('home.profile')}: ${userIdentityText}` : t('home.login')}
             aria-expanded={showUserPanel}
             aria-controls="home-user-panel"
             aria-haspopup={user ? 'dialog' : undefined}
@@ -457,7 +462,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             <div id="home-user-panel" role="dialog" aria-label={t('home.profile')} style={styles.userPanel}>
               <div>
                 <div style={styles.userPanelTitle}>{t('home.profile')}</div>
-                <div style={styles.userPanelEmail}>{user.email}</div>
+                <div style={styles.userPanelEmail}>{userIdentityText}</div>
               </div>
 
               <div style={styles.userPanelRow}>
@@ -478,15 +483,29 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
                 >
                   <LogOut size={16} /> {t('home.logout')}
                 </button>
-                <button
-                  type="button"
-                  style={{ ...styles.userPanelBtn, ...styles.userPanelBtnDanger }}
-                  onClick={handleDelete}
-                  onMouseEnter={() => audio.playHover()}
-                  disabled={isDeleting}
-                >
-                  <Trash2 size={16} /> {t('home.deleteAccount')}
-                </button>
+                {user.isGuest ? (
+                  <button
+                    type="button"
+                    style={styles.userPanelBtn}
+                    onClick={() => {
+                      setShowUserPanel(false);
+                      onUserClick();
+                    }}
+                    onMouseEnter={() => audio.playHover()}
+                  >
+                    <User size={16} /> {t('home.login')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    style={{ ...styles.userPanelBtn, ...styles.userPanelBtnDanger }}
+                    onClick={handleDelete}
+                    onMouseEnter={() => audio.playHover()}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 size={16} /> {t('home.deleteAccount')}
+                  </button>
+                )}
               </div>
             </div>
           )}

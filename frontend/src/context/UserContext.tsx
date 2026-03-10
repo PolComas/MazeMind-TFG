@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 export type AuthUser = {
   id: string;
   email: string;
+  displayName: string;
+  isGuest: boolean;
 };
 
 type UserContextValue = {
@@ -13,6 +15,7 @@ type UserContextValue = {
   setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  signInAsGuest: () => Promise<AuthUser | null>;
   isRecoverySession: boolean;
 };
 
@@ -25,7 +28,18 @@ const parseStoredUser = (): AuthUser | null => {
 
   try {
     const raw = window.localStorage.getItem(USER_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AuthUser>;
+    if (!parsed?.id) return null;
+    const fallbackDisplay =
+      parsed.displayName ||
+      (parsed.email ? parsed.email.split('@')[0] : `Guest-${parsed.id.slice(0, 4)}`);
+    return {
+      id: parsed.id,
+      email: parsed.email ?? '',
+      displayName: fallbackDisplay,
+      isGuest: Boolean(parsed.isGuest),
+    };
   } catch (error) {
     console.error('Error parsing stored user', error);
     window.localStorage.removeItem(USER_STORAGE_KEY);
@@ -38,9 +52,24 @@ const toAuthUser = (sessionUser: SupabaseUser | null): AuthUser | null => {
     return null;
   }
 
+  const provider = sessionUser.app_metadata?.provider ?? '';
+  const explicitAnonymous = Boolean((sessionUser as any).is_anonymous);
+  const isGuest = explicitAnonymous || provider === 'anonymous';
+  const userMeta = (sessionUser.user_metadata ?? {}) as Record<string, unknown>;
+  const metadataDisplayName =
+    (typeof userMeta.guest_name === 'string' && userMeta.guest_name.trim()) ||
+    (typeof userMeta.display_name === 'string' && userMeta.display_name.trim()) ||
+    null;
+  const email = sessionUser.email ?? '';
+  const fallbackDisplayName = email
+    ? email.split('@')[0]
+    : `Guest-${sessionUser.id.slice(0, 4)}`;
+
   return {
     id: sessionUser.id,
-    email: sessionUser.email ?? '',
+    email,
+    displayName: metadataDisplayName ?? fallbackDisplayName,
+    isGuest,
   };
 };
 
@@ -135,6 +164,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInAsGuest = async (): Promise<AuthUser | null> => {
+    const alreadyAuthenticated = await supabase.auth.getUser();
+    if (alreadyAuthenticated.data.user) {
+      return toAuthUser(alreadyAuthenticated.data.user);
+    }
+
+    const guestName = `Guest-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: {
+        data: {
+          guest_name: guestName,
+        },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const nextUser = toAuthUser(data.user ?? null);
+    setUser(nextUser);
+    return nextUser;
+  };
+
   useEffect(() => {
     recoverySessionRef.current = isRecoverySession;
   }, [isRecoverySession]);
@@ -153,6 +206,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Upsert del perfil quan JA hi ha sessió
   const ensureProfile = async (u: SupabaseUser) => {
+    if ((u.app_metadata?.provider ?? '') === 'anonymous' || (u as any).is_anonymous) {
+      return;
+    }
     try {
       const { error } = await supabase
         .from('profiles')
@@ -243,8 +299,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<UserContextValue>(
-    () => ({ user, setUser, logout, deleteAccount, isRecoverySession }),
-    [user, setUser, logout, deleteAccount, isRecoverySession]
+    () => ({ user, setUser, logout, deleteAccount, signInAsGuest, isRecoverySession }),
+    [user, setUser, logout, deleteAccount, signInAsGuest, isRecoverySession]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

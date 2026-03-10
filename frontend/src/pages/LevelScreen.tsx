@@ -175,7 +175,7 @@ export default function LevelScreen({
         { baseProgress: latestProgressRef.current, persist: !user }
       );
       onLevelComplete(newProgress);
-      if (user) {
+      if (user && !user.isGuest) {
         pushProgress(user.id, newProgress).catch((error) => {
           console.error('Error enviant progrés a Supabase:', error);
         });
@@ -215,7 +215,7 @@ export default function LevelScreen({
   }, [phase, tuning.memorizeTime, tuning.revealCharges, tuning.pointsStart]);
 
   useEffect(() => {
-    if (!user || !telemetryMode) {
+    if (!user || user.isGuest || !telemetryMode) {
       setDdaTuning(null);
       return;
     }
@@ -373,7 +373,7 @@ export default function LevelScreen({
 
   // Registrar intent i actualitzar skill quan acaba el nivell
   useEffect(() => {
-    if ((phase === 'completed' || phase === 'failed') && !attemptRecordedRef.current && attemptStartRef.current && telemetryMode && user) {
+    if ((phase === 'completed' || phase === 'failed') && !attemptRecordedRef.current && attemptStartRef.current && telemetryMode && user && !user.isGuest) {
       attemptRecordedRef.current = true;
 
       const success = phase === 'completed';

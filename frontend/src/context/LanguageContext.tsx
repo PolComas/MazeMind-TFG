@@ -29,7 +29,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        if (!user?.id) return;
+        if (!user?.id || user.isGuest) return;
         let canceled = false;
 
         const hydrate = async () => {
@@ -65,7 +65,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             canceled = true;
         };
-    }, [user?.id]);
+    }, [user?.id, user?.isGuest]);
 
     const setLanguage = (lang: Language) => {
         if (lang === language) return;
@@ -75,7 +75,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         } catch (e) {
             console.warn('Failed to save language preference', e);
         }
-        if (user?.id) {
+        if (user?.id && !user.isGuest) {
             upsertCloudLanguage(user.id, lang).catch((e) => {
                 console.warn('Failed to persist language preference', e);
             });

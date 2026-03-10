@@ -120,7 +120,7 @@ export default function LevelSelect({
   }, [audio]);
 
   const handleStartPracticeIA = useCallback(() => {
-    if (!user) {
+    if (!user || user.isGuest) {
       setShowIaLockedModal(true);
       return;
     }

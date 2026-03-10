@@ -462,7 +462,7 @@ export default function PracticeNormalScreen({
           // Guardar només el maxScore de la run actual
           const newBest = savePracticeRun(totalScore);
           setBestScore(newBest);
-          if (user) {
+          if (user && !user.isGuest) {
             pushPracticeBest(user.id, newBest).catch((error) => {
               console.error('Error sincronitzant el millor score de pràctica:', error);
             });

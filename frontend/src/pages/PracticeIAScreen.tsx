@@ -31,7 +31,7 @@ export default function PracticeIAScreen({
   useEffect(() => {
     setError(null);
     setLevel(null);
-    if (!user) {
+    if (!user || user.isGuest) {
       return;
     }
     let cancelled = false;
@@ -106,7 +106,7 @@ export default function PracticeIAScreen({
     setRun((r) => r + 1);
   }, []);
 
-  if (!user) {
+  if (!user || user.isGuest) {
     return (
       <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', padding: 24, position: 'relative', isolation: 'isolate' }}>
         <NetworkBackground

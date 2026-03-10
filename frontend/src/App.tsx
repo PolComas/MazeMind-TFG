@@ -175,6 +175,7 @@ export default function App() {
   const { user, logout, deleteAccount, isRecoverySession } = useUser();
   const { settings } = useSettings();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Estat per al mode tutorial
   const [isTutorialMode, setIsTutorialMode] = useState(false);
@@ -251,7 +252,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const currentUserId = user?.id ?? null;
+    const currentUserId = user && !user.isGuest ? user.id : null;
     if (previousUserIdRef.current === currentUserId) {
       return;
     }
@@ -468,23 +469,19 @@ export default function App() {
   }, [go]);
 
   const renderHome = () => (
-    <>
-      <HomeScreen
-        progress={progress}
-        user={user}
-        onNavigate={() => go('/levels')}
-        onMultiplayer={() => go('/multiplayer')}
-        onUserClick={() => setShowAuthModal(true)}
-        onLogout={handleLogoutRequest}
-        onDeleteAccount={handleDeleteAccount}
-        onSettingsClick={() => go('/settings')}
-      />
-      {showAuthModal && (
-        <AuthModal
-          onClose={() => setShowAuthModal(false)}
-        />
-      )}
-    </>
+    <HomeScreen
+      progress={progress}
+      user={user}
+      onNavigate={() => go('/levels')}
+      onMultiplayer={() => go('/multiplayer')}
+      onUserClick={() => {
+        setAuthModalMode('login');
+        setShowAuthModal(true);
+      }}
+      onLogout={handleLogoutRequest}
+      onDeleteAccount={handleDeleteAccount}
+      onSettingsClick={() => go('/settings')}
+    />
   );
 
   let screen: ReactElement;
@@ -570,6 +567,10 @@ export default function App() {
         <MultiplayerScreen
           onBack={() => go('/')}
           onOpenMatch={(id) => go(`/multiplayer/match/${id}`)}
+          onOpenAuth={(mode) => {
+            setAuthModalMode(mode);
+            setShowAuthModal(true);
+          }}
         />
       );
       break;
@@ -650,7 +651,15 @@ export default function App() {
 
   return (
     <LanguageProvider>
-      {screen}
+      <>
+        {screen}
+        {showAuthModal && (
+          <AuthModal
+            onClose={() => setShowAuthModal(false)}
+            initialMode={authModalMode}
+          />
+        )}
+      </>
     </LanguageProvider>
   );
 }

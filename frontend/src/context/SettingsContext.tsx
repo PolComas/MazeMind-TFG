@@ -34,7 +34,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.id || user.isGuest) {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
@@ -68,7 +68,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       canceled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.isGuest]);
 
   const debouncedCloudSave = useCallback((userId: string, next: AppSettings) => {
     const persist = () => {
@@ -95,11 +95,11 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     (newSettings: AppSettings) => {
       setSettings(newSettings);
       saveLocalSettings(newSettings);
-      if (user?.id) {
+      if (user?.id && !user.isGuest) {
         debouncedCloudSave(user.id, newSettings);
       }
     },
-    [debouncedCloudSave, user?.id]
+    [debouncedCloudSave, user?.id, user?.isGuest]
   );
 
   // Funció per obtenir els estils d'una pantalla

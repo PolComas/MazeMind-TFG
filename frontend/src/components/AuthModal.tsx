@@ -12,6 +12,7 @@ import { useFocusTrap } from '../utils/focusTrap';
 // Props per al modal
 type Props = {
   onClose: () => void;
+  initialMode?: 'login' | 'register';
 };
 
 const buildStyles = (visuals: VisualSettings) => {
@@ -143,7 +144,7 @@ const buildStyles = (visuals: VisualSettings) => {
   } as const;
 };
 
-export default function AuthModal({ onClose }: Props) {
+export default function AuthModal({ onClose, initialMode = 'login' }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();
@@ -197,14 +198,20 @@ export default function AuthModal({ onClose }: Props) {
   useFocusTrap(true, modalRef);
 
   // Estat per canviar entre els modes Iniciar Sessió / Registrar-se
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(initialMode === 'register');
   // Estat per mostrar missatges d'error
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    setIsRegistering(initialMode === 'register');
+    setError(null);
+    setSuccessMessage(null);
+  }, [initialMode]);
+
+  useEffect(() => {
+    if (user && !user.isGuest) {
       setSuccessMessage(null);
       onClose();
     }
