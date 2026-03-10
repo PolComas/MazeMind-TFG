@@ -9,6 +9,7 @@ import CompletionModal from '../components/CompletionModal';
 import GameOverModal from '../components/GameOverModal';
 import PracticeCompletionModal from '../components/PracticeCompletionModal';
 import PracticeIaCompletionModal from '../components/PracticeIaCompletionModal';
+import DailyCompletionModal from '../components/DailyCompletionModal';
 import { saveLevelCompletion, type GameProgress } from '../utils/progress';
 import { useSettings } from '../context/SettingsContext';
 import TutorialOverlay, { tutorialSteps } from "../components/TutorialOverlay";
@@ -55,6 +56,8 @@ export default function LevelScreen({
   telemetryMode,
   suppressModals,
   onGameEnd,
+  isDailyMode,
+  dailyStreakData,
 }: {
   level: Level;
   onBack: () => void;
@@ -68,6 +71,8 @@ export default function LevelScreen({
   telemetryMode?: 'campaign' | 'practice_ia' | 'practice_free' | 'practice_normal' | 'other';
   suppressModals?: boolean;
   onGameEnd?: (result: { completed: boolean; timeSeconds: number; points: number }) => void;
+  isDailyMode?: boolean;
+  dailyStreakData?: { streak: number; bestStreak: number; stars: number };
 }) {
   const audio = useGameAudio();
   const { user } = useUser();
@@ -770,6 +775,7 @@ export default function LevelScreen({
 
   const title = useMemo(() => {
     if (isPracticeMode) {
+      if (isDailyMode) return t('daily.title');
       // level.number === 99 mode lliure
       if (level.number === 99) return t('level.title.free');
       // Per als modes "IA" i "Normal"
@@ -904,14 +910,27 @@ export default function LevelScreen({
         />
       )}
 
-      {/* Modal de Pràctica */}
-      {!suppressModals && (phase === "completed" || phase === "failed") && isPracticeMode && telemetryMode !== 'practice_ia' && (
+      {/* Modal de Pràctica (excloent daily mode) */}
+      {!suppressModals && (phase === "completed" || phase === "failed") && isPracticeMode && !isDailyMode && telemetryMode !== 'practice_ia' && (
         <PracticeCompletionModal
           status={phase}
           time={gameTime}
           onRetrySameMaze={handleRetrySameMaze}
           onRetryNewMaze={handleRetryNewMaze}
           onBackToSettings={handleBack}
+        />
+      )}
+
+      {/* Modal del Repte Diari */}
+      {!suppressModals && (phase === "completed" || phase === "failed") && isDailyMode && (
+        <DailyCompletionModal
+          status={phase}
+          time={gameTime}
+          streak={dailyStreakData?.streak ?? 0}
+          bestStreak={dailyStreakData?.bestStreak ?? 0}
+          stars={dailyStreakData?.stars ?? 0}
+          onRetrySameMaze={handleRetrySameMaze}
+          onBackToDaily={handleBack}
         />
       )}
 

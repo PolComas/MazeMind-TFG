@@ -18,6 +18,13 @@ import { getCloudSnapshot } from './lib/sync';
 import PracticeIAScreen from './pages/PracticeIAScreen';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import MultiplayerMatchScreen from './pages/MultiplayerMatchScreen';
+import DailyChallengeScreen from './pages/DailyChallengeScreen';
+import {
+  generateDailyLevel,
+  completeDailyChallenge,
+  syncStreakToCloud,
+  getTodayKey,
+} from './lib/dailyChallenge';
 
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
@@ -169,7 +176,9 @@ type Route =
   | { type: 'custom'; width: number; height: number; time: number; difficulty: Exclude<Diff, 'easy'>; seed?: string }
   | { type: 'home' }
   | { type: 'unknown'; path: string }
-  | { type: 'auth-reset' };
+  | { type: 'auth-reset' }
+  | { type: 'daily-challenge' }
+  | { type: 'daily-challenge-play' };
 
 export default function App() {
   const { user, logout, deleteAccount, isRecoverySession } = useUser();
@@ -350,6 +359,14 @@ export default function App() {
       return { type: 'multiplayer' };
     }
 
+    if (pathOnly === '/daily') {
+      return { type: 'daily-challenge' };
+    }
+
+    if (pathOnly === '/daily/play') {
+      return { type: 'daily-challenge-play' };
+    }
+
     const mpMatch = pathOnly.match(/^\/multiplayer\/match\/([0-9a-f-]+)$/);
     if (mpMatch) {
       return { type: 'multiplayer-match', matchId: mpMatch[1] };
@@ -481,6 +498,7 @@ export default function App() {
       onLogout={handleLogoutRequest}
       onDeleteAccount={handleDeleteAccount}
       onSettingsClick={() => go('/settings')}
+      onDailyChallenge={() => go('/daily')}
     />
   );
 
@@ -581,6 +599,46 @@ export default function App() {
         <MultiplayerMatchScreen
           matchId={route.matchId}
           onBack={() => go('/multiplayer')}
+        />
+      );
+      break;
+    }
+
+    case 'daily-challenge': {
+      screen = (
+        <DailyChallengeScreen
+          onBack={() => go('/')}
+          onPlay={() => go('/daily/play')}
+        />
+      );
+      break;
+    }
+
+    case 'daily-challenge-play': {
+      const dailyLevel = generateDailyLevel();
+
+      screen = (
+        <LevelScreen
+          key={`daily-${getTodayKey()}-${navKey}`}
+          level={dailyLevel}
+          onBack={() => go('/daily')}
+          onRetry={() => go('/daily/play')}
+          isTutorialMode={false}
+          onCompleteTutorial={() => { }}
+          onLevelComplete={(newProgress) => setProgress(newProgress)}
+          isPracticeMode={true}
+          progress={progress}
+          telemetryMode="other"
+          onGameEnd={(result) => {
+            if (result.completed) {
+              const stars = result.points >= 800 ? 3 : result.points >= 500 ? 2 : 1;
+              const newState = completeDailyChallenge(stars, result.timeSeconds);
+              // Sync to cloud for authenticated users
+              if (user && !user.isGuest) {
+                void syncStreakToCloud(user.id, newState);
+              }
+            }
+          }}
         />
       );
       break;

@@ -9,6 +9,7 @@ import type { VisualSettings } from '../utils/settings';
 import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
 import { useFocusTrap } from '../utils/focusTrap';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 type Props = {
   open: boolean;
@@ -140,6 +141,7 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
   const { styles, colors } = useMemo(() => createStyles(visualSettings), [visualSettings]);
   const modalRef = useRef<HTMLDivElement | null>(null);
   useFocusTrap(open, modalRef);
+  const isMobile = useMediaQuery('(max-width: 480px)');
   const formatKey = (key: string) => {
     if (key === ' ') return t('keys.space');
     if (key.length === 1) return key.toUpperCase();
@@ -231,7 +233,7 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
           <section style={styles.section}>
             <h3 style={{ ...styles.sectionTitle, color: colors.successColor }}><Gamepad2 size={20} color={colors.successColor} /> {t('howto.controls.title')}</h3>
             <div style={styles.card}>
-              <div style={styles.controlsGrid}>
+              <div style={{ ...styles.controlsGrid, ...(isMobile ? { gridTemplateColumns: '1fr' } : {}) }}>
                 <div style={styles.controlItem}>
                   <kbd style={styles.keyDisplay}><ArrowUp size={12} style={{ marginBottom: -1 }} /> {formatKey(gameSettings.keyMoveUp)}</kbd>
                   <span>{t('howto.controls.up')}</span>
@@ -361,7 +363,7 @@ export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props
           </section>
 
           {/* Botó Tutorial */}
-          <div style={styles.tutorialCard}>
+          <div style={{ ...styles.tutorialCard, ...(isMobile ? { flexDirection: 'column', textAlign: 'center' } : {}) }}>
             <div style={styles.tutorialIconWrapper}>
               <GraduationCap size={32} color="#fff" />
             </div>

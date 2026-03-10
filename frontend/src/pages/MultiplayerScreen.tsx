@@ -14,6 +14,7 @@ import {
 } from '../lib/multiplayer';
 import NetworkBackground from '../components/NetworkBackground';
 import { applyAlpha, pickReadableTextColor } from '../utils/color';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 type Diff = 'easy' | 'normal' | 'hard';
 type NoticeAction = 'login' | 'register' | 'guest';
@@ -53,6 +54,7 @@ export default function MultiplayerScreen({
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('multiplayer');
   const { t } = useLanguage();
+  const isMobile = useMediaQuery('(max-width: 600px)');
 
   const [isPublic, setIsPublic] = useState(false);
   const [roundsCount, setRoundsCount] = useState(3);
@@ -509,21 +511,21 @@ export default function MultiplayerScreen({
     ...styles.segmentBtn,
     ...(active
       ? {
-          background: screenSettings.surfaceColor,
-          color: screenSettings.textColor,
-          boxShadow: '0 1px 6px rgba(0,0,0,0.14)',
-        }
+        background: screenSettings.surfaceColor,
+        color: screenSettings.textColor,
+        boxShadow: '0 1px 6px rgba(0,0,0,0.14)',
+      }
       : null),
   });
 
   const actionLabel = notice?.action
     ? t(
-        notice.action === 'login'
-          ? 'multiplayer.auth.action.login'
-          : notice.action === 'register'
-            ? 'multiplayer.auth.action.register'
-            : 'multiplayer.auth.action.guest',
-      )
+      notice.action === 'login'
+        ? 'multiplayer.auth.action.login'
+        : notice.action === 'register'
+          ? 'multiplayer.auth.action.register'
+          : 'multiplayer.auth.action.guest',
+    )
     : '';
 
   return (
@@ -535,15 +537,22 @@ export default function MultiplayerScreen({
       />
 
       <div style={styles.shell}>
-        <header style={styles.header}>
-          <button type="button" style={styles.ghostBtn} onClick={onBack} onMouseEnter={() => audio.playHover()}>
-            ← {t('common.back')}
-          </button>
+        <header style={{ ...styles.header, ...(isMobile ? { gridTemplateColumns: '1fr', justifyItems: 'center', textAlign: 'center', gap: 10 } : {}) }}>
+          {!isMobile && (
+            <button type="button" style={styles.ghostBtn} onClick={onBack} onMouseEnter={() => audio.playHover()}>
+              ← {t('common.back')}
+            </button>
+          )}
           <div style={styles.titleWrap}>
+            {isMobile && (
+              <button type="button" style={{ ...styles.ghostBtn, marginBottom: 8 }} onClick={onBack} onMouseEnter={() => audio.playHover()}>
+                ← {t('common.back')}
+              </button>
+            )}
             <h1 style={styles.title}>{t('multiplayer.title')}</h1>
             <p style={styles.subtitle}>{t('multiplayer.subtitle')}</p>
           </div>
-          <div style={{ width: 90 }} />
+          {!isMobile && <div style={{ width: 90 }} />}
         </header>
 
         <div style={styles.noticeWrap}>

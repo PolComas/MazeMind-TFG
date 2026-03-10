@@ -7,6 +7,7 @@ import { useGameAudio } from '../audio/sound';
 import NetworkBackground from '../components/NetworkBackground';
 import { useLanguage } from '../context/LanguageContext';
 import { useFocusTrap } from '../utils/focusTrap';
+import { useMediaQuery } from '../utils/useMediaQuery';
 
 
 import HomeScreenSettings from '../components/settings/HomeScreenSettings';
@@ -227,6 +228,8 @@ export default function SettingsScreen({ onBack }: Props) {
 
   const contrastScreen: keyof ScreenSettings = previewSection === 'game' ? 'levelScreen' : previewSection;
 
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   return (
     <div style={styles.page}>
       <NetworkBackground
@@ -243,7 +246,7 @@ export default function SettingsScreen({ onBack }: Props) {
         <div style={{ width: 100 }} />
       </header>
 
-      <div style={styles.contentGrid}>
+      <div style={{ ...styles.contentGrid, ...(isMobile ? { gridTemplateColumns: '1fr' } : {}) }}>
         {/* Columna Esquerra: Acordió */}
         <div style={styles.accordionColumn}>
           {/* Temes Predefinits */}
@@ -387,47 +390,49 @@ export default function SettingsScreen({ onBack }: Props) {
           )}
         </div>
 
-        {/* Columna Dreta: Previsualització */}
-        <aside style={styles.previewColumn} aria-label={t('settings.preview.aria')}>
-          <div style={styles.previewHeader}>
-            <span>{t('settings.preview.title')}</span>
-          </div>
-          <div style={styles.previewContent}>
-            {previewSection === 'home' && (
-              <HomeScreenPreview settings={currentSettings.visuals.home} />
-            )}
+        {/* Columna Dreta: Previsualització (hidden on mobile) */}
+        {!isMobile && (
+          <aside style={styles.previewColumn} aria-label={t('settings.preview.aria')}>
+            <div style={styles.previewHeader}>
+              <span>{t('settings.preview.title')}</span>
+            </div>
+            <div style={styles.previewContent}>
+              {previewSection === 'home' && (
+                <HomeScreenPreview settings={currentSettings.visuals.home} />
+              )}
 
-            {previewSection === 'levelSelect' && (
-              <LevelSelectPreview settings={currentSettings.visuals.levelSelect} />
-            )}
+              {previewSection === 'levelSelect' && (
+                <LevelSelectPreview settings={currentSettings.visuals.levelSelect} />
+              )}
 
-            {previewSection === 'levelScreen' && (
-              <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
-            )}
+              {previewSection === 'levelScreen' && (
+                <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
+              )}
 
-            {previewSection === 'multiplayer' && (
-              <MultiplayerScreenPreview settings={currentSettings.visuals.multiplayer} />
-            )}
+              {previewSection === 'multiplayer' && (
+                <MultiplayerScreenPreview settings={currentSettings.visuals.multiplayer} />
+              )}
 
-            {previewSection === 'game' && (
-              <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
-            )}
+              {previewSection === 'game' && (
+                <LevelScreenPreview settings={currentSettings.visuals.levelScreen} />
+              )}
 
-            {!previewSection && (
-              <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
-                {t('settings.preview.empty')}
-              </p>
-            )}
-          </div>
-          {/* Llegenda */}
-          <div style={styles.legend}>
-            {previewSection === 'levelScreen' || previewSection === 'game' ? (
-              <LevelScreenLegend settings={currentSettings.visuals.levelScreen} />
-            ) : (
-              <p>{t('settings.preview.noLegend')}</p>
-            )}
-          </div>
-        </aside>
+              {!previewSection && (
+                <p style={{ color: PALETTE.subtext, fontStyle: 'italic' }}>
+                  {t('settings.preview.empty')}
+                </p>
+              )}
+            </div>
+            {/* Llegenda */}
+            <div style={styles.legend}>
+              {previewSection === 'levelScreen' || previewSection === 'game' ? (
+                <LevelScreenLegend settings={currentSettings.visuals.levelScreen} />
+              ) : (
+                <p>{t('settings.preview.noLegend')}</p>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* Modal d'avís per canvis no desats */}

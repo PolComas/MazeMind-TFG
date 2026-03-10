@@ -9,6 +9,7 @@ import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type Gam
 import NetworkBackground from './NetworkBackground';
 import { applyAlpha } from '../utils/color';
 import { getAggregatedSkillForMode } from '../lib/dda';
+import { getLiveStreak, getLocalDailyState } from '../lib/dailyChallenge';
 
 type UserType = { id: string; email: string; displayName: string; isGuest: boolean; };
 
@@ -16,6 +17,7 @@ type Props = {
   user: UserType | null;
   onNavigate: () => void;
   onMultiplayer: () => void;
+  onDailyChallenge: () => void;
   onUserClick: () => void;
   onLogout: () => Promise<void> | void;
   onDeleteAccount: () => Promise<void> | void;
@@ -23,7 +25,7 @@ type Props = {
   progress: GameProgress;
 };
 
-export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClick, onLogout, onDeleteAccount, onSettingsClick, progress }: Props) {
+export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyChallenge, onUserClick, onLogout, onDeleteAccount, onSettingsClick, progress }: Props) {
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');
   const { t, language, setLanguage } = useLanguage();
@@ -112,6 +114,9 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
     audio.playFail();
     handleUserButton();
   };
+
+  const dailyState = getLocalDailyState();
+  const dailyStreak = getLiveStreak(dailyState);
 
   useEffect(() => {
     if (!user?.id || user.isGuest) {
@@ -390,6 +395,30 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
       transition: "transform .05s ease",
       outline: "3px solid transparent",
     },
+    dailyBtn: {
+      padding: "14px 16px",
+      borderRadius: 12,
+      border: `2px solid ${applyAlpha(screenSettings.accentColor1, 0.4)}`,
+      background: applyAlpha(screenSettings.accentColor1, 0.08),
+      color: screenSettings.textColor,
+      fontSize: 17,
+      fontWeight: 700,
+      cursor: "pointer",
+      transition: "transform .05s ease",
+      outline: "3px solid transparent",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    dailyStreakBadge: {
+      background: applyAlpha(screenSettings.accentColor1, 0.18),
+      color: screenSettings.accentColor1,
+      borderRadius: 999,
+      padding: '2px 10px',
+      fontSize: 13,
+      fontWeight: 800,
+    },
     welcomeMessage: {
       color: screenSettings.subtextColor,
       fontSize: 16,
@@ -546,6 +575,20 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onUserClic
             aria-label={t('home.play')}
           >
             <span aria-hidden="true">▶</span> {t('home.play')}
+          </button>
+
+          {/* Daily Challenge Button */}
+          <button
+            type="button"
+            style={styles.dailyBtn}
+            onClick={() => { audio.playFail(); onDailyChallenge(); }}
+            onMouseEnter={() => audio.playHover()}
+            aria-label={t('daily.title')}
+          >
+            🔥 {t('daily.title')}
+            {dailyStreak > 0 && (
+              <span style={styles.dailyStreakBadge}>{dailyStreak} 🔥</span>
+            )}
           </button>
 
           <button
