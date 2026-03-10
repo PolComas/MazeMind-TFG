@@ -8,6 +8,7 @@ import NetworkBackground from '../components/NetworkBackground';
 import { useLanguage } from '../context/LanguageContext';
 import { useFocusTrap } from '../utils/focusTrap';
 
+
 import HomeScreenSettings from '../components/settings/HomeScreenSettings';
 import HomeScreenPreview from '../components/settings/HomeScreenPreview';
 import LevelSelectSettings from '../components/settings/LevelSelectSettings';
@@ -18,6 +19,7 @@ import LevelScreenLegend from '../components/settings/LevelScreenLegend';
 import MultiplayerScreenSettings from '../components/settings/MultiplayerScreenSettings';
 import MultiplayerScreenPreview from '../components/settings/MultiplayerScreenPreview';
 import GameSettingsComponent from '../components/settings/GameSettingsComponent';
+import ContrastCheckerPanel from '../components/settings/ContrastCheckerPanel';
 import type { GameSettings } from '../utils/settings';
 
 type Props = {
@@ -221,6 +223,10 @@ export default function SettingsScreen({ onBack }: Props) {
     }));
   }, []);
 
+
+
+  const contrastScreen: keyof ScreenSettings = previewSection === 'game' ? 'levelScreen' : previewSection;
+
   return (
     <div style={styles.page}>
       <NetworkBackground
@@ -257,6 +263,11 @@ export default function SettingsScreen({ onBack }: Props) {
               ))}
             </div>
           </section>
+
+          <ContrastCheckerPanel
+            screen={contrastScreen}
+            settings={currentSettings.visuals}
+          />
 
           {/* --- ACORDIÓ --- */}
           {/* Secció HomeScreen */}

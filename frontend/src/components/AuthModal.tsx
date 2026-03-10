@@ -34,8 +34,8 @@ const buildStyles = (visuals: VisualSettings) => {
     getContrastRatio(darkCandidate, visuals.accentColor2),
   );
   const submitTextColor = whiteMin >= darkMin ? '#FFFFFF' : darkCandidate;
-  const errorTextColor = ensureContrastColor(visuals.hardColor, errorBackground, 4.5, surfaceText);
-  const successTextColor = ensureContrastColor(visuals.accentColor1, successBackground, 4.5, surfaceText);
+  const errorTextColor = ensureContrastColor(visuals.hardColor, visuals.surfaceColor, 4.5, surfaceText);
+  const successTextColor = ensureContrastColor(visuals.accentColor1, visuals.surfaceColor, 4.5, surfaceText);
 
   return {
     overlay: {
