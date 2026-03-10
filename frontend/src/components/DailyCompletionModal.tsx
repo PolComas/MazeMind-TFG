@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, CheckCircle, Flame, RefreshCcw, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle, RefreshCcw } from 'lucide-react';
 import { useGameAudio } from '../audio/sound';
 import { useSettings } from '../context/SettingsContext';
 import type { VisualSettings } from '../utils/settings';
@@ -10,8 +10,7 @@ import { useFocusTrap } from '../utils/focusTrap';
 type Props = {
     status: 'completed' | 'failed';
     time: number;
-    streak: number;
-    bestStreak: number;
+    points: number;
     stars: number;
     onRetrySameMaze: () => void;
     onBackToDaily: () => void;
@@ -43,21 +42,26 @@ const buildStyles = (visuals: VisualSettings) => {
             display: 'flex', flexDirection: 'column' as const, gap: 20,
             alignItems: 'center',
         },
-        icon: {
-            color: visuals.easyColor,
-            marginBottom: -8,
-        },
-        title: {
-            margin: 0,
-            fontSize: 'clamp(22px, 5vw, 30px)',
-            fontWeight: 800,
-            color: visuals.easyColor,
-        },
         failTitle: {
             margin: 0,
             fontSize: 'clamp(22px, 5vw, 30px)',
             fontWeight: 800,
             color: visuals.hardColor,
+        },
+        successIcon: {
+            color: visuals.easyColor,
+            marginBottom: -4,
+        },
+        successTitle: {
+            margin: 0,
+            fontSize: 'clamp(24px, 5vw, 32px)',
+            fontWeight: 900,
+            color: visuals.easyColor,
+        },
+        successSubtitle: {
+            margin: 0,
+            fontSize: 14,
+            color: visuals.subtextColor,
         },
         statsGrid: {
             display: 'grid',
@@ -76,18 +80,6 @@ const buildStyles = (visuals: VisualSettings) => {
         },
         statLabel: {
             fontSize: 12, color: visuals.subtextColor, textTransform: 'uppercase' as const, fontWeight: 600,
-        },
-        streakRow: {
-            display: 'flex', alignItems: 'center', gap: 10,
-        },
-        streakValue: {
-            fontSize: '2rem', fontWeight: 900, color: visuals.accentColor1,
-        },
-        streakLabel: {
-            fontSize: '0.85rem', color: visuals.subtextColor,
-        },
-        bestRow: {
-            fontSize: '0.75rem', color: visuals.subtextColor,
         },
         actions: {
             display: 'flex', flexDirection: 'column' as const, gap: 10, width: '100%',
@@ -110,7 +102,7 @@ const buildStyles = (visuals: VisualSettings) => {
 };
 
 export default function DailyCompletionModal({
-    status, time, streak, bestStreak, stars, onRetrySameMaze, onBackToDaily
+    status, time, points, stars, onRetrySameMaze, onBackToDaily
 }: Props) {
     const audio = useGameAudio();
     const { getVisualSettings, settings } = useSettings();
@@ -135,63 +127,56 @@ export default function DailyCompletionModal({
         return () => window.removeEventListener('keydown', handleKey);
     }, [settings.game.keyCloseModal, onBackToDaily]);
 
-    const starDisplay = '⭐'.repeat(stars);
-
     return (
         <div style={styles.overlay}>
             <div ref={modalRef} style={styles.modal} role="dialog" aria-modal="true">
                 {isCompleted ? (
                     <>
-                        <CheckCircle size={52} style={styles.icon} />
-                        <h2 style={styles.title}>{t('daily.modal.win')}</h2>
+                        <CheckCircle size={52} style={styles.successIcon} />
+                        <h2 style={styles.successTitle}>{t('daily.modal.completedTitle')}</h2>
+                        <p style={styles.successSubtitle}>{t('daily.modal.completedSubtitle')}</p>
+                        <div style={styles.statsGrid}>
+                            <div style={styles.statBubble}>
+                                <span style={styles.statValue}>{formatTime(time)}</span>
+                                <span style={styles.statLabel}>{t('completion.result.time')}</span>
+                            </div>
+                            <div style={styles.statBubble}>
+                                <span style={styles.statValue}>{points}</span>
+                                <span style={styles.statLabel}>{t('completion.result.points')}</span>
+                            </div>
+                            <div style={styles.statBubble}>
+                                <span style={styles.statValue}>{'⭐'.repeat(stars)}</span>
+                                <span style={styles.statLabel}>{t('completion.result.stars')}</span>
+                            </div>
+                        </div>
+                        <div style={styles.actions}>
+                            <button onMouseEnter={() => audio.playHover()} style={styles.primaryBtn} onClick={onRetrySameMaze}>
+                                <RefreshCcw size={18} /> {t('daily.playAgain')}
+                            </button>
+                            <button onMouseEnter={() => audio.playHover()} style={styles.secondaryBtn} onClick={onBackToDaily}>
+                                <ArrowLeft size={18} /> {t('common.back')}
+                            </button>
+                        </div>
                     </>
                 ) : (
                     <>
-                        <h2 style={styles.failTitle}>{t('daily.modal.loss')}</h2>
+                        <h2 style={styles.failTitle}>{t('practiceComplete.title.loss')}</h2>
+                        <div style={styles.statsGrid}>
+                            <div style={styles.statBubble}>
+                                <span style={styles.statValue}>{formatTime(time)}</span>
+                                <span style={styles.statLabel}>{t('practiceComplete.result.time')}</span>
+                            </div>
+                        </div>
+                        <div style={styles.actions}>
+                            <button onMouseEnter={() => audio.playHover()} style={styles.primaryBtn} onClick={onRetrySameMaze}>
+                                <RefreshCcw size={18} /> {t('common.retry')}
+                            </button>
+                            <button onMouseEnter={() => audio.playHover()} style={styles.secondaryBtn} onClick={onBackToDaily}>
+                                <ArrowLeft size={18} /> {t('common.back')}
+                            </button>
+                        </div>
                     </>
                 )}
-
-                {/* Stats */}
-                <div style={styles.statsGrid}>
-                    <div style={styles.statBubble}>
-                        <span style={styles.statValue}>{formatTime(time)}</span>
-                        <span style={styles.statLabel}>{t('practiceComplete.result.time')}</span>
-                    </div>
-                    {isCompleted && (
-                        <div style={styles.statBubble}>
-                            <span style={styles.statValue}>{starDisplay || '—'}</span>
-                            <span style={styles.statLabel}>{t('daily.modal.stars')}</span>
-                        </div>
-                    )}
-                    <div style={styles.statBubble}>
-                        <span style={{ ...styles.statValue, color: visuals.accentColor1 }}>{streak}</span>
-                        <span style={styles.statLabel}>{t('daily.streak')}</span>
-                    </div>
-                </div>
-
-                {/* Streak highlight */}
-                {isCompleted && streak > 0 && (
-                    <div style={styles.streakRow}>
-                        <Flame size={26} color={visuals.accentColor1} />
-                        <span style={styles.streakValue}>{streak}</span>
-                        <span style={styles.streakLabel}>{t('daily.streak')}</span>
-                    </div>
-                )}
-                {bestStreak > 0 && (
-                    <div style={styles.bestRow}>
-                        <Trophy size={12} style={{ verticalAlign: 'text-bottom' }} /> {t('daily.bestStreak')}: {bestStreak}
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div style={styles.actions}>
-                    <button onMouseEnter={() => audio.playHover()} style={styles.primaryBtn} onClick={onRetrySameMaze}>
-                        <RefreshCcw size={18} /> {t('daily.modal.retry')}
-                    </button>
-                    <button onMouseEnter={() => audio.playHover()} style={styles.secondaryBtn} onClick={onBackToDaily}>
-                        <ArrowLeft size={18} /> {t('daily.modal.back')}
-                    </button>
-                </div>
             </div>
         </div>
     );

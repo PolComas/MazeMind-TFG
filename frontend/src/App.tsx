@@ -627,6 +627,7 @@ export default function App() {
           onCompleteTutorial={() => { }}
           onLevelComplete={(newProgress) => setProgress(newProgress)}
           isPracticeMode={true}
+          isDailyMode={true}
           progress={progress}
           telemetryMode="other"
           onGameEnd={(result) => {

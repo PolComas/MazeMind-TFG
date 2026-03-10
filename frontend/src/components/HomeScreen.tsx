@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { User, LogOut, Trash2 } from 'lucide-react';
+import { User, LogOut, Trash2, Flame } from 'lucide-react';
 import Logo from "../assets/cervell.svg?react";
 import { PALETTE } from './palette';
 import { useGameAudio } from '../audio/sound';
@@ -7,7 +7,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTotalCompletedLevels, getTotalStars, getTotalPerfectLevels, type GameProgress } from '../utils/progress';
 import NetworkBackground from './NetworkBackground';
-import { applyAlpha } from '../utils/color';
+import { applyAlpha, pickReadableTextColor } from '../utils/color';
 import { getAggregatedSkillForMode } from '../lib/dda';
 import { getLiveStreak, getLocalDailyState } from '../lib/dailyChallenge';
 
@@ -117,6 +117,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
 
   const dailyState = getLocalDailyState();
   const dailyStreak = getLiveStreak(dailyState);
+  const dailyQuickValue = `${dailyStreak} 🔥`;
 
   useEffect(() => {
     if (!user?.id || user.isGuest) {
@@ -293,7 +294,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
       display: "grid",
       justifyItems: "center",
       textAlign: "center",
-      gap: 24,
+      gap: 20,
       paddingInline: "min(4vw, 40px)",
     },
     logoSvg: {
@@ -330,7 +331,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
     statsGrid: {
       listStyle: "none",
       padding: 0,
-      margin: "8px 0 0 0",
+      margin: "4px 0 0 0",
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
       gap: 16,
@@ -355,7 +356,7 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
       gridTemplateColumns: "1fr",
       gap: 12,
       width: "min(420px, 100%)",
-      marginTop: 8,
+      marginTop: 0,
     },
     playBtn: {
       padding: "16px",
@@ -395,29 +396,59 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
       transition: "transform .05s ease",
       outline: "3px solid transparent",
     },
-    dailyBtn: {
-      padding: "14px 16px",
+    dailyShortcutWrap: {
+      width: "min(420px, 100%)",
+      marginTop: 2,
+      display: 'grid',
+    },
+    dailyShortcutBtn: {
+      padding: "10px 14px",
       borderRadius: 12,
-      border: `2px solid ${applyAlpha(screenSettings.accentColor1, 0.4)}`,
-      background: applyAlpha(screenSettings.accentColor1, 0.08),
+      border: `1px solid ${applyAlpha(screenSettings.accentColor1, 0.38)}`,
+      background: `linear-gradient(180deg, ${applyAlpha(screenSettings.accentColor1, 0.16)}, ${applyAlpha(screenSettings.accentColor1, 0.1)})`,
       color: screenSettings.textColor,
-      fontSize: 17,
-      fontWeight: 700,
+      fontSize: 16,
       cursor: "pointer",
       transition: "transform .05s ease",
-      outline: "3px solid transparent",
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 10,
+      position: 'relative',
+      minHeight: 44,
+    },
+    dailyShortcutInfo: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      minWidth: 0,
+    },
+    dailyShortcutIcon: {
+      color: screenSettings.textColor,
+      opacity: 0.95,
+      flexShrink: 0,
+    },
+    dailyShortcutTitle: {
+      fontWeight: 800,
+      fontSize: 15,
+      color: screenSettings.textColor,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
     },
     dailyStreakBadge: {
-      background: applyAlpha(screenSettings.accentColor1, 0.18),
-      color: screenSettings.accentColor1,
-      borderRadius: 999,
-      padding: '2px 10px',
-      fontSize: 13,
+      background: screenSettings.accentColor1,
+      color: pickReadableTextColor(screenSettings.accentColor1),
+      fontSize: 14,
       fontWeight: 800,
+      borderRadius: 999,
+      padding: '2px 8px',
+      border: `1px solid ${applyAlpha(screenSettings.textColor, 0.22)}`,
+      whiteSpace: 'nowrap',
+      position: 'absolute',
+      right: 12,
+      top: '50%',
+      transform: 'translateY(-50%)',
     },
     welcomeMessage: {
       color: screenSettings.subtextColor,
@@ -561,6 +592,22 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
           ))}
         </ul>
 
+        <div style={styles.dailyShortcutWrap}>
+          <button
+            type="button"
+            style={styles.dailyShortcutBtn}
+            onClick={() => { audio.playFail(); onDailyChallenge(); }}
+            onMouseEnter={() => audio.playHover()}
+            aria-label={t('daily.title')}
+          >
+            <span style={styles.dailyShortcutInfo}>
+              <Flame size={16} style={styles.dailyShortcutIcon} aria-hidden="true" />
+              <span style={styles.dailyShortcutTitle}>{t('daily.title')}</span>
+            </span>
+            <span style={styles.dailyStreakBadge}>{dailyQuickValue}</span>
+          </button>
+        </div>
+
         <nav id="actions" aria-label={t('home.actions.aria')} style={styles.actionsCol}>
           <button
             type="button"
@@ -575,20 +622,6 @@ export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyCha
             aria-label={t('home.play')}
           >
             <span aria-hidden="true">▶</span> {t('home.play')}
-          </button>
-
-          {/* Daily Challenge Button */}
-          <button
-            type="button"
-            style={styles.dailyBtn}
-            onClick={() => { audio.playFail(); onDailyChallenge(); }}
-            onMouseEnter={() => audio.playHover()}
-            aria-label={t('daily.title')}
-          >
-            🔥 {t('daily.title')}
-            {dailyStreak > 0 && (
-              <span style={styles.dailyStreakBadge}>{dailyStreak} 🔥</span>
-            )}
           </button>
 
           <button

@@ -57,7 +57,6 @@ export default function LevelScreen({
   suppressModals,
   onGameEnd,
   isDailyMode,
-  dailyStreakData,
 }: {
   level: Level;
   onBack: () => void;
@@ -72,7 +71,6 @@ export default function LevelScreen({
   suppressModals?: boolean;
   onGameEnd?: (result: { completed: boolean; timeSeconds: number; points: number }) => void;
   isDailyMode?: boolean;
-  dailyStreakData?: { streak: number; bestStreak: number; stars: number };
 }) {
   const audio = useGameAudio();
   const { user } = useUser();
@@ -926,9 +924,8 @@ export default function LevelScreen({
         <DailyCompletionModal
           status={phase}
           time={gameTime}
-          streak={dailyStreakData?.streak ?? 0}
-          bestStreak={dailyStreakData?.bestStreak ?? 0}
-          stars={dailyStreakData?.stars ?? 0}
+          points={Math.round(points)}
+          stars={currentStars}
           onRetrySameMaze={handleRetrySameMaze}
           onBackToDaily={handleBack}
         />
