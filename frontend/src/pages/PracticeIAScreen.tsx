@@ -8,6 +8,14 @@ import NetworkBackground from '../components/NetworkBackground';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 
+/**
+ * Pantalla de pràctica IA.
+ *
+ * Flux:
+ * - Demana recomanació DDA per a l'usuari autenticat.
+ * - Genera un laberint amb aquests paràmetres.
+ * - Si el càlcul tarda massa, reintenta i finalment aplica fallback segur.
+ */
 export default function PracticeIAScreen({
   onBack,
   progress,
@@ -38,6 +46,7 @@ export default function PracticeIAScreen({
     let resolved = false;
     const markResolved = () => { resolved = true; };
 
+    // Primer intent: si passen 10s sense resposta, fem un segon intent automàtic.
     const retryTimer = retryCount === 0
       ? window.setTimeout(() => {
         if (resolved || cancelled) return;
@@ -46,6 +55,7 @@ export default function PracticeIAScreen({
       }, 10_000)
       : null;
 
+    // Segon intent: si encara no hi ha resposta, generem un nivell base local.
     const fallbackTimer = retryCount > 0
       ? window.setTimeout(() => {
         if (resolved || cancelled) return;

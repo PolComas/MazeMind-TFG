@@ -6,6 +6,9 @@ type Props = {
   settings: VisualSettings;
 };
 
+/**
+ * Llegenda de colors i estats usada a la preview del nivell.
+ */
 export default function LevelScreenLegend({ settings }: Props) {
   const { t } = useLanguage();
   const styles: Record<string, React.CSSProperties> = {

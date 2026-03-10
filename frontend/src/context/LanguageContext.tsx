@@ -3,6 +3,15 @@ import { type Language, type TranslationKey, TRANSLATIONS } from '../utils/trans
 import { useUser } from './UserContext';
 import { fetchCloudLanguage, upsertCloudLanguage } from '../lib/cloudSettings';
 
+/**
+ * Context d'idioma i traduccions.
+ *
+ * Responsabilitats:
+ * - mantenir idioma actiu de sessió
+ * - persistència local immediata
+ * - sincronització cloud per usuaris autenticats
+ * - exposar helper `t(key)` per accés a catàleg
+ */
 type LanguageContextType = {
     language: Language;
     setLanguage: (lang: Language) => void;
@@ -13,10 +22,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const STORAGE_KEY = 'mazeMindLanguage';
 
+/** Proveïdor d'idioma global. */
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const [language, setLanguageState] = useState<Language>('ca');
     const { user } = useUser();
 
+    // Hidrata preferència local en arrencada.
     useEffect(() => {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -28,6 +39,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
+    // Hidrata preferència cloud quan hi ha usuari autenticat no guest.
     useEffect(() => {
         if (!user?.id || user.isGuest) return;
         let canceled = false;
@@ -44,6 +56,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
                         console.warn('Failed to save language preference', e);
                     }
                 } else {
+                    // Si el núvol no té idioma, publiquem la preferència local actual.
                     let preferred: Language = language;
                     try {
                         const saved = localStorage.getItem(STORAGE_KEY);
@@ -67,6 +80,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         };
     }, [user?.id, user?.isGuest]);
 
+    /** Actualitza idioma actiu i el persisteix local/cloud segons context d'usuari. */
     const setLanguage = (lang: Language) => {
         if (lang === language) return;
         setLanguageState(lang);
@@ -82,6 +96,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    /** Resol una clau de traducció amb fallback a la clau si no existeix. */
     const t = (key: TranslationKey): string => {
         return TRANSLATIONS[language][key] || key;
     };
@@ -93,6 +108,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
+/** Hook d'accés segur al context d'idioma. */
 export const useLanguage = (): LanguageContextType => {
     const context = useContext(LanguageContext);
     if (!context) {

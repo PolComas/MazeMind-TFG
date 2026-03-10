@@ -26,8 +26,10 @@ import {
   getTodayKey,
 } from './lib/dailyChallenge';
 
+/** Assegura que una ruta comenci amb `/`. */
 const ensureLeadingSlash = (value: string) => (value.startsWith('/') ? value : `/${value}`);
 
+/** Normalitza `BASE_URL` per evitar errors de slash al router intern. */
 const normalizeBasePath = (value: string) => {
   if (!value || value === '/') {
     return '';
@@ -36,11 +38,13 @@ const normalizeBasePath = (value: string) => {
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 };
 
+/** Llegeix enters positius de query params amb fallback segur. */
 const parsePositiveIntParam = (value: string | null, fallback: number) => {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+/** Neteja una ruta relativa: slashes duplicats i slash final innecessari. */
 const normalizeRelativePath = (value: string) => {
   if (!value) {
     return '/';
@@ -52,6 +56,7 @@ const normalizeRelativePath = (value: string) => {
   return search ? `${withLeadingSlash}?${search}` : withLeadingSlash;
 };
 
+/** Retorna la ruta actual del navegador (pathname + search). */
 const getBrowserPath = () => {
   if (typeof window === 'undefined') {
     return '/';
@@ -61,7 +66,7 @@ const getBrowserPath = () => {
   return pathWithSearch || '/';
 };
 
-// Nivells desats
+// Catàleg de nivells predefinits (campanya).
 import tutorial from './levels/easy-level-0.json';
 import easyLevel1 from './levels/easy-level-1.json';
 import easyLevel2 from './levels/easy-level-2.json';
@@ -163,6 +168,7 @@ const savedLevels: Record<string, Level> = {
 const base = import.meta.env.BASE_URL || '/';
 const normalizedBase = normalizeBasePath(base);
 
+/** Ruta interna de l'SPA basada en pathname + params. */
 type Route =
   | { type: 'settings' }
   | { type: 'practice-free' }
@@ -180,6 +186,14 @@ type Route =
   | { type: 'daily-challenge' }
   | { type: 'daily-challenge-play' };
 
+/**
+ * Orquestrador principal de l'aplicació.
+ *
+ * Responsabilitats:
+ * - Router intern (sense llibreria externa).
+ * - Hidratar progrés local/núvol segons sessió.
+ * - Muntar la pantalla activa i modals globals.
+ */
 export default function App() {
   const { user, logout, deleteAccount, isRecoverySession } = useUser();
   const { settings } = useSettings();
@@ -193,13 +207,14 @@ export default function App() {
   const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
   const previousUserIdRef = useRef<string | null>(null);
 
-  // --- Lògica de Navegació ---
+  // Router intern: estat de path + clau de refresc de pantalla.
   const [path, setPath] = useState<string>(() => getBrowserPath());
   const [navKey, setNavKey] = useState(0);
 
   // Estat per a la dificultat seleccionada
   const [selectedDifficulty, setSelectedDifficulty] = useState<Diff>('easy');
 
+  // Gestiona navegació del botó enrere/endavant del navegador.
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -212,11 +227,13 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  /** Converteix una ruta relativa a absoluta tenint en compte `BASE_URL`. */
   const toAbsolutePath = useCallback((relative: string) => {
     const relativeWithSlash = ensureLeadingSlash(relative);
     return normalizedBase ? `${normalizedBase}${relativeWithSlash}` : relativeWithSlash;
   }, []);
 
+  /** Converteix una ruta absoluta del navegador al format relatiu intern. */
   const toRelativePath = useCallback((absolute: string) => {
     if (!absolute) {
       return '/';
@@ -233,6 +250,7 @@ export default function App() {
 
   const relativePath = useMemo(() => toRelativePath(path), [path, toRelativePath]);
 
+  /** Navega entre pantalles i sincronitza `history.pushState` amb l'estat React. */
   const go = useCallback((relative: string, options?: { preserveTutorial?: boolean }) => {
     if (!options?.preserveTutorial) {
       setIsTutorialMode(false);
@@ -253,13 +271,13 @@ export default function App() {
     });
   }, [toAbsolutePath]);
 
-
-  // Funció per iniciar el tutorial
+  // Inicia el tutorial des del nivell d'introducció.
   const startTutorial = () => {
     setIsTutorialMode(true);
     go('/level/easy/0', { preserveTutorial: true });
   };
 
+  // Hidrata progrés segons identitat (guest/local o auth/cloud).
   useEffect(() => {
     const currentUserId = user && !user.isGuest ? user.id : null;
     if (previousUserIdRef.current === currentUserId) {
@@ -291,6 +309,7 @@ export default function App() {
     void hydrate();
   }, [user]);
 
+  /** Neteja estat local de sessió i torna al progrés base local. */
   const clearLocalSession = () => {
     if (typeof window !== 'undefined') {
       const keysToClear = [
@@ -335,6 +354,7 @@ export default function App() {
   };
 
 
+  // Parser de ruta -> objecte Route tipat per simplificar el render.
   const route = useMemo<Route>(() => {
     const [pathOnlyRaw, search = ''] = relativePath.split('?');
     const pathOnly = pathOnlyRaw || '/';
@@ -415,6 +435,7 @@ export default function App() {
   }, [relativePath, isRecoverySession]);
 
 
+  // Dreceres globals (fora de gameplay i fora de modals).
   useEffect(() => {
     const isGameplayRoute =
       route.type === 'level' ||
@@ -474,6 +495,7 @@ export default function App() {
     }
   }, [route]);
 
+  /** Construeix query params del mode lliure i navega al nivell custom. */
   const handleStartCustomGame = useCallback((config: CustomLevelConfig) => {
     const params = new URLSearchParams();
     params.set('w', String(config.width));
@@ -485,6 +507,7 @@ export default function App() {
     go(`/level/custom?${params.toString()}`);
   }, [go]);
 
+  // Home encapsulada per reutilitzar en rutes desconegudes/default.
   const renderHome = () => (
     <HomeScreen
       progress={progress}
@@ -502,6 +525,7 @@ export default function App() {
     />
   );
 
+  // Resolució de pantalla activa segons ruta.
   let screen: ReactElement;
 
   if (isRecoverySession) {

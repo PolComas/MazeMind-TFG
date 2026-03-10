@@ -25,6 +25,9 @@ type Props = {
   progress: GameProgress;
 };
 
+/**
+ * Pantalla inicial principal amb estadistiques, accessos i accions de sessio.
+ */
 export default function HomeScreen({ user, onNavigate, onMultiplayer, onDailyChallenge, onUserClick, onLogout, onDeleteAccount, onSettingsClick, progress }: Props) {
   const { getVisualSettings } = useSettings();
   const screenSettings = getVisualSettings('home');

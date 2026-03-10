@@ -133,6 +133,9 @@ const createStyles = (visuals: VisualSettings) => {
   };
 };
 
+/**
+ * Modal explicatiu de mecaniques i inici del tutorial.
+ */
 export default function HowToPlayModal({ open, onClose, onStartTutorial }: Props) {
   const { settings, getVisualSettings } = useSettings();
   const { t } = useLanguage();

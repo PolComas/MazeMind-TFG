@@ -12,6 +12,9 @@ type Props = {
 // Funció per validar si és un color hexadecimal vàlid
 const isValidHex = (color: string): boolean => /^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$/.test(color);
 
+/**
+ * Input combinat de color amb selector i camp textual hex.
+ */
 export default function ColorPickerWithTextInput({ label, value, onChange, inputId }: Props) {
   const { t } = useLanguage();
   const [textValue, setTextValue] = useState(value);

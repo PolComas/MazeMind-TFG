@@ -103,6 +103,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal de derrota amb accions per reintentar o sortir.
+ */
 export default function GameOverModal({ onRetry, onBack, score, bestScore, isPracticeScoreMode, }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();

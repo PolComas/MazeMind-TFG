@@ -16,6 +16,15 @@ import NetworkBackground from '../components/NetworkBackground';
 import { applyAlpha, pickReadableTextColor } from '../utils/color';
 import { useMediaQuery } from '../utils/useMediaQuery';
 
+/**
+ * Pantalla d'entrada al multijugador.
+ *
+ * Inclou:
+ * - Unió per codi.
+ * - Llista de sales públiques en espera.
+ * - Creació de sala amb configuració bàsica.
+ * - CTA contextuals d'autenticació o mode convidat.
+ */
 type Diff = 'easy' | 'normal' | 'hard';
 type NoticeAction = 'login' | 'register' | 'guest';
 type NoticeKind = 'error' | 'info' | 'success';
@@ -26,14 +35,17 @@ type Notice = {
   action?: NoticeAction;
 };
 
+/** Converteix dificultat en mida de laberint objectiu per al multijugador. */
 const sizePreset = (difficulty: Diff) => {
   if (difficulty === 'easy') return 5;
   if (difficulty === 'hard') return 9;
   return 7;
 };
 
+/** Temps de memorització derivat de la mida per mantenir corba de dificultat coherent. */
 const memorizeFromSize = (size: number) => Math.min(20, Math.max(8, Math.round((size * size) / 7)));
 
+/** Nom visible del jugador segons identitat disponible. */
 const resolvePlayerName = (user: { displayName: string; email: string; isGuest: boolean }) => {
   if (user.displayName) return user.displayName;
   if (user.email) return user.email.split('@')[0];
@@ -69,6 +81,7 @@ export default function MultiplayerScreen({
   const memorizeTime = memorizeFromSize(size);
   const isGuest = Boolean(user?.isGuest);
 
+  // Polling d'estat de sales obertes.
   useEffect(() => {
     let mounted = true;
     const load = async () => {

@@ -23,6 +23,9 @@ const previewPath = [
   { x: 4, y: 1 }, // dreta
   { x: 4, y: 2 }, // esquerra
 ];
+/**
+ * Previsualitzacio de la pantalla de joc dins Settings.
+ */
 export default function LevelScreenPreview({ settings }: Props) {
   const { t } = useLanguage();
   const styles: Record<string, React.CSSProperties> = useMemo(() => ({

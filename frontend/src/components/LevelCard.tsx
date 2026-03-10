@@ -26,6 +26,9 @@ function formatTime(seconds: number | null): string | null {
   return `${mins}:${secs}`;
 }
 
+/**
+ * Targeta individual de nivell a la graella de seleccio.
+ */
 export default function LevelCard({ index, unlocked, difficulty, stars, bestTime, isRecommended = false, onPlay }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();

@@ -19,6 +19,14 @@ import {
     type DailyState,
 } from '../lib/dailyChallenge';
 
+/**
+ * Pantalla del repte diari.
+ *
+ * Responsabilitats principals:
+ * - Mostrar els paràmetres del repte d'avui (seed implícita per data).
+ * - Sincronitzar la ratxa local amb el núvol si l'usuari està autenticat.
+ * - Permetre iniciar o repetir el repte del dia.
+ */
 type Props = {
     onBack: () => void;
     onPlay: () => void;
@@ -39,7 +47,7 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
     const completed = hasCompletedToday(dailyState);
     const streak = getLiveStreak(dailyState);
 
-    // Sync with cloud on mount for authenticated users
+    // Sincronització inicial local <-> núvol (només usuaris autenticats).
     useEffect(() => {
         if (!user || user.isGuest) return;
         let cancelled = false;
@@ -50,7 +58,7 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
             const local = getLocalDailyState();
             const merged = mergeStreakStates(local, cloud);
             setDailyState(merged);
-            // Push merged state back
+            // Persistim l'estat fusionat per deixar una sola "font de veritat".
             void syncStreakToCloud(user.id, merged);
         };
         void sync();
@@ -238,17 +246,17 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
                 </button>
 
                 <div style={styles.card}>
-                    {/* Date info */}
+                    {/* Informació de la data actual */}
                     <div style={styles.dateRow}>
                         <Calendar size={14} />
                         <span>{dayOfWeekLabel} · {todayKey}</span>
                     </div>
 
-                    {/* Title */}
+                    {/* Títol i identificador del dia */}
                     <h1 style={styles.title}>{t('daily.title')}</h1>
                     <span style={styles.dayBadge}>#{dayNumber}</span>
 
-                    {/* Info bubbles */}
+                    {/* Resum de configuració del repte d'avui */}
                     <div style={styles.infoGrid}>
                         <div style={styles.infoBubble}>
                             <span style={styles.infoValue}>{params.width}×{params.height}</span>
@@ -264,7 +272,7 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
                         </div>
                     </div>
 
-                    {/* Streak */}
+                    {/* Ratxa actual */}
                     <div style={styles.streakRow}>
                         <Flame size={28} color={streak > 0 ? screenSettings.accentColor1 : screenSettings.subtextColor} />
                         <span style={styles.streakValue}>{streak}</span>
@@ -276,7 +284,7 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
                         </div>
                     )}
 
-                    {/* Completed banner */}
+                    {/* Estat de completat del dia */}
                     {completed && (
                         <div style={styles.completedBanner}>
                             <CheckCircle size={16} />
@@ -284,7 +292,7 @@ export default function DailyChallengeScreen({ onBack, onPlay }: Props) {
                         </div>
                     )}
 
-                    {/* Play / Replay button */}
+                    {/* Acció principal: jugar o repetir el repte diari */}
                     <button
                         type="button"
                         style={styles.playBtn}

@@ -3,6 +3,11 @@ import { useSettings } from '../context/SettingsContext';
 import NetworkBackground from '../components/NetworkBackground';
 import { useLanguage } from '../context/LanguageContext';
 
+/**
+ * Configuració del mode lliure.
+ *
+ * L'usuari defineix mida, temps, dificultat i seed opcional abans de començar.
+ */
 export type CustomLevelConfig = {
   width: number;
   height: number;
@@ -16,6 +21,7 @@ type Props = {
   onStartGame: (config: CustomLevelConfig) => void;
 };
 
+/** Limita un valor numèric dins d'un rang tancat. */
 const clamp = (val: number, min: number, max: number) => {
   return Math.max(min, Math.min(max, val));
 };
@@ -30,7 +36,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
     hard: screenSettings.hardColor || '#f87171',
   }), [screenSettings]);
 
-  // Mantenir les entrades com a cadenes per permetre l'edició lliure (esborrar, valors parcials)
+  // Manté les entrades com a text per permetre editar valors parcials sense bloquejos d'UX.
   const [width, setWidth] = useState('7');
   const [height, setHeight] = useState('7');
   const [time, setTime] = useState('10');
@@ -48,7 +54,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
 
     if (!widthValid || !heightValid || !timeValid) return;
 
-    // Valors vàlids i ajustats
+    // Construeix la configuració sanejada.
     const config: CustomLevelConfig = {
       width: clamp(parsedWidth, 5, 25),
       height: clamp(parsedHeight, 5, 25),
@@ -57,7 +63,7 @@ export default function FreeModeScreen({ onBack, onStartGame }: Props) {
       seed: seed.trim() || undefined,
     };
 
-    // Passem la configuració neta al pare (App.tsx)
+    // Retorna al contenidor principal una configuració consistent.
     onStartGame(config);
   };
 

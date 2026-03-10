@@ -118,6 +118,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal de final de nivell de campanya amb estrelles, punts i accions de continuacio.
+ */
 export default function CompletionModal({ levelNumber, stars, time, points, onNextLevel, onRetry, onBack }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();

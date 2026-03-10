@@ -25,6 +25,9 @@ type Props = {
 }
 
 // Renderitzar el laberint en un canvas HTML5
+/**
+ * Renderer del laberint sobre Canvas 2D, amb jugador, cami i estat visual.
+ */
 export default function MazeCanvas({
   level,
   phase = 'memorize',

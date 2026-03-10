@@ -23,11 +23,17 @@ import GameSettingsComponent from '../components/settings/GameSettingsComponent'
 import ContrastCheckerPanel from '../components/settings/ContrastCheckerPanel';
 import type { GameSettings } from '../utils/settings';
 
+/**
+ * Pantalla central de configuració.
+ *
+ * Gestiona un estat d'edició local, previsualització en temps real i desat
+ * explícit per evitar aplicar canvis parcialment.
+ */
 type Props = {
   onBack: () => void;
 };
 
-// 'home', 'levelSelect', 'levelScreen', 'multiplayer', 'game'
+// Seccions de l'acordió editables des d'aquesta pantalla.
 type AccordionSection = keyof ScreenSettings | 'game';
 
 // Tecles a comprovar que no es repeteixin

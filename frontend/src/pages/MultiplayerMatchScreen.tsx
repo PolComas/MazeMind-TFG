@@ -20,6 +20,14 @@ import {
 } from '../lib/multiplayer';
 import type { MultiplayerMatch, MultiplayerPlayer, RoundResult } from '../lib/multiplayer';
 
+/**
+ * Pantalla de partida multijugador.
+ *
+ * Coordina la sessió amb polling de BD:
+ * - sala d'espera
+ * - rondes actives amb seed compartida
+ * - resultat de ronda i resultat final
+ */
 type RoundOutcome = {
   winnerId: string | null;
   reason: string;
@@ -36,6 +44,10 @@ type ScoreRow = {
 const ROUND_TIMEOUT_MS = 90_000;
 const ROUND_ADVANCE_DELAY_MS = 3500;
 
+/**
+ * Decideix el guanyador d'una ronda en base als resultats disponibles.
+ * Prioritza completat i, si cal, punts com a desempat.
+ */
 const computeWinner = (
   results: Array<{ user_id: string; completed: boolean; time_seconds: number; finished_at: string; points: number }>,
   options?: { allowSingle?: boolean }
@@ -81,7 +93,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
   const lastRoundRef = useRef<number>(0);
   const roundTimeoutRef = useRef<number | null>(null);
 
-  // Poll logic
+  // Reinici d'estat local quan canviem de match.
   useEffect(() => {
     setResolvedRounds({});
     setCleanupQueued(false);
@@ -90,6 +102,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     lastRoundRef.current = 0;
   }, [matchId]);
 
+  // Poll principal: carrega match, jugadors i resultats de ronda.
   const pollMatch = useCallback(async () => {
     const m = await getMatch(matchId);
     if (!m) {
@@ -107,7 +120,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
       lastRoundRef.current = m.current_round;
     }
 
-    // Auto-start if waiting and 2 players (host only)
+    // L'host inicia automàticament quan hi ha 2 jugadors actius.
     const activePlayers = p.filter((player) => player.status === 'joined');
     if (m.status === 'waiting' && activePlayers.length >= 2 && user?.id === m.host_id) {
       await setMatchStatus(matchId, 'active', 1);
@@ -283,7 +296,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     }
   }, [isHost, matchId, currentRound]);
 
-  // Handle round completion logic
+  // Avanç de ronda controlat (només host) quan tots dos han acabat.
   useEffect(() => {
     if (!isHost) return;
     if (!match || currentRound <= 0) return;
@@ -328,7 +341,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     });
   }, [match, players, user, forfeitWinnerId]);
 
-  // Clean up finished match
+  // Neteja de la partida acabada per no acumular dades inactives.
   useEffect(() => {
     if (!match || match.status !== 'finished') return;
     if (cleanupQueued) return;
@@ -362,7 +375,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     );
   }
 
-  // 1. Lobby
+  // 1) Sala d'espera
   if (match.status === 'waiting') {
     return (
       <LobbyScreen
@@ -374,7 +387,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     );
   }
 
-  // 2. Game Result
+  // 2) Resultat final
   if (match.status === 'finished') {
     return (
       <GameResultScreen
@@ -386,8 +399,7 @@ export default function MultiplayerMatchScreen({ matchId, onBack }: { matchId: s
     );
   }
 
-  // 3. Active Gameplay
-  // Calculate round outcome if available
+  // 3) Joc actiu i càlcul de resultat de ronda (si existeix).
   const baseOutcome = roundResults.length >= 2 ? computeWinner(roundResults) : null;
   const outcome = forcedOutcome && forcedOutcome.round === currentRound ? forcedOutcome : baseOutcome;
   const myResult = roundResults.find(r => r.user_id === user.id);

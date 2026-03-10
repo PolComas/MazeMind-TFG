@@ -22,6 +22,9 @@ const difficultyIcons: Record<Diff, React.ReactNode> = {
   hard: <Flame size={16} />,
 };
 
+/**
+ * Pantalla de seleccio de nivells per dificultat i progres.
+ */
 export default function LevelSelect({
   onPlayLevel: originalOnPlayLevel,
   onBack: originalOnBack,

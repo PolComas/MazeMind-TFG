@@ -9,6 +9,9 @@ type Props = {
   isError?: boolean;
 };
 
+/**
+ * Input de remapeig de tecles amb captura de teclat.
+ */
 export default function KeybindingInput({ label, value, onChange, isError = false }: Props) {
   // Estat per saber si estem escoltant una nova tecla
   const [isListening, setIsListening] = useState(false);

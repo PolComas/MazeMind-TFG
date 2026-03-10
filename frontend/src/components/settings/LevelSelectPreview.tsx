@@ -11,6 +11,9 @@ type Props = {
   settings: VisualSettings;
 };
 
+/**
+ * Previsualitzacio de la pantalla de seleccio de nivells.
+ */
 export default function LevelSelectPreview({ settings }: Props) {
   const { t } = useLanguage();
   type Diff = 'easy' | 'normal' | 'hard';

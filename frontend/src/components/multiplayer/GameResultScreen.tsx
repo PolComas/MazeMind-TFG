@@ -17,6 +17,9 @@ type GameResultScreenProps = {
     onExit: () => void;
 };
 
+/**
+ * Pantalla final de partida multijugador amb classificacio global.
+ */
 export default function GameResultScreen({ scoreRows, currentUserId, forfeitWinnerId, onExit }: GameResultScreenProps) {
     const { getVisualSettings } = useSettings();
     const screenSettings = getVisualSettings('levelSelect');

@@ -49,6 +49,9 @@ const keybindingActions: (keyof GameSettings)[] = [
   'keyOpenLevels', 'keyOpenSettings', 'keyOpenHome'
 ];
 
+/**
+ * Bloc de configuracio general de joc (tecles, audio i opcions).
+ */
 export default function GameSettingsComponent({ settings, onChange }: Props) {
   const { t } = useLanguage();
   // NOU: Lògica per detectar duplicats

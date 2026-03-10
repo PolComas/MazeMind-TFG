@@ -13,6 +13,12 @@ import { useUser } from "../context/UserContext";
 import { pushPracticeBest } from "../lib/sync";
 import { useLanguage } from "../context/LanguageContext";
 
+/**
+ * Mode pràctica "score run".
+ *
+ * L'usuari encadena laberints de dificultat creixent i acumula puntuació total
+ * fins que es queda sense vides.
+ */
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
 const REVEAL_DURATION_MS = 500;
@@ -53,6 +59,7 @@ const SIZE_TABLE: Array<{ w: number; h: number }> = [
   { w: 20, h: 20 }, // 18+ → clamp
 ];
 
+/** Resol mida i temps de memorització per al nivell de pràctica actual. */
 function getLevelConfig(levelIndex: number): LevelConfig {
   const index = Math.min(levelIndex - 1, SIZE_TABLE.length - 1);
   const { w, h } = SIZE_TABLE[index];
@@ -67,7 +74,7 @@ function getLevelConfig(levelIndex: number): LevelConfig {
   return { width: w, height: h, memorizeTime };
 }
 
-// Paràmetres de puntuació per "tier" (cada 3 nivells puja una mica)
+/** Defineix l'escalat de puntuació per trams de nivells (tiers). */
 function getScoreTuning(levelIndex: number): ScoreTuning {
   const rawTier = Math.floor((levelIndex - 1) / 3); // 0 per nivells 1–3, 1 per 4–6...
   const tier = Math.min(rawTier, 6); // clamp perquè no es descontroli

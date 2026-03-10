@@ -1,3 +1,9 @@
+/**
+ * Utilitats de color per UI/UX:
+ * - opacitat (`applyAlpha`)
+ * - contrast WCAG
+ * - selecció automàtica de color de text llegible
+ */
 export function applyAlpha(color: string, alpha: number): string {
   const clampedAlpha = Math.max(0, Math.min(1, alpha));
 
@@ -38,6 +44,7 @@ export function applyAlpha(color: string, alpha: number): string {
 
 type RgbColor = { r: number; g: number; b: number };
 
+/** Intenta convertir un color CSS comú (hex/rgb/rgba) a RGB. */
 function parseColorToRgb(color: string): RgbColor | null {
   if (typeof color !== 'string') return null;
 
@@ -70,11 +77,13 @@ function parseColorToRgb(color: string): RgbColor | null {
   };
 }
 
+/** Conversió de canal sRGB a luminància lineal (WCAG). */
 function luminanceChannel(value: number): number {
   const s = value / 255;
   return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
 }
 
+/** Luminància relativa segons fórmula WCAG. */
 function getRelativeLuminance(color: RgbColor): number {
   return (
     0.2126 * luminanceChannel(color.r) +
@@ -83,6 +92,7 @@ function getRelativeLuminance(color: RgbColor): number {
   );
 }
 
+/** Calcula ràtio de contrast entre foreground i background (WCAG). */
 export function getContrastRatio(foreground: string, background: string): number {
   const fg = parseColorToRgb(foreground);
   const bg = parseColorToRgb(background);
@@ -95,6 +105,9 @@ export function getContrastRatio(foreground: string, background: string): number
   return (light + 0.05) / (dark + 0.05);
 }
 
+/**
+ * Tria automàticament text clar/fosc en funció del contrast sobre un fons.
+ */
 export function pickReadableTextColor(
   background: string,
   options: { light?: string; dark?: string } = {},
@@ -108,6 +121,14 @@ export function pickReadableTextColor(
   return lightContrast >= darkContrast ? light : dark;
 }
 
+/**
+ * Garanteix (si és possible) un color de foreground amb contrast mínim.
+ *
+ * Ordre de decisió:
+ * 1) manté `foreground` si ja compleix
+ * 2) prova `fallback` (si es passa)
+ * 3) tria automàticament clar/fosc sobre `background`
+ */
 export function ensureContrastColor(
   foreground: string,
   background: string,

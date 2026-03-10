@@ -1,7 +1,9 @@
 import type { Level, Grid } from './maze_generator';
 
+/** Posició d'una cel·la dins la graella. */
 export type Pos = { x: number; y: number };
 
+/** Mètriques estructurals derivades d'un laberint. */
 export type MazeAnalysis = {
   width: number;
   height: number;
@@ -24,6 +26,7 @@ const DIRS: Array<{ dx: number; dy: number; wall: 'top' | 'right' | 'bottom' | '
 const OPP: Record<'top'|'right'|'bottom'|'left','top'|'right'|'bottom'|'left'> =
   { top:'bottom', right:'left', bottom:'top', left:'right' };
 
+/** Retorna els veïns accessibles (sense paret) des d'una posició. */
 const getNeighbors = (grid: Grid, pos: Pos) => {
   const neighbors: Pos[] = [];
   const cell = grid[pos.y][pos.x];
@@ -39,6 +42,7 @@ const getNeighbors = (grid: Grid, pos: Pos) => {
 };
 
 
+/** Calcula camí òptim start -> goal mitjançant BFS. */
 const bfsShortestPath = (grid: Grid, start: Pos, goal: Pos) => {
   const queue: Pos[] = [start];
   const visited = new Set<string>([`${start.x},${start.y}`]);
@@ -71,6 +75,7 @@ const bfsShortestPath = (grid: Grid, start: Pos, goal: Pos) => {
   return path.reverse();
 };
 
+/** Extreu les cel·les on el recorregut canvia de direcció. */
 export const getTurnPositions = (path: Pos[]): Pos[] => {
   const turns: Pos[] = [];
   if (path.length < 3) return turns;
@@ -90,6 +95,7 @@ export const getTurnPositions = (path: Pos[]): Pos[] => {
 };
 
 
+/** Compta quants girs té un camí discret. */
 const countTurns = (path: Pos[]) => {
   if (path.length < 2) return 0;
   let turns = 0;
@@ -109,6 +115,7 @@ const countTurns = (path: Pos[]) => {
   return turns;
 };
 
+/** Analitza la topologia del nivell i el seu camí òptim. */
 export const analyzeLevel = (level: Level): MazeAnalysis => {
   const { maze } = level;
   const totalCells = level.width * level.height;

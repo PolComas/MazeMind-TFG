@@ -35,6 +35,9 @@ type Props = {
   crashHelpLoss: number;
 };
 
+/**
+ * HUD del mode campanya/practica amb temps, punts i controls d'ajudes.
+ */
 export default function GameHUD({
   gameTime,
   points,

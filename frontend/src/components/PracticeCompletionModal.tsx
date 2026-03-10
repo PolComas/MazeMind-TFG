@@ -102,6 +102,9 @@ const buildStyles = (visuals: VisualSettings): PracticeCompletionStyles => {
   };
 };
 
+/**
+ * Modal de final de practica estandard amb opcions de continuar.
+ */
 export default function PracticeCompletionModal({
   status,
   time,

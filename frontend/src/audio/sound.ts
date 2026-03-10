@@ -16,10 +16,10 @@ import slideSound from './slide2.wav';
 import hoverSound from './hover2.mp3';
 import { useSettings } from '../context/SettingsContext';
 
-// Tipus de configuració d'un so
+/** Configuració base d'un recurs d'àudio. */
 type SoundConfig = { src: string; volume?: number; loop?: boolean }
 
-// Mapa de configuració de tots els sons
+/** Registre centralitzat de tots els sons del joc. */
 const soundMap: Record<string, SoundConfig> = {
   music: { src: bgMusic, loop: true, volume: 0.5 },
   tick: { src: tickSound, volume: 0.7 },
@@ -39,7 +39,7 @@ const soundMap: Record<string, SoundConfig> = {
 
 type SoundKey = keyof typeof soundMap;
 
-// Helper per reproduir sons curts
+/** Reprodueix un so curt reiniciant-lo des de l'inici. */
 const playSound = (audio: HTMLAudioElement | null | undefined, globalVolume: number) => {
   if (!audio) return;
   audio.volume = (audio.dataset.baseVolume ? parseFloat(audio.dataset.baseVolume) : 1.0) * globalVolume;
@@ -48,7 +48,7 @@ const playSound = (audio: HTMLAudioElement | null | undefined, globalVolume: num
 };
 
 
-// Helper per reproduir sons que poden solapar-se
+/** Reprodueix una còpia d'un so per permetre solapament (overlap). */
 const playOverlapSound = (audio: HTMLAudioElement | null | undefined, globalVolume: number) => {
   if (!audio) return;
   const vol = (audio.dataset.baseVolume ? parseFloat(audio.dataset.baseVolume) : 1.0) * globalVolume;
@@ -57,12 +57,18 @@ const playOverlapSound = (audio: HTMLAudioElement | null | undefined, globalVolu
   clone.play().catch(e => console.error("Error en reproduir àudio:", e));
 };
 
+/**
+ * Hook d'àudio global del joc.
+ *
+ * Exposa funcions estables per reproduir SFX i controlar música de fons,
+ * respectant la configuració de volum i activació de l'usuari.
+ */
 export const useGameAudio = () => {
-  // Obtenim la configuració
+  // Llegeix configuració d'àudio activa.
   const { settings } = useSettings();
   const { soundEffects, backgroundMusic, soundVolume, musicVolume } = settings.game;
 
-  // Carregar tots els sons
+  // Crea i cacheja els objectes HTMLAudioElement una sola vegada.
   const audioCache = useMemo<Map<SoundKey, HTMLAudioElement | null>>(() => {
     if (typeof window === 'undefined') {
       return new Map<SoundKey, HTMLAudioElement | null>();
@@ -74,7 +80,7 @@ export const useGameAudio = () => {
       const config = soundMap[k];
       const audio = new Audio(config.src);
       audio.loop = !!config.loop;
-      // Guardem el volum base com a atribut de dades per no perdre'l
+      // Conserva el volum base del clip per escalar-lo després amb el volum global.
       audio.dataset.baseVolume = String(config.volume ?? 1.0);
       audio.volume = config.volume ?? 1.0;
       audio.preload = 'auto';
@@ -84,7 +90,7 @@ export const useGameAudio = () => {
     return cache;
   }, []);
 
-  // Actualitzar el volum de la música en temps real si canvia config
+  // Reaplica volum de música quan canvia la configuració.
   useMemo(() => {
     const music = audioCache.get('music');
     if (music) {
@@ -94,7 +100,7 @@ export const useGameAudio = () => {
     }
   }, [audioCache, musicVolume]);
 
-  // Retornem un objecte amb funcions estables (useCallback)
+  // API pública de reproducció amb callbacks estables.
   return {
     playTick: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('tick'), soundVolume); }, [audioCache, soundEffects, soundVolume]),
     playTickFinal: useCallback(() => { if (!soundEffects) return; playSound(audioCache.get('tickFinal'), soundVolume); }, [audioCache, soundEffects, soundVolume]),
@@ -110,7 +116,7 @@ export const useGameAudio = () => {
     playSlide: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('slide'), soundVolume); }, [audioCache, soundEffects, soundVolume]),
     playHover: useCallback(() => { if (!soundEffects) return; playOverlapSound(audioCache.get('hover'), soundVolume); }, [audioCache, soundEffects, soundVolume]),
 
-    // Música de fons
+    // Control de música de fons.
     startMusic: useCallback(() => {
       if (!backgroundMusic) {
         const m = audioCache.get('music');
@@ -120,13 +126,14 @@ export const useGameAudio = () => {
       const m = audioCache.get('music');
       if (!m) return;
 
-      // Assegurar volum correcte abans de play
+      // Assegura volum correcte abans de reproduir.
       const baseObj = soundMap['music'];
       const baseVol = baseObj.volume ?? 0.5;
       m.volume = baseVol * musicVolume;
 
       m.play().catch(e => {
         console.error("Error al reproduir música:", e);
+        // Fallback per polítiques d'autoplay del navegador.
         const resume = () => {
           m.play().catch(() => { });
           window.removeEventListener('pointerdown', resume);

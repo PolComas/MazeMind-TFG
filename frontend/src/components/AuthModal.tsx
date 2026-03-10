@@ -144,6 +144,9 @@ const buildStyles = (visuals: VisualSettings) => {
   } as const;
 };
 
+/**
+ * Modal d'autenticacio amb flux de login, registre i recuperacio de contrasenya.
+ */
 export default function AuthModal({ onClose, initialMode = 'login' }: Props) {
   // Gestionar àudio
   const audio = useGameAudio();

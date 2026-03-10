@@ -97,6 +97,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal informatiu quan la practica IA requereix autenticacio.
+ */
 export default function PracticeIaLockedModal({ open, onClose, onLogin, visuals }: Props) {
   const styles = useMemo(() => buildStyles(visuals), [visuals]);
   const { t } = useLanguage();

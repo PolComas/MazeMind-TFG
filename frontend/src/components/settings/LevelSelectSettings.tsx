@@ -20,6 +20,9 @@ const extractGradientColors = (gradient: string): [string, string] => {
   return [PALETTE.playBtnFrom || '#5b21b6', PALETTE.playBtnTo || '#7e22ce']; 
 };
 
+/**
+ * Controls d'estil especifics de Level Select.
+ */
 export default function LevelSelectSettings({ settings, onChange }: Props) {
   const { t } = useLanguage();
   const [bgColor1, setBgColor1] = useState(() => extractGradientColors(settings.backgroundColor)[0]);

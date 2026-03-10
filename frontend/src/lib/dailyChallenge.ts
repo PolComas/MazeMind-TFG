@@ -1,12 +1,12 @@
 /**
- * Daily Challenge — seed generation, level params, streak state, and cloud sync.
+ * Repte Diari — generació de seed, paràmetres de nivell, ratxa i sincronització cloud.
  *
- * The daily challenge uses a deterministic seed (`daily-YYYY-MM-DD`) so every
- * player gets the same maze each day. Difficulty scales with the day of week
- * (Mon ▸ easier, Sun ▸ harder).
+ * El repte diari utilitza una seed determinista (`daily-YYYY-MM-DD`) perquè
+ * tots els jugadors juguin el mateix laberint cada dia.
+ * La dificultat escala segons el dia de la setmana.
  *
- * Streak state lives in localStorage for instant reads, and is synced to
- * Supabase (`daily_streak` table) for authenticated users.
+ * L'estat de ratxa viu a `localStorage` per lectura immediata i es sincronitza
+ * a Supabase (`daily_streak`) per usuaris autenticats.
  */
 
 import { generateLevel, type Level } from '../maze/maze_generator';
@@ -14,7 +14,7 @@ import { supabase } from './supabase';
 
 // ─── Helpers ────────────────────────────────────────────
 
-/** Returns today's date string in YYYY-MM-DD, using local time. */
+/** Retorna la data d'avui en format YYYY-MM-DD (hora local). */
 export function getTodayKey(): string {
     const now = new Date();
     const y = now.getFullYear();
@@ -23,19 +23,19 @@ export function getTodayKey(): string {
     return `${y}-${m}-${d}`;
 }
 
-/** Deterministic seed for a given date. */
+/** Seed determinista per una data concreta. */
 export function getDailySeed(dateKey: string): string {
     return `daily-${dateKey}`;
 }
 
-/** Day number since a fixed epoch (2025-01-01), used for the "Day #N" display. */
+/** Número de dia des de l'època fixa (2025-01-01), per mostrar "Dia #N". */
 export function getDayNumber(dateKey: string): number {
     const epoch = new Date('2025-01-01T00:00:00');
     const target = new Date(`${dateKey}T00:00:00`);
     return Math.floor((target.getTime() - epoch.getTime()) / 86_400_000) + 1;
 }
 
-// ─── Level generation ───────────────────────────────────
+// ─── Generació de nivell ───────────────────────────────
 
 type DailyDifficulty = 'easy' | 'normal' | 'hard';
 
@@ -47,29 +47,29 @@ interface DailyParams {
 }
 
 /**
- * Returns maze parameters that scale with the day of the week.
- * Monday (1) = easiest, Sunday (0) = hardest.
+ * Retorna paràmetres de laberint segons el dia de la setmana.
+ * Dilluns (1) = més fàcil, diumenge (0) = més difícil.
  */
 export function getDailyParams(dateKey: string): DailyParams {
     const day = new Date(`${dateKey}T00:00:00`).getDay(); // 0=Sun … 6=Sat
 
     if (day === 1 || day === 2) {
-        // Mon–Tue: easy (7×7)
+        // Dl-Dm: fàcil (7x7)
         return { width: 7, height: 7, difficulty: 'easy', memorizeTime: 12 };
     }
     if (day === 3 || day === 4) {
-        // Wed–Thu: normal (9×9)
+        // Dc-Dj: normal (9x9)
         return { width: 9, height: 9, difficulty: 'normal', memorizeTime: 14 };
     }
     if (day === 5) {
-        // Fri: normal+ (11×11)
+        // Divendres: normal+ (11x11)
         return { width: 11, height: 11, difficulty: 'normal', memorizeTime: 16 };
     }
-    // Sat–Sun: hard (13×13)
+    // Ds-Dg: difícil (13x13)
     return { width: 13, height: 13, difficulty: 'hard', memorizeTime: 18 };
 }
 
-/** Generates today's daily challenge level. */
+/** Genera el nivell del repte diari (avui, o data indicada). */
 export function generateDailyLevel(dateKey?: string): Level {
     const key = dateKey ?? getTodayKey();
     const params = getDailyParams(key);
@@ -86,7 +86,7 @@ export function generateDailyLevel(dateKey?: string): Level {
     });
 }
 
-// ─── Local streak state (localStorage) ──────────────────
+// ─── Estat local de ratxa (localStorage) ───────────────
 
 const STORAGE_KEY = 'mazeMindDailyStreak';
 
@@ -124,13 +124,13 @@ function saveLocalDailyState(state: DailyState): void {
     }
 }
 
-/** Returns true if the player already completed today's challenge. */
+/** Retorna `true` si el repte d'avui ja està completat. */
 export function hasCompletedToday(state?: DailyState): boolean {
     const s = state ?? getLocalDailyState();
     return s.lastCompletedDate === getTodayKey();
 }
 
-/** Returns the "live" streak, accounting for whether yesterday was completed. */
+/** Retorna la ratxa "viva", considerant si ahir es va completar. */
 export function getLiveStreak(state?: DailyState): number {
     const s = state ?? getLocalDailyState();
     if (!s.lastCompletedDate) return 0;
@@ -138,24 +138,24 @@ export function getLiveStreak(state?: DailyState): number {
     const today = getTodayKey();
     if (s.lastCompletedDate === today) return s.currentStreak;
 
-    // Check if last completion was yesterday
+    // Comprova si l'última compleció va ser ahir
     const last = new Date(`${s.lastCompletedDate}T00:00:00`);
     const now = new Date(`${today}T00:00:00`);
     const diffDays = Math.floor((now.getTime() - last.getTime()) / 86_400_000);
 
-    if (diffDays === 1) return s.currentStreak; // streak still alive, not yet completed today
-    return 0; // streak broken
+    if (diffDays === 1) return s.currentStreak; // la ratxa continua viva
+    return 0; // ratxa trencada
 }
 
 /**
- * Records a daily challenge completion. Updates streak and stores results.
- * Returns the new state.
+ * Registra una compleció del repte diari, actualitza ratxa i desa resultat.
+ * Retorna el nou estat.
  */
 export function completeDailyChallenge(stars: number, timeSeconds: number): DailyState {
     const state = getLocalDailyState();
     const today = getTodayKey();
 
-    // Already completed today — just update best results
+    // Si ja està completat avui, només actualitza millor resultat del dia
     if (state.lastCompletedDate === today) {
         if (stars > state.lastStars || (stars === state.lastStars && timeSeconds < (state.lastTimeSeconds ?? Infinity))) {
             state.lastStars = stars;
@@ -165,7 +165,7 @@ export function completeDailyChallenge(stars: number, timeSeconds: number): Dail
         return state;
     }
 
-    // New day completion
+    // Compleció de dia nou
     const liveStreak = getLiveStreak(state);
     state.currentStreak = liveStreak + 1;
     state.bestStreak = Math.max(state.bestStreak, state.currentStreak);
@@ -177,7 +177,7 @@ export function completeDailyChallenge(stars: number, timeSeconds: number): Dail
     return state;
 }
 
-// ─── Cloud sync (Supabase) ──────────────────────────────
+// ─── Sync cloud (Supabase) ──────────────────────────────
 
 export async function getCloudStreak(userId: string): Promise<DailyState | null> {
     try {
@@ -215,18 +215,18 @@ export async function syncStreakToCloud(userId: string, state: DailyState): Prom
                 updated_at: new Date().toISOString(),
             }, { onConflict: 'user_id' });
     } catch {
-        // Silently fail — local state is the source of truth
+        // Si falla el cloud, local continua sent font de veritat
     }
 }
 
 /**
- * Merges local + cloud state, keeping the better values.
- * Used on login to reconcile offline play.
+ * Fusiona estat local + cloud mantenint els valors més recents/útils.
+ * S'utilitza en login per reconciliar joc offline.
  */
 export function mergeStreakStates(local: DailyState, cloud: DailyState | null): DailyState {
     if (!cloud) return local;
 
-    // Use whichever has the more recent completion
+    // Prioritza l'estat amb data de compleció més recent
     const localDate = local.lastCompletedDate ?? '';
     const cloudDate = cloud.lastCompletedDate ?? '';
 

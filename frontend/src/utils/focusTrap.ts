@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
 
+/**
+ * Hook de focus trap per modals/diàlegs.
+ *
+ * Quan està actiu:
+ * - posa el focus al primer element focusable
+ * - intercepta `Tab` / `Shift+Tab` perquè el focus no surti del contenidor
+ */
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -9,6 +16,7 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+/** Activa/desactiva confinament de focus sobre el node referenciat. */
 export function useFocusTrap(active: boolean, ref: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
     if (!active || !ref.current) return;

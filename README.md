@@ -1,86 +1,170 @@
 # MazeMind‑TFG
 
-MazeMind és un joc per entrenar la memòria visoespacial. El joc mostra un laberint durant uns segons i després les parets es tornen invisibles perquè la persona hagi de recordar i reconstruir el camí.
+MazeMind és un joc web per l'entrenament de la memòria visoespacial: el jugador memoritza un laberint, després el resol amb parets ocultes, i rep feedback de rendiment amb progressió, puntuació i adaptació de dificultat.
 
-## **Com executar el projecte**
+## Què inclou el MVP
 
-### **Prerequisits**
-- Node.js + npm instal·lats.
-- Un projecte de Supabase amb les taules i polítiques configurades.
+- Campanya de nivells predefinits (`easy`, `normal`, `hard`).
+- Modes pràctica (normal score-run, lliure i IA adaptativa).
+- DDA heurístic explicable (no model de ML entrenat).
+- Multijugador competitiu per rondes, sincronitzat via Supabase.
+- Repte diari amb ratxa.
+- Personalització visual, remapeig de tecles, i18n (`ca`, `es`, `en`) i millores d'accessibilitat.
 
-### **Configuració d’entorn (sense secrets)**
-Crea `frontend/.env.local` i defineix:
-- `VITE_SUPABASE_URL` — URL del teu projecte Supabase.
-- `VITE_SUPABASE_ANON_KEY` — clau pública (anon) de Supabase.
-- `VITE_API_BASE_URL` — opcional si afegeixes backend propi.
-- `DATABASE_URL` — només si afegeixes un backend (no és necessari pel frontend).
+## Stack tecnològic
 
-### **Arrencada en desenvolupament**
+- Frontend: React + TypeScript + Vite.
+- Persistència i auth: Supabase (Auth + PostgREST + RLS).
+- Render de joc: Canvas 2D.
+- Àudio: `HTMLAudioElement` via `frontend/src/audio/sound.ts`.
+
+## Execució local
+
+### 1) Prerequisits
+
+- Node.js 18+ i npm.
+- Projecte Supabase operatiu.
+
+### 2) Variables d'entorn del frontend
+
+Crea `frontend/.env.local`:
+
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+### 3) Configuració de base de dades
+
+Aplica SQL a Supabase SQL Editor:
+
+- Esquema base: `BD/table_schemas.sql`
+- Features: fitxers de `sql_querys/` segons necessitats del teu entorn
+  - `dda_v2.sql`
+  - `multiplayer.sql`
+  - `multiplayer_fix.sql`
+  - `multiplayer_fix_recursion.sql` (si tens errors de polítiques recursives)
+  - `multiplayer_join_by_code.sql`
+  - `language_preference.sql`
+  - `daily_streak.sql`
+
+### 4) Desenvolupament
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### **Build i preview**
+### 5) Build de producció
+
 ```bash
 cd frontend
 npm run build
 npm run preview
 ```
 
-## **Estructura del projecte**
-- `frontend/` — Aplicació React (UI + lògica de joc + integració Supabase).
-- `frontend/src/App.tsx` — Router i control de rutes SPA.
-- `frontend/src/pages/` — Pantalles principals (Home, Levels, Game, Multiplayer, Settings, etc.).
-- `frontend/src/components/` — Components reutilitzables i modals.
-- `frontend/src/components/settings/` — UI de personalització i previews en temps real.
-- `frontend/src/maze/` — Generació i anàlisi de laberints.
-- `frontend/src/lib/` — Lògica de DDA, sincronització, multiplayer i Supabase.
-- `frontend/src/context/` — Contextos d’usuari, configuració i idioma.
-- `frontend/src/utils/` — Utilitats (progressos, settings, traduccions, etc.).
+## Estructura del repositori
 
-## **Mapa de lògica per funcionalitat**
+- `frontend/`: aplicació web.
+- `frontend/src/App.tsx`: router SPA i orquestració de pantalles.
+- `frontend/src/main.tsx`: entrypoint i providers globals.
+- `frontend/src/pages/`: pantalles principals.
+- `frontend/src/components/`: components reutilitzables i modals.
+- `frontend/src/components/settings/`: editor de configuració + previews.
+- `frontend/src/components/multiplayer/`: UI específica de multijugador.
+- `frontend/src/maze/`: generació/anàlisi de laberints.
+- `frontend/src/audio/`: gestió d'efectes i música.
+- `frontend/src/lib/`: capa de domini (DDA, sync, multiplayer, Supabase, daily).
+- `frontend/src/context/`: estat global (usuari, settings, idioma).
+- `frontend/src/utils/`: utilitats (progress, settings, color, i18n, etc.).
+- `frontend/src/levels/`: catàleg de nivells JSON (`README.md` intern).
+- `sql_querys/`: scripts SQL de funcionalitats.
+- `BD/`: esquema i taules.
+- `scripts/`: scripts de manteniment (`README.md` intern).
 
-### **Generació de laberints (IA / procedimental)**
-- Generador i PRNG: `frontend/src/maze/maze_generator.ts`
-- Anàlisi de dificultat (maze rating, mètriques): `frontend/src/maze/maze_stats.ts`
-- Pantalla de laboratori/creació: `frontend/src/pages/MazeGeneratorScreen.tsx`
+## Mapa funcional ràpid
 
-### **DDA (Adaptive Difficulty)**
-- Algoritme i models: `frontend/src/lib/dda.ts`
-- Registre d’intents i actualització d’habilitat: `level_attempts`, `user_skill_v2`, `level_catalog`
+### Joc i generació procedural
 
-### **Multijugador (sense servidor propi)**
-- Lògica principal: `frontend/src/lib/multiplayer.ts`
+- Generador DFS + PRNG: `frontend/src/maze/maze_generator.ts`
+- Mètriques de laberint: `frontend/src/maze/maze_stats.ts`
+- Pantalla de joc: `frontend/src/pages/LevelScreen.tsx`
+
+### DDA (dificultat adaptativa)
+
+- Lògica principal: `frontend/src/lib/dda.ts`
+- Persistència relacionada: `level_attempts`, `user_skill_v2`, `level_catalog`
+- SQL: `sql_querys/dda_v2.sql`
+- Documentació: `dda.md`, `dda2.md`
+
+### Multijugador
+
+- Domini: `frontend/src/lib/multiplayer.ts`
 - Pantalles: `frontend/src/pages/MultiplayerScreen.tsx`, `frontend/src/pages/MultiplayerMatchScreen.tsx`
-- Components específics: `frontend/src/components/multiplayer/*`
+- Components: `frontend/src/components/multiplayer/*`
+- SQL: `sql_querys/multiplayer*.sql`
 
-### **Accessibilitat (a11y)**
-- Focus visible i reduced motion: `frontend/src/index.css`
-- Atributs ARIA i rol de diàlegs: diversos components i modals
-- Dreceres de teclat configurables: `frontend/src/components/settings/GameSettingsComponent.tsx`
+### Repte diari
 
-### **UX, so i feedback**
-- So d’interaccions: `frontend/src/audio/sound.ts`
-- Microinteraccions a botons i hover: components UI
+- Lògica: `frontend/src/lib/dailyChallenge.ts`
+- Pantalles: `frontend/src/pages/DailyChallengeScreen.tsx`
+- Modal de resultat: `frontend/src/components/DailyCompletionModal.tsx`
+- SQL: `sql_querys/daily_streak.sql`
 
-### **Idiomes i internacionalització**
-- Traduccions: `frontend/src/utils/translations.ts`
-- Context i persistència: `frontend/src/context/LanguageContext.tsx`
+### Accessibilitat i UX
 
-### **Gestió d’usuaris (guest / auth)**
-- Autenticació Supabase: `frontend/src/lib/supabase.ts`
-- Sessió i logout: `frontend/src/context/UserContext.tsx`
-- Modal login/register: `frontend/src/components/AuthModal.tsx`
-- Usuari guest: es guarda en localStorage, sense sincronitzar
+- Focus trap: `frontend/src/utils/focusTrap.ts`
+- Contrast checker: `frontend/src/components/settings/ContrastCheckerPanel.tsx`
+- Keybindings: `frontend/src/components/settings/GameSettingsComponent.tsx`
+- Informe: `UI_and_adaptability.md`
 
-### **Persistència i sincronització**
-- Progrés local: `frontend/src/utils/progress.ts`, `frontend/src/utils/practiceProgress.ts`
-- Sync amb Supabase: `frontend/src/lib/sync.ts`
-- Carrega/sincronitza en login: `frontend/src/App.tsx`
+### Idioma i internacionalització
 
-### **Configuració visual i personalització**
-- Tokens visuals per pantalla: `frontend/src/utils/settings.ts`
-- Context i sincronització de settings: `frontend/src/context/SettingsContext.tsx`, `frontend/src/lib/cloudSettings.ts`
-- UI de personalització: `frontend/src/pages/SettingsScreen.tsx`, `frontend/src/components/settings/*`
+- Diccionari: `frontend/src/utils/translations.ts`
+- Context d'idioma: `frontend/src/context/LanguageContext.tsx`
+- Persistència cloud d'idioma: `frontend/src/lib/cloudSettings.ts`
+
+## Usuaris i persistència
+
+### Autenticació
+
+- Email/password via Supabase.
+- Guest/anònim via `signInAnonymously`.
+- No hi ha OAuth en la implementació actual.
+
+### Política de dades local vs núvol
+
+- Campanya + best de pràctica: es carreguen des del núvol en login (`getCloudSnapshot`).
+- Configuració visual/controls: fusió amb preferència dels valors cloud en conflicte.
+- Idioma: local + cloud, sincronitzat per usuari autenticat.
+
+### Multijugador i guest
+
+- Guest pot crear/jugar partides privades per codi.
+- Partides públiques obertes requereixen compte autenticat.
+
+## Scripts útils
+
+### Keepalive de Supabase
+
+Fitxer: `scripts/supabase_keepalive.py`
+
+Variables requerides:
+
+```env
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_PING_TABLE=...
+```
+
+Execució:
+
+```bash
+python3 scripts/supabase_keepalive.py
+```
+
+## Notes
+
+- Si `npm run build` avisa de chunks grans a Vite, és un warning de bundle size, no un error de compilació.
+- En entorns nous, comprova primer SQL + RLS abans de validar multijugador o DDA.

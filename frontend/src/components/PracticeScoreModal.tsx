@@ -69,6 +69,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal intermig de score-run per passar al seguent laberint.
+ */
 export default function PracticeScoreModal({
   levelNumber,
   pointsGained,

@@ -101,6 +101,9 @@ const buildStyles = (visuals: VisualSettings) => {
     };
 };
 
+/**
+ * Modal de finalitzacio del repte diari amb resum de rendiment.
+ */
 export default function DailyCompletionModal({
     status, time, points, stars, onRetrySameMaze, onBackToDaily
 }: Props) {

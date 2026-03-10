@@ -76,6 +76,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal de completacio de practica IA.
+ */
 export default function PracticeIaCompletionModal({ onNextLevel, onBack }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings } = useSettings();

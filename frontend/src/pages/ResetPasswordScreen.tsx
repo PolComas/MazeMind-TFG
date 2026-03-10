@@ -6,6 +6,7 @@ import { applyAlpha } from '../utils/color';
 import { useLanguage } from '../context/LanguageContext';
 import NetworkBackground from '../components/NetworkBackground';
 
+/** Genera l'estil inline de la pantalla a partir del tema visual actiu. */
 const buildStyles = (v: VisualSettings) => {
   const cardBg = v.surfaceColor;
   const border = v.borderColor;
@@ -29,6 +30,12 @@ const buildStyles = (v: VisualSettings) => {
   } as const;
 };
 
+/**
+ * Pantalla de restabliment de contrasenya.
+ *
+ * Requereix sessió temporal de recuperació (link de Supabase) i permet
+ * establir una nova contrasenya per a l'usuari actual.
+ */
 export default function ResetPasswordScreen({ onDone }: { onDone?: () => void }) {
   const { getVisualSettings } = useSettings();
   const { t } = useLanguage();
@@ -52,10 +59,10 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
 
     setBusy(true);
     try {
-      // Actualitzar la contrasenya a Supabase
+      // Actualitza la contrasenya a Supabase.
       const { error: updateError } = await supabase.auth.updateUser({ password: p1 });
      
-      // Gestionar errors
+      // Gestiona errors d'actualització.
       if (updateError) {
         setError(t('resetPassword.error.update'));
         return;
@@ -64,7 +71,7 @@ export default function ResetPasswordScreen({ onDone }: { onDone?: () => void })
       setOk(t('resetPassword.success'));
       setFinished(true);
 
-      // Tancar sessió en aquesta pestanya per no forçar la sessió a la resta de pestanyes
+      // Tanca sessió en aquesta pestanya per no forçar logout global immediat.
       setTimeout(async () => {
         try {
             const signOutRes = await supabase.auth.signOut();

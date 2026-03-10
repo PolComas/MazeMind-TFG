@@ -8,6 +8,9 @@ type Props = {
     settings: VisualSettings;
 };
 
+/**
+ * Previsualitzacio de la pantalla de multijugador.
+ */
 export default function MultiplayerScreenPreview({ settings }: Props) {
     const { t } = useLanguage();
     const styles: Record<string, React.CSSProperties> = {

@@ -10,6 +10,9 @@ type RoundResultOverlayProps = {
     reason: string; // 'time', 'completed', 'tie', etc.
 };
 
+/**
+ * Overlay de resultat de ronda multijugador.
+ */
 export default function RoundResultOverlay({
     winnerId,
     myId,

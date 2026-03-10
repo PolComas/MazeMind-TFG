@@ -11,6 +11,12 @@ export type CloudSnapshot = {
 const CAMPAIGN_MIN = 1;
 const CAMPAIGN_MAX = 15;
 
+/**
+ * Valida el format de claus de campanya a `progress.levels`.
+ *
+ * Només sincronitzem claus de campanya (`easy-1` ... `hard-15`) al cloud.
+ * Les claus de practica o lliure es mantenen locals per disseny.
+ */
 const isCampaignKey = (key: string) => {
   const parts = key.split('-');
   if (parts.length !== 2) return false;
@@ -18,6 +24,14 @@ const isCampaignKey = (key: string) => {
   return Number.isFinite(num) && num >= CAMPAIGN_MIN && num <= CAMPAIGN_MAX;
 };
 
+/**
+ * Llegeix el snapshot complet del cloud en el moment d'hidratar sessio.
+ *
+ * Inclou:
+ * - stats de campanya (`level_progress`)
+ * - ultim nivell desbloquejat per dificultat (`user_progress`)
+ * - millor score de practica (`practice_best`)
+ */
 export async function getCloudSnapshot(userId: string): Promise<CloudSnapshot> {
   if (!userId) {
     throw new Error('No s\'ha proporcionat cap usuari per obtenir el progrés.');
@@ -78,6 +92,14 @@ export async function getCloudSnapshot(userId: string): Promise<CloudSnapshot> {
   };
 }
 
+/**
+ * Envia el progres de campanya al cloud.
+ *
+ * Notes:
+ * - només sincronitza claus de campanya (veure `isCampaignKey`)
+ * - arrodoneix `best_time` i `best_points` abans de persistir per ajustar-se
+ *   a l'esquema enter de BD i evitar errors de tipus a Postgres
+ */
 export async function pushProgress(userId: string, progress: GameProgress): Promise<void> {
   if (!userId) {
     throw new Error('No s\'ha proporcionat cap usuari per sincronitzar el progrés.');
@@ -121,6 +143,11 @@ export async function pushProgress(userId: string, progress: GameProgress): Prom
   }
 }
 
+/**
+ * Desa la millor puntuacio de practica de l'usuari autenticat.
+ *
+ * `practice_best` manté una sola fila per usuari (`onConflict: user_id`).
+ */
 export async function pushPracticeBest(userId: string, localBest: number): Promise<void> {
   if (!userId) {
     throw new Error('No s\'ha proporcionat cap usuari per sincronitzar practice_best.');

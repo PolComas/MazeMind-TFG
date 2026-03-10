@@ -7,6 +7,12 @@ import { useSettings } from '../context/SettingsContext';
 import { PALETTE } from '../components/palette';
 import { useLanguage } from '../context/LanguageContext';
 
+/**
+ * Laboratori intern per generar i inspeccionar laberints.
+ *
+ * S'utilitza per validar paràmetres, veure mètriques estructurals i exportar
+ * un nivell en format JSON.
+ */
 type FormState = {
   width: number;
   height: number;
@@ -15,9 +21,11 @@ type FormState = {
   levelNumber: number;
 };
 
+/** Normalitza enters d'entrada per evitar valors fora de rang. */
 const sanitizeInt = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, Math.round(value)));
 
+/** Construeix un nivell consistent a partir del formulari. */
 const createLevelFromForm = (form: FormState) =>
   generateLevel({
     levelNumber: sanitizeInt(form.levelNumber, 1, 999),
@@ -28,6 +36,7 @@ const createLevelFromForm = (form: FormState) =>
     stars: [60, 45, 30],
   });
 
+/** Neteja la càrrega exportada per desar únicament les dades essencials del laberint. */
 const cleanLevel = (level: Level) => ({
   ...level,
   maze: level.maze.map((row) => row.map((cell) => ({ walls: cell.walls }))),

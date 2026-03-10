@@ -1,14 +1,22 @@
+/**
+ * Utilitats de progrés de campanya (singleplayer).
+ *
+ * Aquesta capa centralitza:
+ * - lectura/escriptura de progrés a localStorage
+ * - càlcul d'agregats per Home (nivells, estrelles, perfectes)
+ * - actualització segura de millors marques per nivell
+ */
 export type LevelProgress = {
   stars: number;
   bestTime: number | null;
   bestPoints: number | null; 
 };
 
-// Defineix el tipus per a totes les dades de progrés
+/** Estat complet de progrés persistit al client. */
 export type GameProgress = {
-  // Clau: 'difficulty-levelNumber', ex: 'easy-1', 'normal-15'
+  /** Clau `difficulty-levelNumber` (p. ex. `easy-1`, `normal-15`). */
   levels: Record<string, LevelProgress>;
-  // Emmagatzema el número més alt desbloquejat per cada dificultat
+  /** Nivell màxim desbloquejat per dificultat. */
   highestUnlocked: {
     easy: number;
     normal: number;
@@ -18,28 +26,32 @@ export type GameProgress = {
 
 const STORAGE_KEY = 'mazeMindProgress';
 
-// Valor inicial per si no hi ha res guardat
+/** Valor inicial quan encara no hi ha progrés desat. */
 const INITIAL_PROGRESS: GameProgress = {
   levels: {},
   highestUnlocked: { easy: 1, normal: 1, hard: 1 },
 };
 
-// Calcula el nombre total de nivells superats (amb almenys 1 estrella)
+/** Nombre total de nivells superats (>= 1 estrella). */
 export function getTotalCompletedLevels(progress: GameProgress): number {
   return Object.values(progress.levels).filter(level => level.stars > 0).length;
 }
 
-// Calcula el nombre total d'estrelles aconseguides
+/** Suma total d'estrelles aconseguides. */
 export function getTotalStars(progress: GameProgress): number {
   return Object.values(progress.levels).reduce((sum, level) => sum + level.stars, 0);
 }
 
-// Calcula el nombre total de nivells perfectes (amb 3 estrelles)
+/** Nombre total de nivells perfectes (3 estrelles). */
 export function getTotalPerfectLevels(progress: GameProgress): number {
   return Object.values(progress.levels).filter(level => level.stars === 3).length;
 }
 
-// Carregar el progrés des de localStorage
+/**
+ * Carrega el progrés des de localStorage.
+ *
+ * Si hi ha error de parseig, neteja la clau corrupta i retorna estat inicial.
+ */
 export function loadProgress(): GameProgress {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -62,12 +74,22 @@ export function loadProgress(): GameProgress {
   return { ...INITIAL_PROGRESS };
 }
 
-// Guardar el progrés d'un nivell completat
 export type SaveLevelCompletionOptions = {
+  /** Permet injectar progrés base (evita rellegir localStorage). */
   baseProgress?: GameProgress;
+  /** Controla si cal persistir el resultat a localStorage. */
   persist?: boolean;
 };
 
+/**
+ * Desa el resultat d'un nivell i retorna el nou estat de progrés.
+ *
+ * Regles:
+ * - conserva millor temps (mínim)
+ * - conserva millor puntuació (màxim)
+ * - conserva millor estrellat (màxim)
+ * - desbloqueja el següent nivell dins límit [1..15]
+ */
 export function saveLevelCompletion(
   difficulty: 'easy' | 'normal' | 'hard',
   levelNumber: number,
@@ -85,32 +107,32 @@ export function saveLevelCompletion(
   };
   const levelId = `${difficulty}-${levelNumber}`;
 
-  // Obtenir les dades anteriors d'aquest nivell, si existeixen
+  // Dades anteriors del nivell (si existeixen)
   const previousBest = nextProgress.levels[levelId];
 
   const prevBestTime: number | null = previousBest?.bestTime ?? null;
   const prevBestPoints: number | null = previousBest?.bestPoints ?? null;
   const prevStars: number = previousBest?.stars ?? 0;
 
-  // Actualitzar les millors puntuacions
+  // Calcula millors valors històrics
   const newBestTime = (prevBestTime === null || safeTime < prevBestTime) ? safeTime : prevBestTime;
   const newBestPoints = (prevBestPoints === null || safePoints > prevBestPoints) ? safePoints : prevBestPoints;
   const newBestStars = Math.max(prevStars, stars);
 
-  // Guardar les noves dades del nivell
+  // Guarda la millor versió del nivell
   nextProgress.levels[levelId] = {
     stars: newBestStars,
     bestTime: newBestTime,
     bestPoints: newBestPoints,
   };
 
-  // Desbloquejar el següent nivell
+  // Desbloqueja el següent nivell quan toca
   const nextLevelNumber = levelNumber + 1;
   if (nextLevelNumber <= 15 && nextLevelNumber > nextProgress.highestUnlocked[difficulty]) {
     nextProgress.highestUnlocked[difficulty] = nextLevelNumber;
   }
 
-  // Guardar tot a localStorage
+  // Persistència opcional
   const shouldPersist = options?.persist ?? true;
   if (shouldPersist) {
     try {
@@ -123,7 +145,7 @@ export function saveLevelCompletion(
   return nextProgress;
 }
 
-// Obtenir les estadístiques d'un nivell específic
+/** Retorna estadístiques d'un nivell concret o `null` si no hi ha registre. */
 export function getLevelStats(progress: GameProgress, difficulty: 'easy' | 'normal' | 'hard', levelNumber: number): LevelProgress | null {
     const levelId = `${difficulty}-${levelNumber}`;
     return progress.levels[levelId] || null;

@@ -19,6 +19,9 @@ const extractGradientColors = (gradient: string): [string, string] => {
   return [PALETTE.playBtnFrom || '#5b21b6', PALETTE.playBtnTo || '#7e22ce']; 
 };
 
+/**
+ * Controls d'estil especifics de la Home.
+ */
 export default function HomeScreenSettings({ settings, onChange }: Props) {
   const { t } = useLanguage();
   // Estats locals per als colors del gradient

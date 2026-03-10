@@ -24,6 +24,9 @@ const NumberInput = ({ label, value, onChange, inputId, min, max, step }: any) =
   </div>
 );
 
+/**
+ * Controls d'estil especifics de la pantalla de joc.
+ */
 export default function LevelScreenSettings({ settings, onChange }: Props) {
   const { t } = useLanguage();
   // Nota: 'backgroundColor' en aquesta pantalla no és un gradient, 

@@ -1,5 +1,14 @@
 import { PALETTE as ORIGINAL_PALETTE } from '../components/palette';
 
+/**
+ * Definició i persistència de la configuració de l'aplicació.
+ *
+ * Inclou:
+ * - models de settings visuals i de joc
+ * - valors per defecte
+ * - temes predefinits
+ * - utilitats de càrrega, desat i fusió profunda
+ */
 export type VisualSettings = {
   // Colors generals
   backgroundColor: string;
@@ -29,7 +38,7 @@ export type VisualSettings = {
   crashHelpColor?: string;
 };
 
-// Configuració per a cada pantalla
+/** Configuració visual per pantalla. */
 export type ScreenSettings = {
   home: VisualSettings;
   levelSelect: VisualSettings;
@@ -37,7 +46,7 @@ export type ScreenSettings = {
   multiplayer: VisualSettings;
 };
 
-// Configuració global del joc (so, etc.)
+/** Configuració global de joc (àudio, controls i dreceres). */
 export type GameSettings = {
   soundEffects: boolean;
   backgroundMusic: boolean;
@@ -63,7 +72,7 @@ export type GameSettings = {
   keySkipMemorize: string;
 };
 
-// Tipus complet per a tota la configuració guardada
+/** Arrel de configuració completa persistida al client. */
 export type AppSettings = {
   visuals: ScreenSettings;
   game: GameSettings;
@@ -71,7 +80,7 @@ export type AppSettings = {
 
 const STORAGE_KEY = 'mazeMindSettings';
 
-// --- VALORS PER DEFECTE ---
+// --- Valors per defecte ---
 const DEFAULT_VISUALS: VisualSettings = {
   backgroundColor: ORIGINAL_PALETTE.bg,
   textColor: ORIGINAL_PALETTE.text,
@@ -123,7 +132,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
-// Temes predefinits
+/** Catàleg de temes predefinits aplicables a totes les pantalles. */
 export const PRESET_THEMES: Record<'default' | 'dark' | 'light' | 'high_contrast', VisualSettings> = {
   default: {
     backgroundColor: ORIGINAL_PALETTE.bg,
@@ -225,7 +234,11 @@ export const PRESET_THEMES: Record<'default' | 'dark' | 'light' | 'high_contrast
 
 export type PresetThemeKey = keyof typeof PRESET_THEMES;
 
-// Carregar la configuració
+/**
+ * Carrega settings des de localStorage i fusiona amb defaults actuals.
+ *
+ * Aquesta fusió garanteix compatibilitat quan s'afegeixen claus noves.
+ */
 export function loadSettings(): AppSettings {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -240,7 +253,7 @@ export function loadSettings(): AppSettings {
   return deepClone(DEFAULT_SETTINGS);
 }
 
-// Guardar la configuració
+/** Desa settings complets a localStorage. */
 export function saveSettings(settings: AppSettings): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -249,15 +262,21 @@ export function saveSettings(settings: AppSettings): void {
   }
 }
 
-// Funcions auxiliars per a clonar i fusionar objectes
+/** Clonació profunda simple via JSON per objectes de settings serialitzables. */
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
+/** Type guard per detectar objectes plans (no arrays). */
 function isObject(item: any): item is Record<string, any> {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
+/**
+ * Fusió profunda `target <- source` amb preferència pels valors de `source`.
+ *
+ * S'exporta perquè també es fa servir en la reconciliació local/cloud.
+ */
 export function deepMerge<T extends Record<string, any>>(target: T, source: Record<string, any>): T {
   const output = deepClone(target);
   if (isObject(target) && isObject(source)) {

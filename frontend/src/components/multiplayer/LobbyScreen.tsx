@@ -12,6 +12,9 @@ type LobbyScreenProps = {
   onStart?: () => void;
 };
 
+/**
+ * Sala d'espera multijugador abans d'iniciar la partida.
+ */
 export default function LobbyScreen({ match, players, currentUserId, onLeave }: LobbyScreenProps) {
   const { t } = useLanguage();
   const { getVisualSettings } = useSettings();

@@ -19,6 +19,14 @@ import { analyzeLevel } from '../maze/maze_stats';
 import { recordAttemptAndUpdateSkill, recommendDdaTuning, type DdaTuning } from '../lib/dda';
 import { useLanguage } from '../context/LanguageContext';
 
+/**
+ * Pantalla principal de partida.
+ *
+ * Gestiona:
+ * - Fases de joc (memoritzar -> jugar -> resultat).
+ * - HUD, ajudes, puntuació i telemetria.
+ * - Persistència de progrés i integració amb DDA.
+ */
 type Phase = "memorize" | "playing" | "completed" | "failed";
 
 // Constants del Joc
@@ -32,6 +40,7 @@ const LIVES = 3;
 
 type Pos = { x: number; y: number };
 
+/** Compta quantes vegades el camí torna a una cel·la ja visitada. */
 const countRevisits = (path: Pos[]) => {
   const seen = new Set<string>();
   let revisits = 0;

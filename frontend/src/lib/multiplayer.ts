@@ -1,5 +1,12 @@
 import { supabase } from './supabase';
 
+/**
+ * Utilitats d'accés a dades del mode multijugador.
+ *
+ * Aquesta capa encapsula totes les operacions contra Supabase
+ * (`multiplayer_matches`, `multiplayer_players`, `multiplayer_round_results`)
+ * per mantenir la lògica de pantalles separada de la persistència.
+ */
 export type MatchStatus = 'waiting' | 'active' | 'finished' | 'cancelled';
 export type MatchConfig = {
   difficulty: 'easy' | 'normal' | 'hard';
@@ -47,6 +54,7 @@ export type RoundResult = {
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+/** Genera un codi de sala curt sense caràcters ambigus (I, O, 0, 1). */
 export const generateJoinCode = (len = 6) => {
   let out = '';
   for (let i = 0; i < len; i += 1) {
@@ -55,9 +63,13 @@ export const generateJoinCode = (len = 6) => {
   return out;
 };
 
+/** Genera una llista de seeds deterministes per ronda dins la mateixa partida. */
 export const createSeeds = (count: number) =>
   Array.from({ length: count }, () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
+/**
+ * Crea una partida en estat `waiting` i afegeix el host com a primer jugador.
+ */
 export async function createMatch(args: {
   hostId: string;
   isPublic: boolean;
@@ -103,6 +115,7 @@ export async function createMatch(args: {
   return matchRow as MultiplayerMatch;
 }
 
+/** Llista les sales públiques obertes pendents de rival. */
 export async function listOpenMatches(): Promise<MultiplayerMatch[]> {
   const { data, error } = await supabase
     .from('multiplayer_matches')
@@ -116,6 +129,7 @@ export async function listOpenMatches(): Promise<MultiplayerMatch[]> {
   return (data ?? []) as MultiplayerMatch[];
 }
 
+/** Carrega una partida pel seu `id`. */
 export async function getMatch(matchId: string): Promise<MultiplayerMatch | null> {
   const { data, error } = await supabase
     .from('multiplayer_matches')
@@ -127,6 +141,7 @@ export async function getMatch(matchId: string): Promise<MultiplayerMatch | null
   return data as MultiplayerMatch | null;
 }
 
+/** Carrega una partida a partir del codi curt compartible. */
 export async function getMatchByCode(code: string): Promise<MultiplayerMatch | null> {
   const { data, error } = await supabase
     .from('multiplayer_matches')
@@ -138,6 +153,12 @@ export async function getMatchByCode(code: string): Promise<MultiplayerMatch | n
   return data as MultiplayerMatch | null;
 }
 
+/**
+ * Uneix l'usuari autenticat a una sala privada via RPC.
+ *
+ * La validació de codi existent/sala plena/sala no disponible es resol al
+ * costat de BD a `join_match_by_code`.
+ */
 export async function joinMatchByCode(code: string, displayName?: string | null): Promise<MultiplayerMatch> {
   const { data, error } = await supabase.rpc('join_match_by_code', {
     p_code: code.toUpperCase(),
@@ -148,6 +169,7 @@ export async function joinMatchByCode(code: string, displayName?: string | null)
   return data as MultiplayerMatch;
 }
 
+/** Retorna l'estat actual de jugadors d'una partida. */
 export async function getPlayers(matchId: string): Promise<MultiplayerPlayer[]> {
   const { data, error } = await supabase
     .from('multiplayer_players')
@@ -159,6 +181,11 @@ export async function getPlayers(matchId: string): Promise<MultiplayerPlayer[]> 
   return (data ?? []) as MultiplayerPlayer[];
 }
 
+/**
+ * Afegeix o re-activa un jugador en una partida.
+ *
+ * S'usa `upsert` per ser tolerant a reintents i reconnects.
+ */
 export async function joinMatch(matchId: string, userId: string, displayName?: string | null): Promise<void> {
   const { error } = await supabase
     .from('multiplayer_players')
@@ -176,6 +203,7 @@ export async function joinMatch(matchId: string, userId: string, displayName?: s
   if (error) throw error;
 }
 
+/** Marca l'estat del jugador (`joined`, `left`, `finished`). */
 export async function setPlayerStatus(matchId: string, userId: string, status: MultiplayerPlayer['status']): Promise<void> {
   const { error } = await supabase
     .from('multiplayer_players')
@@ -186,6 +214,7 @@ export async function setPlayerStatus(matchId: string, userId: string, status: M
   if (error) throw error;
 }
 
+/** Actualitza l'estat global de la partida i, opcionalment, la ronda actual. */
 export async function setMatchStatus(matchId: string, status: MatchStatus, currentRound?: number): Promise<void> {
   const payload: Record<string, any> = { status };
   if (typeof currentRound === 'number') payload.current_round = currentRound;
@@ -198,6 +227,11 @@ export async function setMatchStatus(matchId: string, status: MatchStatus, curre
   if (error) throw error;
 }
 
+/**
+ * Avança ronda amb compare-and-set sobre `current_round`.
+ *
+ * Evita salts de ronda duplicats quan els dos clients intenten avançar alhora.
+ */
 export async function advanceRoundIfCurrent(matchId: string, currentRound: number, nextRound: number, status?: MatchStatus): Promise<boolean> {
   const payload: Record<string, any> = { current_round: nextRound };
   if (status) payload.status = status;
@@ -213,6 +247,7 @@ export async function advanceRoundIfCurrent(matchId: string, currentRound: numbe
   return (data ?? []).length > 0;
 }
 
+/** Desa (o actualitza) el resultat d'un jugador en una ronda concreta. */
 export async function recordRoundResult(input: RoundResult): Promise<void> {
   const { error } = await supabase
     .from('multiplayer_round_results')
@@ -220,6 +255,7 @@ export async function recordRoundResult(input: RoundResult): Promise<void> {
   if (error) throw error;
 }
 
+/** Obté els resultats d'una ronda concreta per partida. */
 export async function getRoundResults(matchId: string, roundIndex: number): Promise<RoundResult[]> {
   const { data, error } = await supabase
     .from('multiplayer_round_results')
@@ -231,6 +267,7 @@ export async function getRoundResults(matchId: string, roundIndex: number): Prom
   return (data ?? []) as RoundResult[];
 }
 
+/** Obté tots els resultats de totes les rondes d'una partida. */
 export async function getAllRoundResults(matchId: string): Promise<RoundResult[]> {
   const { data, error } = await supabase
     .from('multiplayer_round_results')
@@ -242,6 +279,7 @@ export async function getAllRoundResults(matchId: string): Promise<RoundResult[]
   return (data ?? []) as RoundResult[];
 }
 
+/** Actualitza els totals acumulats d'un jugador (punts, temps i rondes guanyades). */
 export async function updatePlayerTotals(matchId: string, userId: string, totals: { points: number; time: number; roundsWon: number }) {
   const { error } = await supabase
     .from('multiplayer_players')
@@ -256,6 +294,7 @@ export async function updatePlayerTotals(matchId: string, userId: string, totals
   if (error) throw error;
 }
 
+/** Elimina completament una partida (neteja de sala finalitzada/cancel·lada). */
 export async function deleteMatch(matchId: string): Promise<void> {
   const { error } = await supabase
     .from('multiplayer_matches')

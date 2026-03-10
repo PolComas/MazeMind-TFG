@@ -15,6 +15,9 @@ type Props = {
   lives: number;
 };
 
+/**
+ * HUD simplificat per al mode practica score-run.
+ */
 export default function PracticeHUD({
   totalScore,
   revealCharges,

@@ -10,6 +10,9 @@ type Props = {
   settings: VisualSettings;
 };
 
+/**
+ * Previsualitzacio de la Home dins la pantalla de configuracio.
+ */
 export default function HomeScreenPreview({ settings }: Props) {
   const { t } = useLanguage();
   const previewStats = [

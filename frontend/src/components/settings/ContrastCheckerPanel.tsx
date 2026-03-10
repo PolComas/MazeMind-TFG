@@ -5,13 +5,16 @@ import { getContrastRatio } from '../../utils/color';
 import { PALETTE } from '../palette';
 import { useLanguage } from '../../context/LanguageContext';
 
+/** Claus de pantalla configurables dins l'editor visual. */
 type ScreenKey = keyof ScreenSettings;
 
+/** Propietats del panell de contrast. */
 type Props = {
   screen: ScreenKey;
   settings: ScreenSettings;
 };
 
+/** Resultat d'una comprovació individual de contrast. */
 type ContrastCheck = {
   id: string;
   labelKey: string;
@@ -24,6 +27,7 @@ type ContrastCheck = {
   level: 'text' | 'ui';
 };
 
+/** Etiqueta de traducció associada a cada pantalla configurable. */
 const SCREEN_LABEL_KEY: Record<ScreenKey, string> = {
   home: 'settings.section.home',
   levelSelect: 'settings.section.levelSelect',
@@ -31,7 +35,7 @@ const SCREEN_LABEL_KEY: Record<ScreenKey, string> = {
   multiplayer: 'settings.section.multiplayer',
 };
 
-/** Extract a solid colour from a value that may be a gradient. */
+/** Extreu un color sòlid d'un valor que pot ser gradient o rgb(a). */
 const extractSolidColor = (value: string): string | null => {
   if (!value || typeof value !== 'string') return null;
   if (value.startsWith('#')) return value;
@@ -46,6 +50,7 @@ const extractSolidColor = (value: string): string | null => {
   return null;
 };
 
+/** Construeix una comprovació de contrast si els dos colors són resolubles. */
 const buildCheck = (
   id: string,
   labelKey: string,
@@ -71,6 +76,12 @@ const buildCheck = (
   };
 };
 
+/**
+ * Panell minimalista de validació de contrast per la pantalla seleccionada.
+ *
+ * Mostra un resum (checks passats / totals) i, opcionalment, el detall per
+ * cada parella color-text o color-UI rellevant.
+ */
 export default function ContrastCheckerPanel({ screen, settings }: Props) {
   const { t } = useLanguage();
   const visual = settings[screen];
@@ -134,7 +145,7 @@ export default function ContrastCheckerPanel({ screen, settings }: Props) {
 
   return (
     <section style={styles.panel} aria-label={t('settings.contrast.title')}>
-      {/* Collapsible header */}
+      {/* Capçalera col·lapsable */}
       <button
         type="button"
         style={styles.headerButton}
@@ -153,14 +164,14 @@ export default function ContrastCheckerPanel({ screen, settings }: Props) {
         </div>
       </button>
 
-      {/* Expanded details */}
+      {/* Detall expandit */}
       {expanded && (
         <div style={styles.details}>
           <p style={styles.subtitle}>{t('settings.contrast.subtitle')}</p>
           <ul style={styles.list}>
             {checks.map((check) => (
               <li key={check.id} style={styles.listItem}>
-                {/* Color swatches */}
+                {/* Mostres de colors comparats */}
                 <div style={styles.swatchPair}>
                   <span
                     style={{
@@ -181,10 +192,10 @@ export default function ContrastCheckerPanel({ screen, settings }: Props) {
                   />
                 </div>
 
-                {/* Label */}
+                {/* Etiqueta de la comprovació */}
                 <span style={styles.checkLabel}>{t(check.labelKey)}</span>
 
-                {/* Ratio + status */}
+                {/* Ratio de contrast i estat pass/fail */}
                 <div style={styles.ratioGroup}>
                   <span
                     style={{
@@ -204,7 +215,7 @@ export default function ContrastCheckerPanel({ screen, settings }: Props) {
             ))}
           </ul>
 
-          {/* Minimum requirements note */}
+          {/* Recordatori de llindars mínims WCAG */}
           <p style={styles.note}>
             {t('settings.contrast.note')}
           </p>

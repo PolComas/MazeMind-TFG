@@ -3,6 +3,16 @@ import type { ReactNode } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Context d'identitat/autenticació de l'aplicació.
+ *
+ * Responsabilitats:
+ * - exposar usuari actual (auth + guest)
+ * - hidratar sessió de Supabase en arrencada
+ * - persistir usuari simplificat a localStorage per UX ràpida
+ * - gestionar logout, delete account i login anònim
+ * - detectar sessions de recuperació de contrasenya
+ */
 export type AuthUser = {
   id: string;
   email: string;
@@ -21,6 +31,11 @@ type UserContextValue = {
 
 const USER_STORAGE_KEY = 'mazeMindUser';
 
+/**
+ * Llegeix i valida l'usuari simplificat guardat al localStorage.
+ *
+ * Si el payload és invàlid, es neteja per evitar estats trencats.
+ */
 const parseStoredUser = (): AuthUser | null => {
   if (typeof window === 'undefined') {
     return null;
@@ -47,6 +62,7 @@ const parseStoredUser = (): AuthUser | null => {
   }
 };
 
+/** Converteix l'usuari de Supabase a la forma `AuthUser` utilitzada al frontend. */
 const toAuthUser = (sessionUser: SupabaseUser | null): AuthUser | null => {
   if (!sessionUser) {
     return null;
@@ -73,6 +89,11 @@ const toAuthUser = (sessionUser: SupabaseUser | null): AuthUser | null => {
   };
 };
 
+/**
+ * Detecta si la URL actual correspon a un flux de recuperació de contrasenya.
+ *
+ * Supabase pot passar `type=recovery` tant a querystring com a hash.
+ */
 const readRecoveryFlagFromUrl = () => {
   if (typeof window === 'undefined') {
     return false;
@@ -97,8 +118,11 @@ const readRecoveryFlagFromUrl = () => {
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
+/** Proveïdor global d'usuari i autenticació. */
 export function UserProvider({ children }: { children: ReactNode }) {
   const initialAuthState = useMemo(() => {
+    // Si venim d'un link de recovery, no mostrem cap usuari "persistit"
+    // per evitar incoherències de flux.
     const isRecovery = readRecoveryFlagFromUrl();
     return {
       isRecovery,
@@ -111,7 +135,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const recoverySessionRef = useRef(isRecoverySession);
 
   const logout = async () => {
-    // Optimitzar UX: netegem estat local abans d'esperar resposta de xarxa
+    // Optimització UX: primer neteja local, després intenta tancar sessió remota.
     setUser(null);
     try {
       if (typeof window !== 'undefined') {
@@ -136,7 +160,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const result = await withTimeout(supabase.auth.signOut({ scope: 'global' }), 1500);
       if (!result) {
-        // Fallback local per assegurar que la sessió es neteja encara que la xarxa falli
+        // Fallback local per assegurar logout encara amb incidències de xarxa.
         await supabase.auth.signOut({ scope: 'local' });
       }
     } catch (e) {
@@ -144,6 +168,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** Elimina el compte autenticat via RPC i força neteja completa de sessió local. */
   const deleteAccount = async () => {
     if (!user?.id) return;
     try {
@@ -164,6 +189,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** Inicia sessió anònima (guest) i retorna l'usuari resultant. */
   const signInAsGuest = async (): Promise<AuthUser | null> => {
     const alreadyAuthenticated = await supabase.auth.getUser();
     if (alreadyAuthenticated.data.user) {
@@ -204,7 +230,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // Upsert del perfil quan JA hi ha sessió
+  /**
+   * Garanteix que existeix fila a `profiles` per usuaris no anònims.
+   * No aplica a convidats.
+   */
   const ensureProfile = async (u: SupabaseUser) => {
     if ((u.app_metadata?.provider ?? '') === 'anonymous' || (u as any).is_anonymous) {
       return;
@@ -224,6 +253,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Bootstrap inicial de sessió per hidratar estat.
     const bootstrapSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -266,6 +296,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const sessionUser = session?.user ?? null;
 
       if (_event === 'PASSWORD_RECOVERY') {
+        // Durant recovery, ocultem usuari per forçar flux dedicat de reset.
         setIsRecoverySession(true);
         setUser(null);
         return;
@@ -306,6 +337,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
+/** Hook d'accés segur al context d'usuari. */
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) {

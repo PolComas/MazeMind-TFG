@@ -2,9 +2,18 @@ import { supabase } from './supabase';
 import type { Level } from '../maze/maze_generator';
 import type { MazeAnalysis } from '../maze/maze_stats';
 
+/**
+ * Motor de DDA (Dynamic Difficulty Adjustment) i telemetria de rendiment.
+ *
+ * Responsabilitats principals:
+ * - persistir intents (`level_attempts`) i catàleg de nivell (`level_catalog`)
+ * - recalcular skill contextual (`user_skill_v2`) per mode+dificultat
+ * - recomanar tuning dinàmic per partida i paràmetres de pràctica IA
+ */
 export type DdaMode = 'campaign' | 'practice_ia' | 'practice_free' | 'practice_normal' | 'other';
 export type DdaDifficulty = 'easy' | 'normal' | 'hard';
 
+/** Mètriques observables registrades al final d'un intent. */
 export type AttemptMetrics = {
   startedAt: string; // ISO
   endedAt: string; // ISO
@@ -23,6 +32,7 @@ export type AttemptMetrics = {
   memorizeTime: number;
 };
 
+/** Entrada completa necessària per persistir intent i recalcular skill. */
 export type RecordAttemptInput = {
   userId: string;
   mode: DdaMode;
@@ -40,6 +50,7 @@ const RECENCY_ALPHA = 0.85;
 
 const DEFAULT_STAR_THRESHOLDS = [800, 400, 1] as const;
 
+/** Paràmetres que el DDA pot ajustar per un nivell concret. */
 export type DdaTuning = {
   memorizeTime: number;
   revealCharges: number;
@@ -51,6 +62,7 @@ export type DdaTuning = {
   starThresholds: readonly number[];
 };
 
+/** Forma de fila guardada a `user_skill_v2`. */
 export type UserSkillRow = {
   user_id: string;
   mode: DdaMode;
@@ -68,6 +80,7 @@ export type UserSkillRow = {
   updated_at?: string | null;
 };
 
+/** Config de pesos/escala per calcular dificultat objectiva del laberint. */
 export type MazeRatingConfig = {
   weights: {
     pathLen: number;
@@ -96,6 +109,7 @@ const isMissingRelation = (error: any) => {
   return error?.code === '42P01' || msg.includes('relation') || msg.includes('does not exist');
 };
 
+/** Normalitza el JSON de configuració carregat de BD amb valors per defecte segurs. */
 const parseMazeRatingConfig = (raw: any): MazeRatingConfig => {
   const weights = raw?.weights ?? {};
   const scale = raw?.scale ?? {};
@@ -119,6 +133,7 @@ const parseMazeRatingConfig = (raw: any): MazeRatingConfig => {
   return next;
 };
 
+/** Carrega i cacheja la configuració de `maze_rating` de `dda_config`. */
 async function getMazeRatingConfig(): Promise<MazeRatingConfig> {
   const now = Date.now();
   if (cachedMazeConfig && now - cachedMazeConfig.loadedAt < MAZE_CONFIG_TTL_MS) {
@@ -150,7 +165,9 @@ async function getMazeRatingConfig(): Promise<MazeRatingConfig> {
   }
 }
 
-// Un rating simple de "dificultat objectiva" del laberint basat en features.
+/**
+ * Calcula un rating de dificultat objectiva del laberint a partir de features.
+ */
 export function computeMazeRating(a: MazeAnalysis, config?: MazeRatingConfig): number {
   const cfg = config ?? DEFAULT_MAZE_RATING_CONFIG;
   const r =
@@ -161,6 +178,12 @@ export function computeMazeRating(a: MazeAnalysis, config?: MazeRatingConfig): n
   return Number(r.toFixed(3));
 }
 
+/**
+ * Garanteix que el nivell existeixi (o quedi actualitzat) a `level_catalog`.
+ *
+ * Aquest catàleg permet creuar intents amb característiques estructurals del
+ * laberint i facilita analítica posterior.
+ */
 export async function ensureLevelCatalogRow(level: Level, analysis: MazeAnalysis, mazeRating?: number): Promise<void> {
   const rating = isFiniteNumber(mazeRating) ? mazeRating : computeMazeRating(analysis);
 
@@ -186,6 +209,12 @@ export async function ensureLevelCatalogRow(level: Level, analysis: MazeAnalysis
   if (error) throw error;
 }
 
+/**
+ * Persisteix un intent de joc i actualitza skill contextual si aplica.
+ *
+ * Per modes amb skill (`campaign`, `practice_ia`) recalcula `user_skill_v2`
+ * amb finestra recent i pesos de recència.
+ */
 export async function recordAttemptAndUpdateSkill(input: RecordAttemptInput): Promise<void> {
   const mazeConfig = await getMazeRatingConfig();
   const mazeRating = computeMazeRating(input.analysis, mazeConfig);
@@ -237,6 +266,7 @@ export async function recordAttemptAndUpdateSkill(input: RecordAttemptInput): Pr
   }
 }
 
+/** Obté la skill d'un usuari per context concret (mode + dificultat). */
 export async function getUserSkill(userId: string, mode: DdaMode, difficulty: DdaDifficulty): Promise<UserSkillRow | null> {
   try {
     const { data, error } = await supabase
@@ -258,6 +288,7 @@ export async function getUserSkill(userId: string, mode: DdaMode, difficulty: Dd
   }
 }
 
+/** Objectius de flow usats per convertir skill i telemetria en pressió adaptativa. */
 const FLOW_TARGETS = {
   success: 0.7,
   crash: 0.2,
@@ -280,6 +311,11 @@ const flowDeltaFromSkill = (skill: any) => {
   return clamp(successDelta + crashDelta + helpDelta + timeDelta, -0.3, 0.3);
 };
 
+/**
+ * Converteix skill+flow en paràmetres de tuning per una partida concreta.
+ *
+ * La variable `pressure` resumeix si cal apujar o relaxar dificultat.
+ */
 const tuningFromSkill = (args: {
   skill: any;
   baseMemorizeTime: number;
@@ -343,21 +379,25 @@ const tuningFromSkill = (args: {
   };
 };
 
+/** Genera pesos de recència (exponencials) per una finestra de mostres. */
 const buildRecencyWeights = (count: number, alpha: number) =>
   Array.from({ length: count }, (_, i) => Math.pow(alpha, i));
 
+/** Mitjana ponderada robusta davant pesos buits. */
 const weightedMean = (values: number[], weights: number[]) => {
   const totalW = weights.reduce((s, w) => s + w, 0) || 1;
   const sum = values.reduce((acc, v, i) => acc + v * weights[i], 0);
   return sum / totalW;
 };
 
+/** Variància ponderada utilitzada per estimar estabilitat de rendiment (`sigma`). */
 const weightedVariance = (values: number[], weights: number[], mean: number) => {
   const totalW = weights.reduce((s, w) => s + w, 0) || 1;
   const sum = values.reduce((acc, v, i) => acc + weights[i] * Math.pow(v - mean, 2), 0);
   return sum / totalW;
 };
 
+/** Calcula ratxa signada recent (+ èxits consecutius / - fallades consecutives). */
 const computeStreakSigned = (attempts: any[]) => {
   if (!attempts.length) return 0;
   const firstSuccess = Boolean(attempts[0]?.completed);
@@ -369,6 +409,12 @@ const computeStreakSigned = (attempts: any[]) => {
   return firstSuccess ? count : -count;
 };
 
+/**
+ * Recalcula la skill contextual (`user_skill_v2`) a partir dels últims intents.
+ *
+ * S'aplica una finestra de recència i normalització de mètriques per evitar
+ * oscil·lacions brusques després d'un intent puntual.
+ */
 export async function refreshUserSkillContext(
   userId: string,
   opts: { mode: DdaMode; difficulty: DdaDifficulty; windowSize: number; recencyAlpha: number }
@@ -498,6 +544,7 @@ export async function refreshUserSkillContext(
   }
 }
 
+/** Agrega múltiples files de skill (normalment per dificultats) en una sola vista. */
 const aggregateSkillRows = (rows: UserSkillRow[]): UserSkillRow | null => {
   if (!rows.length) return null;
   const weights = rows.map((r) => Math.max(1, Number(r.sample_count ?? 1)));
@@ -528,6 +575,7 @@ const aggregateSkillRows = (rows: UserSkillRow[]): UserSkillRow | null => {
   };
 };
 
+/** Obté skill agregada d'un mode (fusionant contextos disponibles). */
 export async function getAggregatedSkillForMode(userId: string, mode: DdaMode): Promise<UserSkillRow | null> {
   try {
     const { data, error } = await supabase
@@ -546,6 +594,10 @@ export async function getAggregatedSkillForMode(userId: string, mode: DdaMode): 
   }
 }
 
+/**
+ * Recomana tuning DDA per un nivell concret basant-se en skill contextual i
+ * dificultat objectiva del laberint.
+ */
 export async function recommendDdaTuning(
   userId: string,
   mode: DdaMode,
@@ -563,7 +615,7 @@ export async function recommendDdaTuning(
   });
 }
 
-// --- Recomanació (mode IA) ---
+/** Paràmetres generats per arrencar una sessió de pràctica IA. */
 export type PracticeIaParams = {
   width: number;
   height: number;
@@ -572,6 +624,11 @@ export type PracticeIaParams = {
   seed: string;
 };
 
+/**
+ * Recomana mida, dificultat i temps de memorització per pràctica IA.
+ *
+ * Prioritza la skill de `practice_ia` i, si no n'hi ha, cau a `campaign`.
+ */
 export async function recommendPracticeIaParams(userId: string): Promise<PracticeIaParams> {
   const skill =
     (await getAggregatedSkillForMode(userId, 'practice_ia')) ??

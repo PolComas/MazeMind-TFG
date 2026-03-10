@@ -6,6 +6,9 @@ type NetworkBackgroundProps = {
     opacity?: number; // 0 to 1, default 1
 };
 
+/**
+ * Fons animat decoratiu reutilitzable per a pantalles principals.
+ */
 export default function NetworkBackground({ primaryColor, backgroundColor = '#0f172a', opacity = 1 }: NetworkBackgroundProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 

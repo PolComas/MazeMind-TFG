@@ -64,6 +64,9 @@ const buildStyles = (visuals: VisualSettings): Record<string, React.CSSPropertie
   };
 };
 
+/**
+ * Modal per escollir submode de practica (IA, normal, lliure).
+ */
 export default function PracticeModeModal({ open, onClose, onStartIA, onStartNormal, onStartFree }: Props) {
   const audio = useGameAudio();
   const { getVisualSettings, settings } = useSettings();

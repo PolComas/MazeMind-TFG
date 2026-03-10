@@ -7,6 +7,9 @@ type Props = {
     onChange: (key: keyof VisualSettings, value: string | number) => void;
 };
 
+/**
+ * Controls d'estil especifics de la pantalla de multijugador.
+ */
 export default function MultiplayerScreenSettings({ settings, onChange }: Props) {
     const { t } = useLanguage();
     return (

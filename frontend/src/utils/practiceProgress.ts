@@ -1,4 +1,10 @@
-// Gestionar l'storage del millor score de pràctica
+/**
+ * Persistència local de la millor puntuació de pràctica.
+ *
+ * Nota: es mantenen dues claus per compatibilitat:
+ * - `mazeMindPracticeStats` (format antic objecte)
+ * - `mazeMindPracticeBestScore` (format actual numèric)
+ */
 export type PracticeStats = {
   maxScore: number;
 };
@@ -10,7 +16,7 @@ const INITIAL_STATS: PracticeStats = {
   maxScore: 0,
 };
 
-// Carregar el millor score de pràctica
+/** Carrega l'estat antic de pràctica (`PracticeStats`) des de localStorage. */
 export function loadPracticeStats(): PracticeStats {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -28,7 +34,9 @@ export function loadPracticeStats(): PracticeStats {
   return { ...INITIAL_STATS };
 }
 
-// Guardar el millor score DESPRÉS d'una run
+/**
+ * Desa la puntuació d'una run i retorna el millor històric resultant.
+ */
 export function savePracticeRun(totalScore: number): number {
   const prev = loadPracticeBestScore();
   const nextBest = Math.max(prev, totalScore);
@@ -40,7 +48,7 @@ export function savePracticeRun(totalScore: number): number {
   return nextBest;
 }
 
-// Reiniciar el millor score de pràctica
+/** Reinicia l'estructura antiga de pràctica a valors per defecte. */
 export function resetPracticeStats(): PracticeStats {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STATS));
@@ -50,7 +58,7 @@ export function resetPracticeStats(): PracticeStats {
   return { ...INITIAL_STATS };
 }
 
-// Obtenir el millor score de pràctica
+/** Llegeix la millor puntuació de pràctica (format actual). */
 export function loadPracticeBestScore(): number {
   try {
     const raw = localStorage.getItem(BEST_SCORE_KEY);

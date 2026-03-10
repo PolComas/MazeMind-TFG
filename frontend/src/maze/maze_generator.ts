@@ -1,10 +1,13 @@
+/**
+ * Tipus base del domini de laberints.
+ */
 export type Dir = 'top' | 'right' | 'bottom' | 'left'
 export type Cell = { walls: Record<Dir, boolean>; visited?: boolean } // Parets i si ha estat visitada
 export type Grid = Cell[][]
 
 export type Diff = 'easy' | 'normal' | 'hard';
 
-// Tipus per a un nivell complet del joc
+/** Entitat de nivell consumida per la resta de pantalles del joc. */
 export type Level = {
   id: string
   number: number
@@ -18,13 +21,13 @@ export type Level = {
   exit: { x: number; y: number }
 }
 
-// PRNG Simple: Mulberry32
+/** PRNG determinista (Mulberry32) amb entrada numèrica o textual. */
 class PRNG {
   private state: number;
 
   constructor(seed: string | number) {
     if (typeof seed === 'string') {
-      // Hash string to number
+      // Converteix seed textual a enter de 32 bits.
       let h = 0xdeadbeef;
       for (let i = 0; i < seed.length; i++) {
         h = Math.imul(h ^ seed.charCodeAt(i), 2654435761);
@@ -38,7 +41,7 @@ class PRNG {
     }
   }
 
-  // Retorna un float entre 0 i 1
+  /** Retorna un valor pseudoaleatori en rang [0, 1). */
   next(): number {
     this.state = (this.state + 0x6d2b79f5) | 0;
     let t = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
@@ -47,7 +50,9 @@ class PRNG {
   }
 }
 
-// Generador de laberints utilitzant l'algorisme de backtracking recursiu
+/**
+ * Generador de laberints "perfectes" (sense cicles) via DFS + backtracking.
+ */
 export class MazeGenerator {
   width: number
   height: number
@@ -57,10 +62,11 @@ export class MazeGenerator {
   constructor(width: number, height: number, seed?: string | number) {
     this.width = width
     this.height = height
-    // Si no hi ha seed, n'utilitzem una d'aleatòria basada en el temps
+    // Si no hi ha seed, usa una seed temporal.
     this.prng = new PRNG(seed ?? Date.now());
   }
 
+  /** Construeix i retorna una graella de laberint nova. */
   generate(): Grid {
     // Inicialitza la graella amb totes les parets presents i cap cel·la visitada
     this.grid = Array.from({ length: this.height }, () =>
@@ -70,38 +76,38 @@ export class MazeGenerator {
       }))
     )
 
-    // Pila per al backtracking
+    // Pila explícita per al backtracking iteratiu.
     const stack: { x: number; y: number }[] = []
-    // Inicia des de la cantonada superior esquerra
+    // Punt d'inici fix.
     const startX = 0, startY = 0
     this.grid[startY][startX].visited = true
     stack.push({ x: startX, y: startY })
 
-    // Algorisme principal: mentre hi hagi elements a la pila
+    // Bucle principal del DFS.
     while (stack.length) {
-      const cur = stack[stack.length - 1]  // Cel·la actual (cim de la pila)
-      const nbs = this.getUnvisitedNeighbors(cur.x, cur.y)  // Veïns no visitats
+      const cur = stack[stack.length - 1]  // Cel·la actual
+      const nbs = this.getUnvisitedNeighbors(cur.x, cur.y)  // Veïns pendents
 
       if (nbs.length) {
-        // Escull un veí aleatori utilitzant el PRNG
+        // Selecció pseudoaleatòria del següent veí.
         const next = nbs[Math.floor(this.prng.next() * nbs.length)]
-        // Treu la paret entre la cel·la actual i la següent
+        // Obre pas entre cel·les adjacents.
         this.removeWall(cur, next)
-        // Marca la següent com visitada i afegeix a la pila
+        // Avança en profunditat.
         this.grid[next.y][next.x].visited = true
         stack.push({ x: next.x, y: next.y })
       } else {
-        // No hi ha veïns no visitats, torna enrere
+        // Sense opcions: retrocedeix.
         stack.pop()
       }
     }
     return this.grid
   }
 
-  // Retorna la llista de veïns no visitats d'una cel·la
+  /** Retorna veïns vàlids no visitats de la cel·la indicada. */
   private getUnvisitedNeighbors(x: number, y: number) {
     const n: { x: number; y: number; dir: Dir }[] = []
-    // Comprova cada direcció si està dins dels límits i no visitada
+    // Comprova límits i estat de visita a cada direcció.
     if (y > 0 && !this.grid[y - 1][x].visited) n.push({ x, y: y - 1, dir: 'top' })
     if (x < this.width - 1 && !this.grid[y][x + 1].visited) n.push({ x: x + 1, y, dir: 'right' })
     if (y < this.height - 1 && !this.grid[y + 1][x].visited) n.push({ x, y: y + 1, dir: 'bottom' })
@@ -109,7 +115,7 @@ export class MazeGenerator {
     return n
   }
 
-  // Treu la paret entre dues cel·les adjacents
+  /** Obre la paret compartida entre dues cel·les adjacents. */
   private removeWall(a: { x: number; y: number }, b: { x: number; y: number }) {
     const dx = b.x - a.x
     const dy = b.y - a.y
@@ -129,7 +135,7 @@ export class MazeGenerator {
   }
 }
 
-// Paràmetres per generar un nivell
+/** Paràmetres d'entrada per generar un nivell complet. */
 export type LevelParams = {
   width: number;  // Amplada del laberint
   height: number;  // Alçada del laberint
@@ -140,7 +146,7 @@ export type LevelParams = {
   seed?: string | number; // Seed opcional per a generació determinista
 };
 
-// Funció per generar un nivell complet amb laberint
+/** Genera un nivell consistent a partir dels paràmetres rebuts. */
 export function generateLevel(params: LevelParams): Level {
   const gen = new MazeGenerator(params.width, params.height, params.seed);
 
@@ -157,4 +163,3 @@ export function generateLevel(params: LevelParams): Level {
     exit: { x: params.width - 1, y: params.height - 1 },
   };
 }
-

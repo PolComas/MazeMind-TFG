@@ -43,6 +43,9 @@ export const tutorialSteps = [
   }
 ];
 
+/**
+ * Overlay guiat del tutorial pas a pas.
+ */
 export default function TutorialOverlay({ step, onNext, onSkip }: Props) {
   const { t } = useLanguage();
   const currentStep = tutorialSteps[step] || tutorialSteps[0];
