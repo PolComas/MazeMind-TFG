@@ -477,7 +477,7 @@ const styles: Record<string, React.CSSProperties> = {
   accordionHeader: { background: 'none', border: 'none', color: PALETTE.text, fontSize: '1rem', fontWeight: 600, cursor: 'pointer', padding: '8px 0', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' },
   accordionContent: { padding: '16px 4px 4px 4px', borderTop: `1px dashed ${PALETTE.borderColor}`, marginTop: '8px' },
   previewColumn: { borderRadius: 16, display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflow: 'hidden' },
-  previewHeader: { background: `linear-gradient(90deg, ${PALETTE.accentPink}, ${PALETTE.accentViolet})`, color: '#fff', padding: '12px 16px', borderRadius: '12px 12px 0 0', fontWeight: 600 },
+  previewHeader: { background: `linear-gradient(90deg, ${PALETTE.surface}, ${PALETTE.surface})`, color: PALETTE.accentCyan, padding: '12px 16px', borderRadius: '12px 12px 0 0', fontWeight: 600,border: `1px solid ${PALETTE.borderColor}`, borderBottom: 'none', },
   previewContent: { flexGrow: 1, background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: '0 0 12px 12px', display: 'grid', placeItems: 'center', padding: '16px', minHeight: '300px' },
   legend: { background: PALETTE.surface, border: `1px solid ${PALETTE.borderColor}`, borderRadius: 12, padding: '16px', fontSize: 14, color: PALETTE.subtext },
   saveButton: { padding: "14px", borderRadius: 10, border: "none", background: PALETTE.easyGreen, color: '#0A192F', fontSize: 16, fontWeight: 700, cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: 'auto' },
