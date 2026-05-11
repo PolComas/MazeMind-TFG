@@ -1,6 +1,6 @@
 import React from 'react';
 import { PALETTE } from './palette'; 
-import { Dumbbell, Zap, Flame, Lock, Play, Star, Clock } from 'lucide-react';
+import { Dumbbell, Zap, Flame, Lock, Play, RotateCcw, Star, Clock } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 import { useGameAudio } from '../audio/sound';
 import { useLanguage } from '../context/LanguageContext';
@@ -65,7 +65,10 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
   };
 
   // Creem etiquetes descriptives per a lectors de pantalla
-  const accessiblePlayLabel = `${t('levelCard.playLabel.before')} ${index} ${t('levelCard.playLabel.after')} ${difficultyLabel}`;
+  const isCompleted = stars > 0;
+  const actionLabel = isCompleted ? t('common.replay') : t('common.play');
+  const ActionIcon = isCompleted ? RotateCcw : Play;
+  const accessibleActionLabel = `${isCompleted ? t('levelCard.replayLabel.before') : t('levelCard.playLabel.before')} ${index} ${t('levelCard.playLabel.after')} ${difficultyLabel}`;
   const accessibleLockedLabel = `${t('common.level')} ${index} (${t('levelCard.locked')})`;
 
   // Mostrar les estrelles
@@ -200,9 +203,9 @@ export default function LevelCard({ index, unlocked, difficulty, stars, bestTime
               }} 
               onClick={onPlay}
               onMouseEnter={() => audio.playHover()}
-              aria-label={accessiblePlayLabel}
+              aria-label={accessibleActionLabel}
             >
-              <Play size={16} /> {t('common.play')}
+              <ActionIcon size={16} /> {actionLabel}
             </button>
           </>
         ) : (

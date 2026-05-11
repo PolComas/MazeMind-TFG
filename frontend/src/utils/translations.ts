@@ -23,6 +23,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'common.level': 'Nivell',
         'common.close': 'Tancar',
         'common.play': 'Jugar',
+        'common.replay': 'Repetir',
         'common.home': 'Inici',
         'difficulty.easy': 'Fàcil',
         'difficulty.normal': 'Normal',
@@ -297,6 +298,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'levelSelect.aria.backHome': 'Tornar a la pantalla d\'inici',
 
         'levelCard.playLabel.before': 'Jugar el nivell',
+        'levelCard.replayLabel.before': 'Repetir el nivell',
         'levelCard.playLabel.after': 'en dificultat',
         'levelCard.locked': 'Bloquejat',
         'levelCard.starsLabel.before': 'Puntuació:',
@@ -519,6 +521,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'common.level': 'Nivel',
         'common.close': 'Cerrar',
         'common.play': 'Jugar',
+        'common.replay': 'Repetir',
         'common.home': 'Inicio',
         'difficulty.easy': 'Fácil',
         'difficulty.normal': 'Normal',
@@ -793,6 +796,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'levelSelect.aria.backHome': 'Volver a la pantalla de inicio',
 
         'levelCard.playLabel.before': 'Jugar el nivel',
+        'levelCard.replayLabel.before': 'Repetir el nivel',
         'levelCard.playLabel.after': 'en dificultad',
         'levelCard.locked': 'Bloqueado',
         'levelCard.starsLabel.before': 'Puntuación:',
@@ -1015,6 +1019,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'common.level': 'Level',
         'common.close': 'Close',
         'common.play': 'Play',
+        'common.replay': 'Replay',
         'common.home': 'Home',
         'difficulty.easy': 'Easy',
         'difficulty.normal': 'Normal',
@@ -1289,6 +1294,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
         'levelSelect.aria.backHome': 'Back to home screen',
 
         'levelCard.playLabel.before': 'Play level',
+        'levelCard.replayLabel.before': 'Replay level',
         'levelCard.playLabel.after': 'on difficulty',
         'levelCard.locked': 'Locked',
         'levelCard.starsLabel.before': 'Score:',
